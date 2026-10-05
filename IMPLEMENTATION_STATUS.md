@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-003` Relationship Domain Foundation; implementation complete, PR/CI and Chat Gate pending. TASK-002 approved and merged via PR #1.
+Current task: `TASK-003` Relationship Domain Foundation; implementation complete, PR #2 and Python 3.11 CI passed; Chat Gate pending. TASK-002 approved and merged via PR #1.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -219,7 +219,10 @@ Implemented:
 Local verification: Windows / Python 3.14.6, 83 passed / 0 failed / 1 skipped;
 Ruff passed, mypy passed (4 source files). All four TASK-001/002 test files are unchanged.
 The skipped test remains the opt-in intentional naive failure demonstration.
-Python 3.11 CI: pending PR run. No Resolve/A/V correction/subtitle/B-roll/multi-track
+Python 3.11.16 CI: 83 passed / 0 failed / 1 skipped, Ruff and mypy passed (run 37276145821). No Resolve/A/V correction/subtitle/B-roll/multi-track
 ripple/transaction/rollback/retime/AI added. INV-004/full INV-006 remain unverified.
 OPEN-001 retained; OPEN-005 records role/cardinality/policy-conflict and split/delete
 lifecycle decisions for future execution. No next TASK is authorized.
+
+TASK-003 PR: https://github.com/KIM0296/edit-program/pull/2
+Standard report: docs/reports/TASK_003_COMPLETION.md. Requested Gate: APPROVED (request only, not a Chat decision).

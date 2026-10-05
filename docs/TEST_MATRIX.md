@@ -61,7 +61,7 @@ TASK-002 local validation: 57 passed, 0 failed, 1 intentional naive demonstratio
 
 ## TASK-003 foundation (not a new invariant PASS)
 
-83 passed / 0 failed / 1 skipped locally on Python 3.14.6; Python 3.11 CI pending.
+83 passed / 0 failed / 1 skipped on local Python 3.14.6 and CI Python 3.11.16 (run 37276145821); Ruff and mypy passed.
 New coverage: reference integrity, distinct repeated-media placements, immutable graphs,
 independent J/L-cut ranges, per-member metadata, no relation-bearing mutation execution.
 All existing TASK-001/002 tests retained unchanged. INV-004 and INV-006 remain TODO;

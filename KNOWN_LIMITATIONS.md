@@ -43,7 +43,7 @@ unsafe → reject
 - Version starts at 1 and advances once per nonempty fake plan. Base version is
   checked before application; full concurrent-state/stale-plan coverage is deferred.
 - FakeTimeline.apply is a simulation entry point, not the production safety pipeline.
-- No A/V relationships, retime, transitions, actual Resolve/media
+- No A/V sync correction or relationship policy execution, retime, transitions, actual Resolve/media
   edits, transaction engine, failure-injection rollback or postflight engine.
 - Domain values do not define a versioned Editing IR JSON serialization contract.
 - Only INV-001/002/003 have scoped fake coverage; the destructive alpha P0 release gate is not satisfied.
