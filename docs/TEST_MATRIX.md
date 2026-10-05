@@ -56,4 +56,4 @@
 TASK-001 validation: 25 passed, 0 failed, 1 opt-in naive demonstration skipped.
 Historical TASK-001 result. Current TASK-002 coverage includes INV-001/002/003; INV-004..018 remain TODO. See IMPLEMENTATION_STATUS.md for reproduction and limits.
 
-TASK-002 local validation: 57 passed, 0 failed, 1 intentional naive demonstration skipped. Python 3.11 CI verification pending.
+TASK-002 local validation: 57 passed, 0 failed, 1 intentional naive demonstration skipped. Python 3.11.16 CI also passed: run 37274008568 (PR #1), 57 passed / 0 failed / 1 skipped.

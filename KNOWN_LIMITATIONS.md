@@ -47,7 +47,7 @@ unsafe → reject
   edits, transaction engine, failure-injection rollback or postflight engine.
 - Domain values do not define a versioned Editing IR JSON serialization contract.
 - Only INV-001/002/003 have scoped fake coverage; the destructive alpha P0 release gate is not satisfied.
-- Local validation used Python 3.14.6; Python 3.11 minimum was not separately exercised.
+- TASK-001 initially used Python 3.14.6 locally; TASK-002 CI verifies the full suite on Python 3.11.16 (run 37274008568).
 
 
 ## TASK-002 scope and remaining limitations

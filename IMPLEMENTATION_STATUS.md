@@ -61,7 +61,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-002` implemented on feat/task-002-inv002-inv003; PR/CI and Chat Gate pending. TASK-001 approved with changes.
+Current task: `TASK-002` implemented on feat/task-002-inv002-inv003; PR #1 created, Python 3.11 CI passed; Chat Gate pending. TASK-001 approved with changes.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -184,9 +184,13 @@ Test-first evidence:
 - Mypy passed (4 source files); Ruff checks passed after formatting/import cleanup.
 - TASK-001 assertions remain; successful-plan fixtures now supply explicit displacement
   approvals required by ADR-011. Naive regression still runs; intentional red demo is skipped.
-- CI workflow added for Python 3.11 with pytest, Ruff, mypy. Hosted result pending PR run.
+- CI workflow added for Python 3.11 with pytest, Ruff, mypy. Hosted PR run 37274008568 passed on Python 3.11.16: 57 passed, 1 skipped; Ruff and mypy passed.
 
 Gate scope:
 - INV-001/002/003 verified for the fake only. INV-004..018 remain unverified/incomplete.
 - No Resolve, A/V relationships, retime, transition, transaction/rollback or AI added.
 - TASK-002 Chat Gate requested after PR/CI evidence; no merge or TASK-003 authorization.
+
+TASK-002 PR: https://github.com/KIM0296/edit-program/pull/1
+CI evidence: https://github.com/KIM0296/edit-program/actions/runs/37274008568
+Standard report: docs/reports/TASK_002_COMPLETION.md. Requested Gate: APPROVED (request only, not Chat decision).

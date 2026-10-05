@@ -51,8 +51,8 @@ This scoped comparison is not a general postflight engine or production rollback
 - [x] Boundary after protection and unrelated later edits succeed with protection unchanged.
 - [x] Multiple protections, multi-command late violation and gap protection are covered.
 - [x] Rejection leaves identical snapshot/version; successful multi-command plan adds one version.
-- [ ] Python 3.11 GitHub Actions runs pytest, ruff, mypy and passes all implemented invariants.
-- [ ] Update status/limitations/decisions, open PR and submit standard report for Chat Gate.
+- [x] Python 3.11 GitHub Actions runs pytest, ruff, mypy and passes all implemented invariants.
+- [x] Update status/limitations/decisions, open PR and submit standard report for Chat Gate.
 
 ## Explicit exclusions
 
@@ -69,3 +69,5 @@ python -m mypy
 CI: Python 3.11, ubuntu-latest, pull_request and push on main/task branches.
 The one opt-in naive intentional failure stays skipped by default; the normal
 naive regression always runs. Reproduction command remains in IMPLEMENTATION_STATUS.md.
+
+Implementation and CI complete; Chat Gate pending. PR #1. See docs/reports/TASK_002_COMPLETION.md.

@@ -96,7 +96,7 @@ Options to investigate:
 이 결정을 TASK-001에서 임의로 확정하지 않는다.
 
 ## OPEN-004 — Range boundaries and multi-item delete scope
-Status: OPEN
+Status: PARTIALLY RESOLVED by ADR-008/010/011; cross-clip and multi-track scope remains OPEN
 
 Context: TASK-001 does not specify end-frame inclusion, gaps, overlapping requests,
 or ripple participation across tracks and clips.
@@ -108,8 +108,22 @@ accept one track, 1:1 source mapping, and targets contained in a single clip fra
 Reject unsupported or overlapping requests explicitly, without choosing production policy.
 Needs Chat decision: confirm production interval and ripple scope before broadening support.
 
+## Chat Gate resolution - TASK-001 / TASK-002, 2026-10-05
+
+TASK-001 Domain Model, FakeTimeline, StableTarget and INV-001: APPROVED WITH CHANGES.
+ADR-008..012 above record the explicit user approval in this session.
+OPEN-003 is resolved for fake lineage and version granularity by ADR-009/012;
+production split identity remains deferred to OPEN-001.
+OPEN-004 is resolved for interval convention and TASK-002 protection/ripple policy
+by ADR-008/010/011. Multi-track and cross-clip request scope remains OPEN and unsupported.
+Original OPEN descriptions are retained as historical context, not competing policy. Current status labels and accepted ADRs take precedence.
+TASK-002 is authorized only for INV-002/003; work on feat/task-002-inv002-inv003,
+submit a PR, and request Chat Gate. Do not merge or proceed to further tasks automatically.
+
+# Resolved Decision History
+
 ## OPEN-003 — Split identity and version granularity
-Status: OPEN
+Status: RESOLVED FOR FAKE by ADR-009/012; production identity remains OPEN-001
 
 Context: stable targets must survive an earlier delete within the same plan, while stale
 plans cannot execute. Persistent identity is already OPEN-001.
@@ -120,15 +134,3 @@ and are distinguished by source range. Distinct placements require distinct clip
 The fake checks the base snapshot before application and advances version once per plan.
 Needs Chat decision: production split identity and version/transaction boundaries.
 No Resolve identity, automatic rebase, or rollback guarantee is established by TASK-001.
-
-## Chat Gate resolution - TASK-001 / TASK-002, 2026-10-05
-
-TASK-001 Domain Model, FakeTimeline, StableTarget and INV-001: APPROVED WITH CHANGES.
-ADR-008..012 above record the explicit user approval in this session.
-OPEN-003 is resolved for fake lineage and version granularity by ADR-009/012;
-production split identity remains deferred to OPEN-001.
-OPEN-004 is resolved for interval convention and TASK-002 protection/ripple policy
-by ADR-008/010/011. Multi-track and cross-clip request scope remains OPEN and unsupported.
-Existing OPEN descriptions above are retained as historical context, not competing policy.
-TASK-002 is authorized only for INV-002/003; work on feat/task-002-inv002-inv003,
-submit a PR, and request Chat Gate. Do not merge or proceed to further tasks automatically.
