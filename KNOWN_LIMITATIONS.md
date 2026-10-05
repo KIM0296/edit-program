@@ -126,3 +126,27 @@ unsafe → reject
   full INV-006 and production sync/rollback/editability are not certified by these tests.
 - Chat-approved action-specific semantics and concrete identity/mapping contracts are
   prerequisites to any future lowering into executable actions (OPEN-001/005/006/007).
+
+
+## TASK-006 candidate authority state scope
+
+- Immutable in-memory state contracts only. No actual candidate timeline creation,
+  duplication, Apply, postflight, observer, lock, notification, UI or persistence.
+- Application/verification are caller-supplied fake evidence. IDs/version equality and
+  frozen data cannot prove that native Apply/postflight happened or close TOCTOU races.
+  Trusted producers and artifact binding remain OPEN-002/001, not adapter shortcuts.
+- WorkingAuthority carries a fake timeline/version comparison input, not a production
+  schema decision. Result identity is an opaque test token with an observed reference.
+- Eligibility checks candidate-authority preconditions only. It does not run safety,
+  dependency/topology preflight, protection checks or authorize real destructive edits.
+- Whole-version mismatch is conservatively STALE; there is no region exemption, automatic
+  rebase, optimistic merge, recomputation or stale->fresh transition. Human observations
+  only concern the current authority; live observation/provenance is not implemented.
+- Validity describes reuse of the original proposal base, not historical postflight.
+  After promotion changes authority, the old proposal may be STALE while applied/verified/
+  promoted history remains intact. Subsequent candidates need the explicit current base.
+- Branches are same-source-base explorations. Branching from an applied result needs a
+  separate future contract. No global candidate registry/retention/approval policy exists.
+- Multiple concurrent approvals, revoke, DIRTY distinction, partial refresh and crash/restart
+  lifecycle remain OPEN-008. WorkPhase is descriptive progress only, no execution gate.
+- No production Human Edit Wins or rollback guarantee is claimed from simulated state tests.

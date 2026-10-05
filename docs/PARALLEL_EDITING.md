@@ -62,3 +62,20 @@ Track:
 - net time saved
 
 The objective is not only fast AI execution, but minimal human waiting and minimal AI-induced rework.
+
+## TASK-006 conservative concurrency subset
+
+The scope-aware goals and conflict colors above are future product guidance. TASK-006
+has no scope analysis, actual observer, lock, lease, watcher, recompute or coordinator.
+Any source timeline identity/version mismatch makes the candidate STALE. Even an edit
+believed to be outside the candidate's region gets no exemption in this foundation.
+DIRTY has no separate approved contract and is deferred under OPEN-008.
+
+WorkPhase is descriptive ANALYZING / BUILDING_CANDIDATE / READY metadata. Phase changes
+do not authorize application or restore validity. A human-version observation is explicit
+caller input for the currently authoritative timeline; it does not switch the working
+pointer to a preview timeline. Live observation ordering/provenance and commit-time
+concurrency protection require future approved contracts.
+
+[Attention Economy v1](PRODUCT_SPEC.md#attention-economy-v1-approved-task-006-product-notes)
+is documentation only; no metrics, notification or batching UI is introduced.
