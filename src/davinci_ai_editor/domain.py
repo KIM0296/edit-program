@@ -1,4 +1,4 @@
-"""Immutable TASK-001 values. Ranges are integer, half-open [start, end)."""
+"""Immutable timeline domain values. Ranges are integer, half-open [start, end)."""
 
 from dataclasses import dataclass
 from typing import Literal, NewType
@@ -34,7 +34,7 @@ class FrameRange:
 
 @dataclass(frozen=True)
 class Clip:
-    # Fake-only placement lineage. Split fragments keep this ID (OPEN-003).
+    # Fake-only placement lineage. Split fragments keep this ID (ADR-012).
     clip_id: ClipId
     media_id: MediaId
     timeline_range: FrameRange
@@ -72,13 +72,42 @@ class StableTarget:
 
 
 @dataclass(frozen=True)
+class ProtectedRange:
+    track_id: TrackId
+    frame_range: FrameRange
+    policy: str = "HARD_LOCK"
+
+    def __post_init__(self) -> None:
+        if self.policy != "HARD_LOCK":
+            raise ValueError("Only HARD_LOCK protection is supported")
+
+
+@dataclass(frozen=True)
+class RippleDisplacement:
+    """Explicit allowed movement of surviving content in base-snapshot coordinates."""
+
+    track_id: TrackId
+    original_range: FrameRange
+    delta_frames: int
+
+    def __post_init__(self) -> None:
+        if type(self.delta_frames) is not int or self.delta_frames >= 0:
+            raise ValueError("Ripple DELETE displacement must be a negative integer")
+
+
+@dataclass(frozen=True)
 class TimelineSnapshot:
     timeline_id: TimelineId
     version: TimelineVersion
     tracks: tuple[Track, ...]
+    protected_ranges: tuple[ProtectedRange, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "tracks", tuple(self.tracks))
+        object.__setattr__(self, "protected_ranges", tuple(self.protected_ranges))
+        track_ids = {t.track_id for t in self.tracks}
+        if any(p.track_id not in track_ids for p in self.protected_ranges):
+            raise ValueError("Protected range must reference a known track")
 
     @property
     def duration(self) -> int:
@@ -119,6 +148,10 @@ class EditPlan:
     timeline_id: TimelineId
     base_version: TimelineVersion
     commands: tuple[EditCommand, ...]
+    approved_ripple_displacements: tuple[RippleDisplacement, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "commands", tuple(self.commands))
+        object.__setattr__(
+            self, "approved_ripple_displacements", tuple(self.approved_ripple_displacements)
+        )

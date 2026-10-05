@@ -25,8 +25,8 @@
 - [x] StableTarget model
 - [x] Target Resolver
 - [x] INV-001
-- [ ] INV-002
-- [ ] INV-003
+- [x] INV-002
+- [x] INV-003
 
 ## Phase 2 — Safety Core
 
@@ -61,7 +61,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-001` complete. TASK-002 proposed, not implemented.
+Current task: `TASK-002` implemented on feat/task-002-inv002-inv003; PR/CI and Chat Gate pending. TASK-001 approved with changes.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -156,3 +156,37 @@ Git setup:
 - No nested Codex session was launched.
 
 TASK-001 Chat Gate: APPROVED WITH CHANGES (2026-10-05). ADR-008..012 accepted; TASK-002 authorized for INV-002/003 only.
+
+
+## TASK-002 implementation - 2026-10-05
+
+Approved basis: TASK-001 Chat Gate APPROVED WITH CHANGES and explicit authorization
+of TASK-002 INV-002/003. ADR-008..012 recorded before code, ADR-007 moved into
+Accepted Decisions, original required-type count corrected to 12. Prior TASK-001
+sections above are historical; the current status is this section.
+
+Implemented:
+- Immutable HARD_LOCK ProtectedRange on snapshots. Direct overlap and earlier ripple
+  (including before a protected gap) reject before any simulated deletion.
+- EditPlan explicitly lists approved surviving-range ripple displacements. Missing,
+  incorrect, duplicate or extra approval rejects before deletion. No automatic approval.
+- Base-snapshot expected survivor layout is computed independently of sequential deletes.
+  Candidate media/placement identity, source intervals, order and positions must match
+  before publishing fake state. Production transaction/rollback is not implemented.
+- One version increase per successful nonempty plan; rejection and no-op leave it unchanged.
+- Scope stays one track, 1:1 mapping, ripple DELETE, single-fragment targets.
+
+Test-first evidence:
+- Before changes, two new INV-002 tests failed with DID NOT RAISE: missing displacement
+  authorization and unrequested media corruption were accepted by TASK-001's fake.
+- ProtectedRange acceptance suite initially could not collect because the type was absent.
+- After implementation: 57 passed, 0 failed, 1 skipped locally (Windows / Python 3.14.6).
+- Mypy passed (4 source files); Ruff checks passed after formatting/import cleanup.
+- TASK-001 assertions remain; successful-plan fixtures now supply explicit displacement
+  approvals required by ADR-011. Naive regression still runs; intentional red demo is skipped.
+- CI workflow added for Python 3.11 with pytest, Ruff, mypy. Hosted result pending PR run.
+
+Gate scope:
+- INV-001/002/003 verified for the fake only. INV-004..018 remain unverified/incomplete.
+- No Resolve, A/V relationships, retime, transition, transaction/rollback or AI added.
+- TASK-002 Chat Gate requested after PR/CI evidence; no merge or TASK-003 authorization.

@@ -40,17 +40,17 @@ This scoped comparison is not a general postflight engine or production rollback
 
 ## Test-first acceptance criteria
 
-- [ ] Existing TASK-001 tests remain green, with explicit displacement approval where needed.
-- [ ] Tests first demonstrate missing INV-002 enforcement and HARD_LOCK behavior.
-- [ ] Mixed media, repeated placements, gaps, multiple deletes and reverse order preserve
+- [x] Existing TASK-001 tests remain green, with explicit displacement approval where needed.
+- [x] Tests first demonstrate missing INV-002 enforcement and HARD_LOCK behavior.
+- [x] Mixed media, repeated placements, gaps, multiple deletes and reverse order preserve
       the full ordered (placement, media, source frame, timeline frame) oracle.
-- [ ] Missing/incorrect/extra ripple approval rejects before mutation.
-- [ ] Corrupted simulated media/source/order/position results are rejected, not published.
-- [ ] Direct inside/partial/covering HARD_LOCK edits reject before any delete.
-- [ ] Earlier ripple, including end-touching before protection, rejects before any delete.
-- [ ] Boundary after protection and unrelated later edits succeed with protection unchanged.
-- [ ] Multiple protections, multi-command late violation and gap protection are covered.
-- [ ] Rejection leaves identical snapshot/version; successful multi-command plan adds one version.
+- [x] Missing/incorrect/extra ripple approval rejects before mutation.
+- [x] Corrupted simulated media/source/order/position results are rejected, not published.
+- [x] Direct inside/partial/covering HARD_LOCK edits reject before any delete.
+- [x] Earlier ripple, including end-touching before protection, rejects before any delete.
+- [x] Boundary after protection and unrelated later edits succeed with protection unchanged.
+- [x] Multiple protections, multi-command late violation and gap protection are covered.
+- [x] Rejection leaves identical snapshot/version; successful multi-command plan adds one version.
 - [ ] Python 3.11 GitHub Actions runs pytest, ruff, mypy and passes all implemented invariants.
 - [ ] Update status/limitations/decisions, open PR and submit standard report for Chat Gate.
 
