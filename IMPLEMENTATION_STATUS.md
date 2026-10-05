@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-004` topology foundation implemented; PR #3 and Python 3.11 CI passed; Chat Gate pending. TASK-003 approved and merged via PR #2.
+Current task: `TASK-005` pure dependency compiler implemented; PR/CI and Chat Gate pending. TASK-004 approved/merged via PR #3; ADR-013 accepted/merged via PR #4.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -255,3 +255,30 @@ subtitle/B-roll/transaction/rollback/retime/AI/external-tool execution added.
 
 TASK-004 PR: https://github.com/KIM0296/edit-program/pull/3
 Standard report: docs/reports/TASK_004_COMPLETION.md. Requested Gate: APPROVED (request only, not Chat decision).
+
+
+## TASK-005 Relationship Resolver / Dependency Plan Compiler - 2026-10-05
+
+Base main: 4d003fe3ad75dbc7cc8807903868965e2be6643f. Approved basis: user TASK-005
+and ADR-013. Spec/OPEN-005 application committed first: 1dd8001.
+New tests then failed collection with missing davinci_ai_editor.dependency (red-first).
+
+Implemented:
+- Optional explicit PEER/DRIVER/DEPENDENT roles; legacy None never inferred from order.
+- Immutable primary intent, fragment evidence, actions, reasons, conflicts, SCC cycles,
+  compiled plan/status. Pure compiler reads snapshot graph and matching native topology.
+- Finite conservative incidence closure; explicit role arcs only for directed SCC diagnosis.
+- Six action-specific triggers; no delete cascade, alignment, movement or retime commands.
+- Subtitle DELETE/TRIM produces RECALCULATE assessment, not automatic subtitle deletion.
+- Conflicting policy requirements retained without priority; ambiguous fragments REVIEW.
+- All reached relationships REVIEW; RETIME UNSUPPORTED. Dependency-free MOVE/RIPPLE/
+  TRIM/DELETE may continue planning, never bypass independent safety/execution gates.
+- No modifications to FakeTimeline/safety/topology execution or earlier regression tests.
+
+Local Windows / Python 3.14.6: 158 passed, 0 failed, 1 skipped (44 new compiler tests).
+Skipped test is the existing opt-in intentional naive failure demonstration.
+Ruff passed; strict mypy passed (6 source files). Python 3.11 hosted CI pending.
+OPEN-001/005/006/007 retained; OPEN-005 application records deferred exact execution,
+cardinality, fragment rebinding, native linked selection and sync offsets.
+No production Resolve, real edit, rollback, multitrack execution or next task started.
+Standard completion report and PR/CI evidence will be linked before review submission.

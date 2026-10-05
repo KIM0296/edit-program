@@ -76,3 +76,25 @@ Track identity/type/order, membership, expected versus actual diff, artifact-ori
 whole-layer replacement REVIEW and immutable relationship-compatible projection are covered.
 TASK-001/002/003 regression files unchanged. INV-004..018 remain uncertified; INV-019
 is scoped domain validation, not evidence of native Resolve/editability behavior.
+
+
+## TASK-005 pure dependency compiler (not execution invariant certification)
+
+Local: 158 passed / 0 failed / 1 skipped; 44 new compiler tests. Ruff/mypy passed.
+Python 3.11 hosted CI evidence pending PR creation.
+
+| Coverage | Evidence in tests/test_dependency_compiler.py |
+| --- | --- |
+| AV_LINK DELETE; valid J/L cut | sync REVIEW, original ranges unchanged, no boundary command |
+| Subtitle DELETE/TRIM; B-roll anchor | RECALCULATE assessment / anchor REVIEW, no cascade |
+| FOLLOW vs STAY; equal policies | conflicting evidence retained / no false conflict for equal metadata |
+| Cycle vs diamond/PEER; disconnected cycle | exact directed SCCs, no recursive side effects, unrelated exclusion |
+| Finite closure | 1,100-object chain and canonical multi-cycle evidence |
+| Primary actions | all six dispatch paths; RETIME unsupported, SPLIT rebinding review |
+| Identity and fragments | same media across placements distinct, ambiguous fragment candidates |
+| Determinism and immutability | permuted members/relations/registry, repeated compile, frozen results |
+| Base integrity | stale/missing target, topology graph/type/order/membership/version/origin rejection |
+| Regression | all prior tests unchanged; relationship-bearing fake execution still rejects |
+
+The single skipped case remains the opt-in intentional naive failure. Production
+INV-004/full INV-006 and rollback remain unverified; no new invariant is marked PASS.
