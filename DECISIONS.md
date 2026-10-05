@@ -140,6 +140,58 @@ silently weaken Preserve Editability or INV-019.
 Track semantic roles (for example MAIN_VIDEO/BROLL/GRAPHICS/DIALOGUE/BGM/SFX/SUBTITLE) are a
 future architecture topic. Track names or ordinal positions alone are not authoritative role data.
 
+
+
+## ADR-015 - Candidate Authority Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-05
+
+Candidate selection, approval, application, verification, and promotion are distinct states.
+
+1. Selection Is Not Approval: selecting a candidate only chooses it for comparison or further edits.
+2. Approval Is Not Promotion: approval grants permission to attempt application; it does not change
+   the authoritative working timeline by itself.
+3. Promotion Requires Verified Apply: only a successfully applied and postflight-verified result may
+   become the default working authority for subsequent requests.
+4. Every Candidate Carries Its Base: every candidate records the source timeline identity/version
+   from which it was derived.
+5. Human Edit Wins / Stale Candidate Reject: if Resolve changes after candidate creation, do not
+   apply the stale candidate unchanged.
+6. No Automatic Destructive Rebase: stale candidates must be recomputed/reviewed; never silently
+   merge an old candidate over newer human edits.
+7. Candidate Branching Does Not Change Main: candidate A/B/B2 exploration does not change working
+   authority until verified promotion.
+8. Ambiguous Praise Is Not Approval: positive evaluation is not equivalent to an explicit apply.
+9. Active Timeline Is Not Automatically Working Authority: merely viewing/selecting another Resolve
+   timeline does not silently move the working pointer.
+10. Next Request Defaults to Latest Verified Working Timeline after successful promotion.
+
+Implementation details for whether candidates are native duplicated timelines, virtual plans, or
+rendered previews remain separate decisions. Resolve remains the Source of Truth.
+
+## ADR-016 - Parallel Editing / Human Priority v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-05
+
+AI work should not block the editor by default. Analysis and candidate generation happen against an
+immutable base snapshot/shadow candidate rather than writing directly into the authoritative working
+state.
+
+1. Parallel Editing Principle: editor and AI may work concurrently when changes are isolated.
+2. Human Priority Principle: human changes always take precedence over in-flight AI candidates.
+3. Shadow Candidate Principle: analysis/candidate building does not mutate the authoritative working
+   timeline.
+4. Minimal Commit Lock: exclusive write coordination, when required, is limited to the smallest
+   affected scope and shortest commit/verification window practical.
+5. No Silent Rebase: an AI candidate invalidated by human work must be marked dirty/stale and
+   recomputed or reviewed rather than silently reapplied.
+
+Future Concurrent Work Coordinator responsibilities may include AI work scope, human-change
+detection, staleness, conflict classification, dependency impact, incremental recomputation and
+commit coordination. A soft work lease may communicate AI scope but must not prevent the human from
+editing; human edits invalidate/recompute AI work instead.
+
+These are conservative v1 product/architecture rules. Changes require Chat review.
+
+
 # Open Decisions
 
 ## OPEN-006 - Topology correspondence and native track indices
