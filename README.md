@@ -1,4 +1,6 @@
-# DaVinci Resolve AI Editing System
+# edit-program
+
+DaVinci Resolve AI Editing System
 
 AI가 DaVinci Resolve의 현재 프로젝트와 타임라인을 이해하고, 자연어 편집 의도를 안전한 Edit Plan으로 변환하며, 기존 편집 구조를 보존한 채 반복 작업을 줄이는 **AI Assistant Editor** 프로젝트다.
 
