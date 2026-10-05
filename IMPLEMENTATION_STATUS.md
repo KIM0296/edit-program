@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-005` pure dependency compiler implemented; PR #6 and Python 3.11 CI passed; Chat Gate pending. TASK-004 approved/merged via PR #3; ADR-013 accepted/merged via PR #4.
+Current task: `TASK-006` candidate authority/concurrency state foundation implemented; PR #8 and Python 3.11 CI passed; Chat Gate pending. TASK-005 approved/merged via PR #6; ADR-015/016 accepted in main.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -286,3 +286,36 @@ PR: https://github.com/KIM0296/edit-program/pull/6
 Standard report: docs/reports/TASK_005_COMPLETION.md. Requested Gate: APPROVED (request only).
 During implementation, main advanced to 6421b8d with ADR-014/Track Stewardship v1.
 Merged that documentation at 40781ce; no TASK-005 scope expansion or source change.
+
+
+## TASK-006 Candidate Authority / Concurrent Work State - 2026-10-05
+
+Approved basis: TASK-005 APPROVED/PR #6 merged; ADR-015/016 and explicit TASK-006 request.
+Main base fe8ee5ee188df52fe930f4d1dac47d57fa329544. New branch:
+feat/task-006-candidate-concurrency-state. Spec/OPEN/product notes committed before code
+at f552852. New tests failed collection with missing davinci_ai_editor.authority first.
+
+Implemented:
+- Separate immutable selection, approval, validity, application, verification, promotion
+  and work-phase axes. Every candidate has explicit base identity/version and lineage.
+- Pure selection/explicit approval/preview/progress events never implicitly promote.
+- Whole-version/identity mismatch invalidates; stale remains blocked without rebase.
+- Explicit human observation updates current authority version knowledge, never a
+  preview pointer. Source base/approval/application/verification history is not rewritten.
+- Bound fake application/result/verification evidence and guarded verified promotion.
+  No actual Apply/Postflight is implemented; caller facts do not prove native operations.
+- Same-base exploration branching copies no approval/result/authority and cannot refresh stale.
+- Attention Economy's four principles documented only; small commands remain allowed.
+
+Local Windows/Python 3.14.6: 210 passed / 0 failed / 1 skipped (52 new state tests).
+Ruff PASS; strict mypy PASS (7 source files). Hosted Python 3.11.16 CI also passed:
+run 37287250147, 210 passed / 1 skipped, Ruff/mypy PASS.
+The skipped case remains the opt-in intentional naive failure; earlier regressions unchanged.
+OPEN-002 partially resolved by ADR-015/016, production representation/evidence still OPEN.
+OPEN-008 records DIRTY/STALE, scope/changeset/refresh, multiple approvals/revocation,
+retention/persistence questions. Production WorkingAuthority/result identity not settled.
+No actual timeline/candidate creation, apply/observer/rollback/Resolve/UI/AI introduced.
+Standard report: docs/reports/TASK_006_COMPLETION.md. Requested Gate: APPROVED (request only).
+
+TASK-006 PR: https://github.com/KIM0296/edit-program/pull/8
+CI evidence: https://github.com/KIM0296/edit-program/actions/runs/37287250147

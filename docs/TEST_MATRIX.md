@@ -98,3 +98,25 @@ Python 3.11.16 CI passed: run 37282763459, 158 passed / 1 skipped, Ruff/mypy pas
 
 The single skipped case remains the opt-in intentional naive failure. Production
 INV-004/full INV-006 and rollback remain unverified; no new invariant is marked PASS.
+
+
+## TASK-006 candidate authority/concurrency state foundation
+
+Local: 210 passed / 0 failed / 1 skipped; 52 new state tests. Ruff/mypy PASS.
+Python 3.11.16 hosted CI passed: run 37287250147, 210 passed / 1 skipped, Ruff/mypy PASS.
+No earlier regression tests or executors changed.
+
+| User scenario | Evidence in tests/test_candidate_authority.py |
+| --- | --- |
+| Selection != approval | Only selection changes; authority and approval retained |
+| Approval != apply/promotion | Explicit approval changes one axis; no result/authority writes |
+| v42 vs v45; Human Edit Wins | Sticky STALE, blocked eligibility; no base rewrite or old-version resurrection |
+| Unverified / verified promotion | Reject created/selected/approved/unverified; accept bound verified supplied result |
+| Main -> B -> B2 | Same-base lineage, fresh ID, no copied approval/result or authority switch |
+| Active preview switch | Only active ID changes; wrong authority observation rejected |
+| Immutable / deterministic | Frozen nested values, same event yields same result, input unchanged |
+| Invalid transitions | Mismatched evidence/replay/failed verification/stale/result changes reject |
+| No execution | FakeTimeline.apply patched to raise; all pure transitions still work |
+
+The single skip is the intentional naive red demonstration. INV-012/017 are not marked
+fully PASS: live observer, actual concurrent apply and transaction/rollback remain absent.
