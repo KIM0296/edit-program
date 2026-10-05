@@ -37,6 +37,9 @@ Chat의 역할은 **Product / Architecture / Safety Decision Layer** 다.
 8. Every destructive operation must pass Safety Core.
 9. AI edit one transaction should behave like one user-understandable operation.
 10. Unknown or ambiguous destructive behavior defaults to REVIEW, not APPLY.
+11. Preserve Editability.
+12. Native Editing Environment Preservation.
+13. Preview/render may flatten for display, but must not replace editable project state.
 
 ---
 

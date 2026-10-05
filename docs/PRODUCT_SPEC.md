@@ -75,3 +75,22 @@ AI가 빠르게 결과를 만들었다는 사실만으로 성공으로 보지 �
 ```
 
 이어야 한다.
+
+
+## Preserve Editability / Native Editing Environment Preservation
+
+Approved in TASK-004 user instruction: AI edits must retain the native Track/Layer/Object
+structure so the user can continue individual editing. Preview/render output may flatten,
+but must not replace editable project state or become the editable source of truth.
+Track additions/removals/moves require explicit expected topology changes (INV-019).
+
+## Preferred Effects Implementation Path (future product boundary only)
+
+1. Editorial effects: prefer Edit Page / Resolve FX.
+2. Motion graphics, tracking and simple compositing: consider Fusion first when feasible.
+3. Fusion is preferred, not required.
+4. Unrestricted full Fusion automation is not initial scope.
+5. Future effect automation should prioritize editable, reversible, inspectable structures.
+6. Complex specialist VFX: prioritize VFX Assist / Handoff over direct automation.
+7. External VFX integrations are later priorities, considered only when they preserve the
+   native editing environment. These notes authorize no TASK-004 effect implementation.

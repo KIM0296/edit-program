@@ -72,6 +72,33 @@ persistent TimelineItem ID. Resolve persistent identity remains OPEN-001.
 
 # Open Decisions
 
+## OPEN-006 - Topology correspondence and native track indices
+Status: OPEN
+
+Context/evidence: TASK-003 fake TimelineObjectId includes track_id, so a native object
+move changes that composite reference. Track tuples do not define Resolve's indexing API.
+Affected contract: INV-019 object membership/track order without wrong identity matching.
+Options: production independent persistent ID, approved adapter correspondence, or fake
+explicit origin bindings. Media/name/source/time matching can confuse repeated placements.
+Recommendation for TASK-004: preserve existing relationship IDs; separate comparison identity
+from current membership using explicit one-to-one fake bindings. Tuple index is fake order only.
+Needs Chat decision: production stable identity/correspondence and per-type native track indices.
+Deferred: adapters, implicit identity inference, actual track movement. OPEN-001 remains OPEN.
+
+## OPEN-007 - Native editability / flatten provenance evidence
+Status: OPEN
+
+Context: topology alone cannot prove that a clip tagged native is individually editable
+or distinguish every intentional replacement from a hidden render/flatten result.
+Options: verified adapter provenance, retained source object graph, or conservative REVIEW
+when provenance/structure is ambiguous. Blind trust in labels is insufficient for production.
+Recommendation: fake input declares origin; reject preview/render/flattened editable substitutes,
+and REVIEW whole multi-layer collapse into one replacement even if changes are expected.
+Needs Chat decision: authoritative native-state evidence and acceptable editable replacement
+semantics before production integration. No generic effect/editability certification here.
+Deferred: Resolve/render adapters and broad flatten detection beyond the scoped data contract.
+
+
 ## OPEN-005 - Relationship execution semantics and lifecycle
 Status: OPEN
 
@@ -162,3 +189,12 @@ TASK-003 is Relationship Domain Foundation only, as specified in
  tasks/TASK_003_RELATIONSHIP_DOMAIN.md. INV-004 is not the next implementation by number.
 Immutable relationships, reference validity, independent J/L-cut timing and fake-only identity
 are required. No relationship policy execution, actual sync changes or later task is authorized.
+
+
+## Chat Gate - TASK-003 approved / TASK-004 authorized
+
+User reports TASK-003 PR #2 APPROVED and merged. TASK-004 is topology foundation only.
+Preserve Editability, Native Editing Environment Preservation and INV-019 are explicitly
+approved user requirements; preview/render must not replace editable source state.
+Effect/VFX preferences are product/architecture notes only, not execution authorization.
+Implementation follows tasks/TASK_004_TIMELINE_TOPOLOGY.md; PR and Chat Gate required.

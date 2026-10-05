@@ -1,6 +1,6 @@
 # Known Limitations
 
-TASK-001/002 fake safety and TASK-003 relationship domain foundation are implemented; production execution remains out of scope. The following capabilities remain unsupported/unverified.
+TASK-001/002 fake safety, TASK-003 relationships and TASK-004 topology foundations are implemented; production execution remains out of scope. The following capabilities remain unsupported/unverified.
 
 ## Resolve API 미검증 영역
 
@@ -80,3 +80,24 @@ unsafe → reject
   This conservative unsupported-scope guard is not a relationship policy executor or UI.
 - Type-specific roles/cardinality and split/delete/conflict semantics remain OPEN-005.
 - TASK-003 does not certify INV-004 A/V sync or full INV-006 relationship preservation.
+
+
+## TASK-004 topology validation scope
+
+- Pure topology projection, diff and validation; no mutation executor or new Resolve state.
+- Track order is a zero-based snapshot tuple index, not verified native per-type indices.
+- Comparison identity is independent of membership only through explicit fake origin IDs.
+  Composite IDs after a move require caller-supplied one-to-one correspondence; without it,
+  they appear as removed/added objects and cannot silently count as unchanged. No media matching.
+- The adapter/caller must supply truthful provenance and correspondence. Topology cannot
+  prove a native label or detect all hidden rendered media/effect replacements (OPEN-007).
+- Preview/render/flattened origins are rejected as editable state even if topology matches;
+  whole multi-layer replacement with one new object is conservatively REVIEW even if expected.
+- Expected diffs are exact, including displaced indices on track insertion/removal. Validation
+  does not constitute user approval, apply topology operations, or commit/increment version.
+- Relationship records must remain unchanged; projection may translate explicitly supplied
+  identity references, not execute relationship policy or lifecycle repair.
+- Topology validation does not inspect media/source/time/effects/retime. INV-002 and other
+  independent safety checks remain necessary; no full project editability guarantee.
+- Preview/render can be represented as artifacts, but this task implements no renderer.
+- Preferred effects path is documentation only; no Fusion/FX/external VFX integration.
