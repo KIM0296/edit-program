@@ -241,3 +241,21 @@ Preserve Editability, Native Editing Environment Preservation and INV-019 are ex
 approved user requirements; preview/render must not replace editable source state.
 Effect/VFX preferences are product/architecture notes only, not execution authorization.
 Implementation follows tasks/TASK_004_TIMELINE_TOPOLOGY.md; PR and Chat Gate required.
+
+### TASK-005 application of OPEN-005 (2026-10-05, remains OPEN)
+
+ADR-013 is accepted; TASK-004/PR #3 and semantics/PR #4 are merged per Chat.
+The TASK-005 spec proposes explicit optional roles without inferring legacy roles.
+Exact type-specific cardinality, AV_LINK PEER rules, SYNC_GROUP leader, split fragment
+rebinding, Compound/Multicam, native Linked Selection and concrete sync offsets remain
+OPEN-005. Evidence: current fake IDs can identify multiple split fragments and existing
+policy metadata contains no action-specific offset/mapping contract.
+
+Options: infer a universal FOLLOW propagation rule (unsafe/contradicts ADR-013), or
+retain finite impact candidates and require REVIEW until individual semantics are
+approved. Recommendation: the latter, as specified in TASK-005. Conservative connected
+impact assessment is not execution reachability. All related intents remain REVIEW;
+only dependency-free inspection may be SAFE_TO_CONTINUE (never apply permission).
+Chat decisions are needed before lowering any candidate into executable action.
+Execution/rebinding/cardinality enforcement are deferred; pure diagnostic compilation
+can proceed. OPEN-001 and OPEN-006/007 are unchanged.
