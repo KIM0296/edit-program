@@ -111,3 +111,31 @@ conflict rework; maximizing the number of automated actions is not the objective
 
 These are product/architecture notes only. TASK-006 adds no UI, notifications, review
 batching implementation, metric instrumentation or telemetry.
+
+
+## Effect / VFX Boundary v1
+
+The product does not equate technical possibility with product responsibility.
+
+### E1 - Editorial Effects
+Core editor-level effects may be supported directly after normal safety validation.
+
+### E2 - Controlled Motion / Simple Composite
+Support is limited and should favor validated editable primitives/templates. For a
+Resolve-centered implementation, Fusion is preferred when appropriate, but not required.
+
+### V1 - VFX Assist / Handoff
+Complex roto, difficult removal/keying/tracking/reconstruction and similar specialist work
+should be identified, scoped and prepared for handoff rather than freely automated.
+
+### V2 - Specialist VFX
+Outside the core Assistant Editor responsibility.
+
+Effect automation eligibility depends on Predictability, Reversibility, Inspectability,
+Editability and Verifiability. Existing effect/node/keyframe structures are user-owned.
+
+**Initial product decision: no unrestricted Effect ALL Auto.** The project will first prove
+time savings and safety for bounded E1/E2 primitives. A future validated Effect Auto Pass may
+be reconsidered over an approved primitive set; it is not part of the initial scope.
+
+Color, Audio and Generative Asset Creation remain separate product verticals.
