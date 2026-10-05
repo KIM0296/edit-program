@@ -81,7 +81,7 @@ is scoped domain validation, not evidence of native Resolve/editability behavior
 ## TASK-005 pure dependency compiler (not execution invariant certification)
 
 Local: 158 passed / 0 failed / 1 skipped; 44 new compiler tests. Ruff/mypy passed.
-Python 3.11 hosted CI evidence pending PR creation.
+Python 3.11.16 CI passed: run 37282763459, 158 passed / 1 skipped, Ruff/mypy passed.
 
 | Coverage | Evidence in tests/test_dependency_compiler.py |
 | --- | --- |

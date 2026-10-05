@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-005` pure dependency compiler implemented; PR/CI and Chat Gate pending. TASK-004 approved/merged via PR #3; ADR-013 accepted/merged via PR #4.
+Current task: `TASK-005` pure dependency compiler implemented; PR #6 and Python 3.11 CI passed; Chat Gate pending. TASK-004 approved/merged via PR #3; ADR-013 accepted/merged via PR #4.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -277,8 +277,12 @@ Implemented:
 
 Local Windows / Python 3.14.6: 158 passed, 0 failed, 1 skipped (44 new compiler tests).
 Skipped test is the existing opt-in intentional naive failure demonstration.
-Ruff passed; strict mypy passed (6 source files). Python 3.11 hosted CI pending.
+Ruff passed; strict mypy passed (6 source files). Python 3.11.16 hosted CI passed:
+run 37282763459, 158 passed / 1 skipped, Ruff/mypy passed.
 OPEN-001/005/006/007 retained; OPEN-005 application records deferred exact execution,
 cardinality, fragment rebinding, native linked selection and sync offsets.
 No production Resolve, real edit, rollback, multitrack execution or next task started.
-Standard completion report and PR/CI evidence will be linked before review submission.
+PR: https://github.com/KIM0296/edit-program/pull/6
+Standard report: docs/reports/TASK_005_COMPLETION.md. Requested Gate: APPROVED (request only).
+During implementation, main advanced to 6421b8d with ADR-014/Track Stewardship v1.
+Merged that documentation at 40781ce; no TASK-005 scope expansion or source change.
