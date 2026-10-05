@@ -107,6 +107,39 @@ editorial cases justify it, but changes require Chat Architecture Review and mus
 existing invariants silently.
 
 
+
+
+## ADR-014 - Track Stewardship v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-05
+
+The timeline's existing track organization is user-owned project structure. AI may edit content
+within that structure, but must not silently reorganize the editor's workspace.
+
+Safety/product defaults:
+1. Existing Structure Is User-Owned: do not delete, rename, reorder, repurpose, or silently
+   move objects across existing tracks without an explicit approved topology change.
+2. Reuse Before Create, But Only When Safe: reuse an existing track only when its role is
+   sufficiently established and the planned placement is conflict-free. Ambiguous tracks are
+   not AI-owned free space.
+3. Empty Does Not Mean Disposable: an empty track may be intentional staging/organization and
+   must not be deleted merely because it is empty.
+4. AI-Created Becomes User-Owned: once an AI-created track/object enters the editable project,
+   it becomes ordinary user project state. Later AI work may not reset or remove it merely
+   because AI originally created it. Human edits take precedence.
+5. Explicit Selection Is Strong Intent, Not a Safety Bypass: a user-selected target track is a
+   strong placement signal, but lock/protection/topology/relationship checks still apply.
+6. Track Creation Is a Topology Change: creating, deleting, reordering, renaming/repurposing,
+   or moving membership across tracks must be represented as an expected topology change.
+7. Stacking Ambiguity Escalates to REVIEW: when the visual/audio result depends on layer order
+   and a safe insertion position cannot be determined, do not guess.
+
+These are v1 conservative defaults. Real Resolve metadata and professional workflow evidence may
+justify future refinement, but any change requires Chat Product/Architecture Review and must not
+silently weaken Preserve Editability or INV-019.
+
+Track semantic roles (for example MAIN_VIDEO/BROLL/GRAPHICS/DIALOGUE/BGM/SFX/SUBTITLE) are a
+future architecture topic. Track names or ordinal positions alone are not authoritative role data.
+
 # Open Decisions
 
 ## OPEN-006 - Topology correspondence and native track indices
