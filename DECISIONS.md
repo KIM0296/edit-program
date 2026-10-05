@@ -1,5 +1,7 @@
 # Architecture Decisions
 
+# Accepted Decisions
+
 ## ADR-001 — Resolve is Source of Truth
 Status: ACCEPTED
 
@@ -33,12 +35,42 @@ LLM이 Python/Lua/Resolve scripting code를 직접 실행 경로에 생성하지
 
 ---
 
-# Open Decisions
-
 ## ADR-007 — Main Repository and Product-first Development
 Status: ACCEPTED — 사용자 지시, 2026-10-05
 
-이 저장소를 메인 제품으로 삼고 기존 영상 편집자동화 시스템연구는 재사용 자산/검증 사례로 보존한다. 제품은 Mac 전용이 아니며 Windows는 현재 개발 환경이다. OS별 설치·권한·연결 검증은 핵심 구축 후 마무리 단계에 수행한다. 기존 Safety Core 경로를 유지하며 이번 결정은 invariant 완화나 실제 API 검증 생략을 뜻하지 않는다. 비교 결과: docs/LEGACY_INTEGRATION_REVIEW.md.
+이 저장소를 메인 제품으로 삼고 기존 영상 편집자동화 시스템연구는 재사용 자산/검증 사례로 보존한다. 제품은 Mac 전용이 아니며 Windows는 현재 개발 환경이다. OS별 설치·권한·연결 검증은 핵심 구축 후 마무리 단계에 수행한다. 기존 Safety Core 경로를 유지하며 이번 결정은 invariant 완화나 실제 API 검증 생략을 뜻하지 않는다. 비교 결과: (historical review artifact is not present in this repository).
+
+## ADR-008 - Integer Half-open Internal FrameRange
+Status: ACCEPTED - Chat Gate Review, 2026-10-05
+
+All internal FrameRange values use integer half-open [start, end) coordinates.
+
+## ADR-009 - Version Advances on Successful Plan Commit
+Status: ACCEPTED - Chat Gate Review, 2026-10-05
+
+TimelineVersion increases by one per successfully committed EditPlan/Transaction,
+not per command. Failure or rollback does not increase it. An empty fake plan is
+an uncommitted no-op. This decision does not authorize transaction/rollback implementation.
+
+## ADR-010 - TASK-002 ProtectedRange Is HARD_LOCK
+Status: ACCEPTED - Chat Gate Review, 2026-10-05
+
+Direct edits and ripple-induced absolute timeline position changes are violations.
+Reject the entire offending plan before mutation. No override is provided in TASK-002.
+
+## ADR-011 - Unrequested Content Preservation
+Status: ACCEPTED - Chat Gate Review, 2026-10-05
+
+INV-002 preserves unrequested media identity, source range, and content order.
+Timeline positions may change only by ripple displacement explicitly approved in EditPlan.
+
+## ADR-012 - Fake Placement Lineage Identity
+Status: ACCEPTED - Chat Gate Review, 2026-10-05
+
+TASK-001 FakeTimeline clip_id is fake placement lineage identity, not a production
+persistent TimelineItem ID. Resolve persistent identity remains OPEN-001.
+
+# Open Decisions
 
 ## OPEN-002 — Candidate Approval and Live Timeline Authority
 Status: OPEN
@@ -88,3 +120,15 @@ and are distinguished by source range. Distinct placements require distinct clip
 The fake checks the base snapshot before application and advances version once per plan.
 Needs Chat decision: production split identity and version/transaction boundaries.
 No Resolve identity, automatic rebase, or rollback guarantee is established by TASK-001.
+
+## Chat Gate resolution - TASK-001 / TASK-002, 2026-10-05
+
+TASK-001 Domain Model, FakeTimeline, StableTarget and INV-001: APPROVED WITH CHANGES.
+ADR-008..012 above record the explicit user approval in this session.
+OPEN-003 is resolved for fake lineage and version granularity by ADR-009/012;
+production split identity remains deferred to OPEN-001.
+OPEN-004 is resolved for interval convention and TASK-002 protection/ripple policy
+by ADR-008/010/011. Multi-track and cross-clip request scope remains OPEN and unsupported.
+Existing OPEN descriptions above are retained as historical context, not competing policy.
+TASK-002 is authorized only for INV-002/003; work on feat/task-002-inv002-inv003,
+submit a PR, and request Chat Gate. Do not merge or proceed to further tasks automatically.

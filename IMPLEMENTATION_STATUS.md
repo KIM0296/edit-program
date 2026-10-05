@@ -69,7 +69,7 @@ Current task: `TASK-001` complete. TASK-002 proposed, not implemented.
 This completion section supersedes the pre-implementation src/tests observations in the earlier Integration Review. That review is preserved as history.
 
 Implemented:
-- All 13 required domain types; frozen dataclasses and integer half-open FrameRange.
+- All 12 required domain types; frozen dataclasses and integer half-open FrameRange.
 - FakeTimeline creation/clip placement via a single Track, immutable snapshot/version,
   snapshot target resolution, ordered ripple-delete simulation, current clip positions.
 - All targets are resolved and checked against the same base snapshot before mutation.
@@ -154,3 +154,5 @@ Git setup:
 - Original specification and TASK-001 implementation recorded as separate commits.
 - Existing remote initial commit is preserved when integrating main.
 - No nested Codex session was launched.
+
+TASK-001 Chat Gate: APPROVED WITH CHANGES (2026-10-05). ADR-008..012 accepted; TASK-002 authorized for INV-002/003 only.
