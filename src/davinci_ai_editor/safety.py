@@ -76,6 +76,8 @@ def preflight(base: TimelineSnapshot, plan: EditPlan) -> Track:
     """Reject before the fake invokes any delete; return the exact expected track."""
     if plan.timeline_id != base.timeline_id or plan.base_version != base.version:
         raise ValueError("Plan does not match current timeline snapshot")
+    if plan.commands and base.relationship_graph and base.relationship_graph.relationships:
+        raise ValueError("REVIEW: relationship-aware editing is not implemented")
     expected, displacements = _expected_layout(base, plan.commands)
     for protection in base.protected_ranges:
         for command in plan.commands:

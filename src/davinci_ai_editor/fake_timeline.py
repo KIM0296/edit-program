@@ -11,6 +11,7 @@ from .domain import (
     EditPlan,
     FrameRange,
     ProtectedRange,
+    RelationshipGraph,
     StableTarget,
     TimelineId,
     TimelineSnapshot,
@@ -27,11 +28,12 @@ class FakeTimeline:
         track: Track,
         *,
         protected_ranges: tuple[ProtectedRange, ...] = (),
+        relationship_graph: RelationshipGraph | None = None,
     ) -> None:
         if len({c.clip_id for c in track.clips}) != len(track.clips):
             raise ValueError("Initial placements must have distinct clip IDs")
         self._snapshot = TimelineSnapshot(
-            timeline_id, TimelineVersion(1), (track,), protected_ranges
+            timeline_id, TimelineVersion(1), (track,), protected_ranges, relationship_graph
         )
 
     def snapshot(self) -> TimelineSnapshot:
@@ -56,7 +58,12 @@ class FakeTimeline:
             positions.append(interval)
             track = self._delete(track, index, interval)
         verify_unrequested_content(expected, track)
-        self._snapshot = replace(base, version=TimelineVersion(base.version + 1), tracks=(track,))
+        self._snapshot = replace(
+            base,
+            version=TimelineVersion(base.version + 1),
+            tracks=(track,),
+            relationship_graph=None,
+        )
         return tuple(positions)
 
     @staticmethod

@@ -72,6 +72,25 @@ persistent TimelineItem ID. Resolve persistent identity remains OPEN-001.
 
 # Open Decisions
 
+## OPEN-005 - Relationship execution semantics and lifecycle
+Status: OPEN
+
+Context: TASK-003 authorizes immutable relationship data, not policy execution.
+Evidence: the same-media fake may have multiple placements or disjoint fragments;
+AV_LINK may intentionally have different video/audio boundaries (J/L cuts).
+Affected requirements: future A/V sync, subtitle/anchor following, multi-track ripple.
+Options/trade-offs: directed roles versus symmetric/n-ary membership; per-type cardinality;
+retain lineage-level links versus explicit rebinding after split/delete; cycle/conflict review
+versus an approved deterministic resolution. These choices affect edit intent and safety.
+Recommendation: represent typed n-ary membership and per-member policy metadata only;
+do not infer direction, alignment, common displacement, conflict resolution, or propagation.
+Needed Chat decision: role/cardinality constraints and split/delete/policy-conflict semantics
+before any relationship execution. Review the internal representation in TASK-003's PR.
+Deferred: all relationship-aware edit execution. Nonempty relation-bearing plans explicitly
+reject for REVIEW. Independent foundation and existing relation-free regression work continue.
+OPEN-001 remains the separate unresolved production identity decision.
+
+
 ## OPEN-002 — Candidate Approval and Live Timeline Authority
 Status: OPEN
 
@@ -134,3 +153,12 @@ and are distinguished by source range. Distinct placements require distinct clip
 The fake checks the base snapshot before application and advances version once per plan.
 Needs Chat decision: production split identity and version/transaction boundaries.
 No Resolve identity, automatic rebase, or rollback guarantee is established by TASK-001.
+
+
+## Chat Gate - TASK-002 approval and TASK-003 authorization
+
+User reports TASK-002 / PR #1 APPROVED and merged; fetched main contains merge 747474a.
+TASK-003 is Relationship Domain Foundation only, as specified in
+ tasks/TASK_003_RELATIONSHIP_DOMAIN.md. INV-004 is not the next implementation by number.
+Immutable relationships, reference validity, independent J/L-cut timing and fake-only identity
+are required. No relationship policy execution, actual sync changes or later task is authorized.

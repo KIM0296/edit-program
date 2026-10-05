@@ -57,3 +57,12 @@ TASK-001 validation: 25 passed, 0 failed, 1 opt-in naive demonstration skipped.
 Historical TASK-001 result. Current TASK-002 coverage includes INV-001/002/003; INV-004..018 remain TODO. See IMPLEMENTATION_STATUS.md for reproduction and limits.
 
 TASK-002 local validation: 57 passed, 0 failed, 1 intentional naive demonstration skipped. Python 3.11.16 CI also passed: run 37274008568 (PR #1), 57 passed / 0 failed / 1 skipped.
+
+
+## TASK-003 foundation (not a new invariant PASS)
+
+83 passed / 0 failed / 1 skipped on local Python 3.14.6 and CI Python 3.11.16 (run 37276145821); Ruff and mypy passed.
+New coverage: reference integrity, distinct repeated-media placements, immutable graphs,
+independent J/L-cut ranges, per-member metadata, no relation-bearing mutation execution.
+All existing TASK-001/002 tests retained unchanged. INV-004 and INV-006 remain TODO;
+a representational foundation is not proof of sync correction or relationship-aware editing.
