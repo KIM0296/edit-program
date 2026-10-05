@@ -15,6 +15,7 @@ from davinci_ai_editor.domain import (
     TrackId,
 )
 from davinci_ai_editor.fake_timeline import FakeTimeline
+from davinci_ai_editor.safety import propose_ripple_displacements
 
 
 def timeline() -> FakeTimeline:
@@ -49,6 +50,9 @@ def test_inv001_stable_targets_and_exact_remaining_content(reverse: bool) -> Non
     targets = tuple(before.resolve(TrackId("V1"), r) for r in ranges)
     assert fake.snapshot() == before  # All targets resolved before mutation.
     plan = EditPlan(before.timeline_id, before.version, tuple(EditCommand(t) for t in targets))
+    plan = replace(
+        plan, approved_ripple_displacements=propose_ripple_displacements(before, plan.commands)
+    )
     actual_positions = fake.apply(plan)
     assert (
         actual_positions == tuple(ranges)
@@ -77,7 +81,12 @@ def test_duplicate_media_placements_do_not_confuse_clip_identity() -> None:
     snap = fake.snapshot()
     targets = tuple(snap.resolve(TrackId("V1"), r) for r in (FrameRange(0, 60), FrameRange(70, 80)))
     assert fake.apply(
-        EditPlan(snap.timeline_id, snap.version, tuple(EditCommand(t) for t in targets))
+        EditPlan(
+            snap.timeline_id,
+            snap.version,
+            tuple(EditCommand(t) for t in targets),
+            propose_ripple_displacements(snap, tuple(EditCommand(t) for t in targets)),
+        )
     ) == (FrameRange(0, 60), FrameRange(10, 20))
     assert [
         (c.clip_id, c.source_range, c.timeline_range) for c in fake.snapshot().tracks[0].clips
@@ -146,6 +155,9 @@ def test_boundaries_preserve_exact_source_content(ranges: tuple[FrameRange, ...]
         snap.version,
         tuple(EditCommand(snap.resolve(TrackId("V1"), r)) for r in ranges),
     )
+    plan = replace(
+        plan, approved_ripple_displacements=propose_ripple_displacements(snap, plan.commands)
+    )
     fake.apply(plan)
     expected = [f + 10000 for f in range(3600) if not any(r.start <= f < r.end for r in ranges)]
     assert original_frames(fake) == expected
@@ -172,7 +184,14 @@ def test_old_snapshot_cannot_be_applied_as_new_plan() -> None:
     snap = fake.snapshot()
     a = snap.resolve(TrackId("V1"), FrameRange(900, 960))
     b = snap.resolve(TrackId("V1"), FrameRange(2700, 2760))
-    fake.apply(EditPlan(snap.timeline_id, snap.version, (EditCommand(a),)))
+    fake.apply(
+        EditPlan(
+            snap.timeline_id,
+            snap.version,
+            (EditCommand(a),),
+            propose_ripple_displacements(snap, (EditCommand(a),)),
+        )
+    )
     after = fake.snapshot()
     with pytest.raises(ValueError):
         fake.apply(EditPlan(snap.timeline_id, snap.version, (EditCommand(b),)))

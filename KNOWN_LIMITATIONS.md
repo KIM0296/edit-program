@@ -1,6 +1,6 @@
 # Known Limitations
 
-Only the TASK-001 domain prototype is implemented. The following capabilities remain unsupported/unverified.
+Only the TASK-001/002 domain prototype is implemented. The following capabilities remain unsupported/unverified.
 
 ## Resolve API 미검증 영역
 
@@ -43,8 +43,22 @@ unsafe → reject
 - Version starts at 1 and advances once per nonempty fake plan. Base version is
   checked before application; full concurrent-state/stale-plan coverage is deferred.
 - FakeTimeline.apply is a simulation entry point, not the production safety pipeline.
-- No protected ranges, A/V relationships, retime, transitions, actual Resolve/media
+- No A/V relationships, retime, transitions, actual Resolve/media
   edits, transaction engine, failure-injection rollback or postflight engine.
 - Domain values do not define a versioned Editing IR JSON serialization contract.
-- Only INV-001 is complete; the destructive alpha P0 release gate is not satisfied.
-- Local validation used Python 3.14.6; Python 3.11 minimum was not separately exercised.
+- Only INV-001/002/003 have scoped fake coverage; the destructive alpha P0 release gate is not satisfied.
+- TASK-001 initially used Python 3.14.6 locally; TASK-002 CI verifies the full suite on Python 3.11.16 (run 37274008568).
+
+
+## TASK-002 scope and remaining limitations
+
+- ProtectedRange is HARD_LOCK per ADR-010; no override or soft/follow policy.
+  Earlier ripple is forbidden even when protected source content itself would survive.
+- Explicit displacement approval is required for all shifted surviving intervals.
+  Old plans containing only ripple=True now reject if content would move (ADR-011).
+- The proposal helper does not constitute user approval or bypass protection checks.
+- Protection is supplied when constructing the fake snapshot. No UI/persistence/editor
+  for changing protection is implemented; production protection lifecycle is out of scope.
+- Expected/candidate comparison covers only this fake's clip fields, not arbitrary
+  NLE dependencies, production postflight, transaction rollback or concurrency.
+- CI targets Python 3.11 on Ubuntu; this does not verify Resolve on any OS.

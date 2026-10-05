@@ -1,4 +1,4 @@
-"""In-memory, one-track ripple simulation for INV-001 only.
+"""In-memory, one-track ripple simulation for INV-001/002/003.
 
 This is not a validated transaction or a Resolve adapter. Unsupported scope raises
 ValueError. All requests are checked against the base snapshot before mutation.
@@ -10,19 +10,29 @@ from .domain import (
     Clip,
     EditPlan,
     FrameRange,
+    ProtectedRange,
     StableTarget,
     TimelineId,
     TimelineSnapshot,
     TimelineVersion,
     Track,
 )
+from .safety import preflight, verify_unrequested_content
 
 
 class FakeTimeline:
-    def __init__(self, timeline_id: TimelineId, track: Track) -> None:
+    def __init__(
+        self,
+        timeline_id: TimelineId,
+        track: Track,
+        *,
+        protected_ranges: tuple[ProtectedRange, ...] = (),
+    ) -> None:
         if len({c.clip_id for c in track.clips}) != len(track.clips):
             raise ValueError("Initial placements must have distinct clip IDs")
-        self._snapshot = TimelineSnapshot(timeline_id, TimelineVersion(1), (track,))
+        self._snapshot = TimelineSnapshot(
+            timeline_id, TimelineVersion(1), (track,), protected_ranges
+        )
 
     def snapshot(self) -> TimelineSnapshot:
         return self._snapshot
@@ -35,18 +45,7 @@ class FakeTimeline:
         Version advances once for a nonempty plan. No production rollback is implied.
         """
         base = self._snapshot
-        if plan.timeline_id != base.timeline_id or plan.base_version != base.version:
-            raise ValueError("Plan does not match current timeline snapshot")
-        seen: list[FrameRange] = []
-        for command in plan.commands:
-            if command.action != "DELETE" or command.ripple is not True:
-                raise ValueError("Fake supports ripple DELETE only")
-            target = command.target
-            if target != base.resolve(target.track_id, target.timeline_range):
-                raise ValueError("Target does not match the base snapshot")
-            if any(target.timeline_range.overlaps(r) for r in seen):
-                raise ValueError("Overlapping targets are unsupported")
-            seen.append(target.timeline_range)
+        expected = preflight(base, plan)
 
         if not plan.commands:
             return ()
@@ -56,6 +55,7 @@ class FakeTimeline:
             index, interval = self._locate(track, command.target)
             positions.append(interval)
             track = self._delete(track, index, interval)
+        verify_unrequested_content(expected, track)
         self._snapshot = replace(base, version=TimelineVersion(base.version + 1), tracks=(track,))
         return tuple(positions)
 
