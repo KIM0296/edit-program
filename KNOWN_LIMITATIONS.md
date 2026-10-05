@@ -1,6 +1,6 @@
 # Known Limitations
 
-Only the TASK-001/002 domain prototype is implemented. The following capabilities remain unsupported/unverified.
+TASK-001/002 fake safety and TASK-003 relationship domain foundation are implemented; production execution remains out of scope. The following capabilities remain unsupported/unverified.
 
 ## Resolve API 미검증 영역
 
@@ -62,3 +62,21 @@ unsafe → reject
 - Expected/candidate comparison covers only this fake's clip fields, not arbitrary
   NLE dependencies, production postflight, transaction rollback or concurrency.
 - CI targets Python 3.11 on Ubuntu; this does not verify Resolve on any OS.
+
+
+## TASK-003 relationship foundation
+
+- TimelineObjectId is snapshot-local (track_id, fake clip placement lineage), not a
+  production/persistent Resolve ID. OPEN-001 remains unresolved.
+- A Relationship value is an unbound descriptor, not a valid timeline relation by itself.
+  Graph construction/addition validates registry references; snapshot construction validates
+  that the registry exactly matches actual objects. Only bound graphs have snapshot meaning.
+- Current registry covers clip placement lineages. Subtitle/B-roll relationships can be
+  described using fake placements; real subtitle/marker/effect object adapters are absent.
+- Graphs represent multi-track data but the FakeTimeline executor remains single-track.
+- Per-member policies are metadata only. No default common movement, time alignment,
+  sync repair, subtitle retiming, anchor following, cycle resolution or lifecycle propagation.
+- Nonempty plans against a graph containing relationships reject for REVIEW before mutation.
+  This conservative unsupported-scope guard is not a relationship policy executor or UI.
+- Type-specific roles/cardinality and split/delete/conflict semantics remain OPEN-005.
+- TASK-003 does not certify INV-004 A/V sync or full INV-006 relationship preservation.

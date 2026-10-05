@@ -30,7 +30,8 @@
 
 ## Phase 2 — Safety Core
 
-- [ ] Relationship Graph
+- [x] Relationship Graph domain foundation (TASK-003; no execution)
+- [ ] Relationship Integrity Engine / policy execution
 - [ ] Temporal Mapping
 - [ ] Media Identity
 - [ ] Transaction Engine
@@ -61,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-002` implemented on feat/task-002-inv002-inv003; PR #1 created, Python 3.11 CI passed; Chat Gate pending. TASK-001 approved with changes.
+Current task: `TASK-003` Relationship Domain Foundation; implementation complete, PR/CI and Chat Gate pending. TASK-002 approved and merged via PR #1.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -194,3 +195,31 @@ Gate scope:
 TASK-002 PR: https://github.com/KIM0296/edit-program/pull/1
 CI evidence: https://github.com/KIM0296/edit-program/actions/runs/37274008568
 Standard report: docs/reports/TASK_002_COMPLETION.md. Requested Gate: APPROVED (request only, not Chat decision).
+
+
+## TASK-003 Relationship Domain Foundation - 2026-10-05
+
+User approval: TASK-002 Chat Gate APPROVED, PR #1 merged. Main base 747474a.
+TASK-003 specification committed first (88d1257), followed by tests, missing-type
+collection failure, minimal implementation and full regression verification.
+
+Implemented:
+- TrackType, fake-only TimelineObjectId, RelationshipId/Type/Member/Policy,
+  Relationship and immutable RelationshipGraph as part of TimelineSnapshot.
+- Typed n-ary membership and per-member FOLLOW/STAY/RECALCULATE/REVIEW metadata;
+  no implied alignment, shared displacement or policy execution.
+- Graph construction/addition rejects missing members and duplicate IDs. Snapshot
+  binding additionally requires the graph registry to match actual placement lineages.
+- Object IDs distinguish track/placement, not media or coordinates. Legal split fragments
+  share fake lineage; conflicting media/overlapping source under one lineage reject.
+- J/L-cut ranges and source ranges remain unchanged when relationships are represented.
+- Nonempty relation-bearing plans explicitly reject for REVIEW before simulated delete.
+  Existing relation-free execution rebuilds its empty graph registry after deletion.
+
+Local verification: Windows / Python 3.14.6, 83 passed / 0 failed / 1 skipped;
+Ruff passed, mypy passed (4 source files). All four TASK-001/002 test files are unchanged.
+The skipped test remains the opt-in intentional naive failure demonstration.
+Python 3.11 CI: pending PR run. No Resolve/A/V correction/subtitle/B-roll/multi-track
+ripple/transaction/rollback/retime/AI added. INV-004/full INV-006 remain unverified.
+OPEN-001 retained; OPEN-005 records role/cardinality/policy-conflict and split/delete
+lifecycle decisions for future execution. No next TASK is authorized.

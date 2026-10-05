@@ -49,16 +49,16 @@ Multi-track snapshots are representable; multi-track fake execution remains unsu
 
 ## Tests / acceptance criteria
 
-- [ ] Required types and all four relationship types/policies are representable.
-- [ ] Graph is an immutable part of immutable TimelineSnapshot; input lists cannot mutate it.
-- [ ] Unknown members, phantom registry entries, duplicate relationship/object/track IDs reject.
-- [ ] Same-media repeated placements resolve independently by object identity.
-- [ ] J-cut/L-cut examples retain independent video/audio ranges and source ranges unchanged.
-- [ ] Mixed member policies do not imply or perform identical movement.
-- [ ] Read-only graph lookup and immutable addition do not modify prior graph/snapshot/version.
-- [ ] Multi-track relationships are representable without adding multi-track edit execution.
-- [ ] Relation-bearing mutation rejects before delete and preserves snapshot/version.
-- [ ] TASK-001/002 test files and their INV-001/002/003 assertions remain unchanged and pass.
+- [x] Required types and all four relationship types/policies are representable.
+- [x] Graph is an immutable part of immutable TimelineSnapshot; input lists cannot mutate it.
+- [x] Unknown members, phantom registry entries, duplicate relationship/object/track IDs reject.
+- [x] Same-media repeated placements resolve independently by object identity.
+- [x] J-cut/L-cut examples retain independent video/audio ranges and source ranges unchanged.
+- [x] Mixed member policies do not imply or perform identical movement.
+- [x] Read-only graph lookup and immutable addition do not modify prior graph/snapshot/version.
+- [x] Multi-track relationships are representable without adding multi-track edit execution.
+- [x] Relation-bearing mutation rejects before delete and preserves snapshot/version.
+- [x] TASK-001/002 test files and their INV-001/002/003 assertions remain unchanged and pass.
 - [ ] Full pytest, Ruff, mypy, Python 3.11 CI pass; standard report and PR prepared.
 
 ## Test-first plan
