@@ -27,6 +27,14 @@ class RelationshipType(str, Enum):
     ANCHOR = "ANCHOR"
 
 
+class RelationshipRole(str, Enum):
+    """Explicit ADR-013 context roles; never inferred from member order."""
+
+    PEER = "PEER"
+    DRIVER = "DRIVER"
+    DEPENDENT = "DEPENDENT"
+
+
 class RelationshipPolicy(str, Enum):
     """Per-member descriptive metadata; no movement or execution is implied."""
 
@@ -58,12 +66,15 @@ class TimelineObjectId:
 class RelationshipMember:
     object_id: TimelineObjectId
     policy: RelationshipPolicy = RelationshipPolicy.REVIEW
+    role: RelationshipRole | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.object_id, TimelineObjectId):
             raise TypeError("Relationship member requires a fake object identity")
         if not isinstance(self.policy, RelationshipPolicy):
             raise TypeError("Unknown relationship policy")
+        if self.role is not None and not isinstance(self.role, RelationshipRole):
+            raise TypeError("Unknown relationship role")
 
 
 @dataclass(frozen=True)
@@ -71,7 +82,7 @@ class Relationship:
     """Unbound value descriptor. Graph/snapshot binding validates object existence.
 
     Member order does not imply direction, timing alignment or common displacement.
-    Type-specific roles and execution semantics are deferred under OPEN-005.
+    Exact type-specific role constraints remain deferred under OPEN-005.
     """
 
     relationship_id: RelationshipId

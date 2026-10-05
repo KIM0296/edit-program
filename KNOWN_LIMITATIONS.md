@@ -78,7 +78,8 @@ unsafe → reject
   sync repair, subtitle retiming, anchor following, cycle resolution or lifecycle propagation.
 - Nonempty plans against a graph containing relationships reject for REVIEW before mutation.
   This conservative unsupported-scope guard is not a relationship policy executor or UI.
-- Type-specific roles/cardinality and split/delete/conflict semantics remain OPEN-005.
+- ADR-013 resolves broad role/delete/conflict semantics. Exact type-specific role/cardinality,
+  fragment rebinding and concrete execution rules remain OPEN-005.
 - TASK-003 does not certify INV-004 A/V sync or full INV-006 relationship preservation.
 
 
@@ -101,3 +102,27 @@ unsafe → reject
   independent safety checks remain necessary; no full project editability guarantee.
 - Preview/render can be represented as artifacts, but this task implements no renderer.
 - Preferred effects path is documentation only; no Fusion/FX/external VFX integration.
+
+
+## TASK-005 dependency compilation scope
+
+- Pure diagnostic plan only; no execution authorization. SAFE_TO_CONTINUE means no
+  dependency concern for a valid isolated MOVE/RIPPLE/TRIM/DELETE target, not a complete
+  edit preflight. No destination/delta, resulting ranges, or Universal Editing IR exists.
+- All connected relationship context is conservatively assessed, including upstream
+  drivers/peers. This can over-report possible impact; it is not propagation reachability.
+- Any reached relationship requires REVIEW. FOLLOW never becomes a universal action;
+  STAY/RECALCULATE remain candidates. RETIME is UNSUPPORTED without Temporal Mapping.
+- Roles are optional descriptive data; unspecified legacy roles require REVIEW. Exact
+  cardinality/PEER/leader rules are not enforced. Only explicit DRIVER->DEPENDENT arcs
+  define cycle diagnostics; unresolved PEER/mixed semantics already remain REVIEW.
+- Policy disagreements conservatively conflict even when concrete action-specific
+  outcomes might eventually agree. No implicit priority or conflict resolution exists.
+- Primary range must bind one base fragment. Multiple dependent fragments return one
+  candidate with all fragment evidence and REVIEW; no pairing or relationship cloning.
+- Base topology must match the snapshot projection; alternate origin-ID remapping is
+  not resolved by this compiler. Native provenance remains caller-declared (OPEN-007).
+- Existing fake relationship-bearing editing still rejects before mutation. INV-004,
+  full INV-006 and production sync/rollback/editability are not certified by these tests.
+- Chat-approved action-specific semantics and concrete identity/mapping contracts are
+  prerequisites to any future lowering into executable actions (OPEN-001/005/006/007).
