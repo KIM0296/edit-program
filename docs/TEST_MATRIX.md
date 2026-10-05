@@ -6,7 +6,7 @@
 
 | ID | 테스트 | 우선순위 | 초기 상태 |
 |---|---|---:|---|
-| INV-001 | target coordinate stability | P0 | TODO |
+| INV-001 | target coordinate stability | P0 | PASS (TASK-001 fake scope) |
 | INV-002 | unrequested region invariance | P0 | TODO |
 | INV-003 | protected range | P0 | TODO |
 | INV-004 | A/V sync preservation | P0 | TODO |
@@ -52,3 +52,6 @@
 - safe delete
 - safe ripple
 - rollback validation
+
+TASK-001 validation: 25 passed, 0 failed, 1 opt-in naive demonstration skipped.
+Only INV-001 is complete; all other P0 rows remain TODO. See IMPLEMENTATION_STATUS.md for reproduction and limits.

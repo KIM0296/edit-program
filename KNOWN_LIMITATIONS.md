@@ -1,6 +1,6 @@
 # Known Limitations
 
-현재는 구현 전 단계이므로 아래 항목을 지원한다고 가정하지 않는다.
+Only the TASK-001 domain prototype is implemented. The following capabilities remain unsupported/unverified.
 
 ## Resolve API 미검증 영역
 
@@ -32,3 +32,19 @@ unknown → REVIEW
 unsupported → explicit limitation
 unsafe → reject
 ```
+
+
+## TASK-001 FakeTimeline scope
+
+- Memory-only, one track, integer half-open [start, end) frames, 1:1 source mapping.
+- Each request must lie inside one clip fragment; cross-clip/gap and overlapping
+  requests raise ValueError. No production REVIEW workflow exists yet.
+- clip_id is fake placement lineage across splits, not a persistent Resolve item ID.
+- Version starts at 1 and advances once per nonempty fake plan. Base version is
+  checked before application; full concurrent-state/stale-plan coverage is deferred.
+- FakeTimeline.apply is a simulation entry point, not the production safety pipeline.
+- No protected ranges, A/V relationships, retime, transitions, actual Resolve/media
+  edits, transaction engine, failure-injection rollback or postflight engine.
+- Domain values do not define a versioned Editing IR JSON serialization contract.
+- Only INV-001 is complete; the destructive alpha P0 release gate is not satisfied.
+- Local validation used Python 3.14.6; Python 3.11 minimum was not separately exercised.

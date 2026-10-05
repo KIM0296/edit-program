@@ -104,15 +104,15 @@ Unexpected original region deletion:
 
 ## Acceptance Criteria
 
-- [ ] domain model exists
-- [ ] FakeTimeline exists
-- [ ] timeline version exists
-- [ ] both targets resolved before mutation
-- [ ] stable target survives first ripple mutation
-- [ ] INV-001 pytest passes
-- [ ] naive failure is documented or reproducible
-- [ ] `IMPLEMENTATION_STATUS.md` updated
-- [ ] tests pass
+- [x] domain model exists
+- [x] FakeTimeline exists
+- [x] timeline version exists
+- [x] both targets resolved before mutation
+- [x] stable target survives first ripple mutation
+- [x] INV-001 pytest passes
+- [x] naive failure is documented or reproducible
+- [x] `IMPLEMENTATION_STATUS.md` updated
+- [x] tests pass
 
 ## Out of Scope
 
