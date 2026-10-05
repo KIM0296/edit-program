@@ -192,6 +192,46 @@ editing; human edits invalidate/recompute AI work instead.
 These are conservative v1 product/architecture rules. Changes require Chat review.
 
 
+
+
+## ADR-017 - Effect / VFX Product Boundary v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-05
+
+Effect automation is scoped by editorial responsibility, complexity, editability and
+verifiability, not by which application or page can technically perform the work.
+
+1. Editorial Effects are Core Scope: normal NLE-level transforms, simple punch-ins,
+   basic blur/transitions/speed/audio fades/subtitle styling/basic titles and similar
+   editor-owned effects may become directly supported after normal safety validation.
+2. Controlled Motion / Simple Composite is Limited Scope: lower thirds, tracked text,
+   simple masks/object blur/screen replacement and similar work should use validated
+   primitives/templates rather than unrestricted free-form graph generation.
+3. Fusion Preferred, Not Required: for Resolve-centered motion/tracking/simple composite,
+   Fusion is the preferred implementation path when it preserves the native workflow,
+   but it is not a hard dependency or universal requirement.
+4. Preserve Effect Editability: committed effects should remain native, inspectable,
+   reversible and editable whenever reasonably possible; rendered/flattened substitutes
+   must not silently replace editable project state.
+5. Existing Effect Structure Is User-Owned: existing effects, nodes, keyframes and graph
+   organization are not AI-owned scratch space and must not be silently rewritten.
+6. No Unrestricted Free-form Fusion Automation Initially: early automation must pass
+   through validated primitives/templates and bounded parameter contracts.
+7. Complexity Escalates to VFX Handoff: when outcome verification, reversibility,
+   inspectability or editability become weak, prefer VFX Assist/Handoff over direct automation.
+8. Color, Audio and Generative Asset Creation are separate verticals and are not silently
+   absorbed into this Effect/VFX contract.
+
+Effect Automation Eligibility is judged by:
+Predictable + Reversible + Inspectable + Editable + Verifiable.
+As these qualities weaken, behavior moves from AUTO-ELIGIBLE to REVIEW-REQUIRED to HANDOFF.
+
+Initial scope explicitly excludes unrestricted Effect ALL Auto. Do not build a system that
+freely chooses and applies arbitrary effects across the project merely because the effects
+are technically possible. First validate individual E1/E2 primitives for real time savings,
+editability and correction cost. A future validated Effect Auto Pass may be reconsidered
+only over an approved bounded primitive set and only if evidence shows favorable net time saved.
+
+
 # Open Decisions
 
 ## OPEN-006 - Topology correspondence and native track indices
