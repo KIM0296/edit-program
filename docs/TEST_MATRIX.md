@@ -24,6 +24,7 @@
 | INV-016 | expected vs actual diff | P0 | TODO |
 | INV-017 | human edit wins | P0 | TODO |
 | INV-018 | marker/subtitle integrity | P0 | TODO |
+| INV-019 | track/layer topology preservation | P0 | PASS (TASK-004 fake topology/provenance scope only) |
 
 ## 단계 2 — Fake Adapter Integration
 
@@ -66,3 +67,12 @@ New coverage: reference integrity, distinct repeated-media placements, immutable
 independent J/L-cut ranges, per-member metadata, no relation-bearing mutation execution.
 All existing TASK-001/002 tests retained unchanged. INV-004 and INV-006 remain TODO;
 a representational foundation is not proof of sync correction or relationship-aware editing.
+
+
+## TASK-004 topology foundation
+
+114 passed / 0 failed / 1 skipped locally (Python 3.14.6); Python 3.11 CI pending.
+Track identity/type/order, membership, expected versus actual diff, artifact-origin rejection,
+whole-layer replacement REVIEW and immutable relationship-compatible projection are covered.
+TASK-001/002/003 regression files unchanged. INV-004..018 remain uncertified; INV-019
+is scoped domain validation, not evidence of native Resolve/editability behavior.

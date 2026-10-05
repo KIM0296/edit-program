@@ -50,17 +50,17 @@ membership changes in the data comparison, with explicit correspondence supplied
 
 ## Red-first acceptance criteria
 
-- [ ] Multiple VIDEO/AUDIO/SUBTITLE tracks and stable identity independent of index.
-- [ ] Object membership references existing tracks; duplicate/ambiguous identities reject.
-- [ ] Same media across placements/tracks is never used to merge object identities.
-- [ ] Track removal/addition/type change/order change each reported and rejected if unexpected.
-- [ ] Object move reported using stable comparison identity; unmapped composite moves fail closed.
-- [ ] Exact expected topology changes pass; extra and missing changes fail.
-- [ ] Multi-layer flattened replacement fails, even when listed as expected.
-- [ ] PREVIEW/RENDER/FLATTENED cannot become editable source of truth, even unchanged topology.
-- [ ] Existing graph compatible and unchanged; dangling/rebound wrong references reject.
-- [ ] Pure comparison leaves source snapshots, graph and versions unchanged.
-- [ ] TASK-001/002/003 regression files unchanged and full suite passes.
+- [x] Multiple VIDEO/AUDIO/SUBTITLE tracks and stable identity independent of index.
+- [x] Object membership references existing tracks; duplicate/ambiguous identities reject.
+- [x] Same media across placements/tracks is never used to merge object identities.
+- [x] Track removal/addition/type change/order change each reported and rejected if unexpected.
+- [x] Object move reported using stable comparison identity; unmapped composite moves fail closed.
+- [x] Exact expected topology changes pass; extra and missing changes fail.
+- [x] Multi-layer flattened replacement fails, even when listed as expected.
+- [x] PREVIEW/RENDER/FLATTENED cannot become editable source of truth, even unchanged topology.
+- [x] Existing graph compatible and unchanged; dangling/rebound wrong references reject.
+- [x] Pure comparison leaves source snapshots, graph and versions unchanged.
+- [x] TASK-001/002/003 regression files unchanged and full suite passes.
 - [ ] Python 3.11 CI, Ruff, mypy pass; standard report and PR for Chat Gate.
 
 ## Architecture ambiguities

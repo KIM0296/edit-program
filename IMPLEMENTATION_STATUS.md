@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-003` Relationship Domain Foundation; implementation complete, PR #2 and Python 3.11 CI passed; Chat Gate pending. TASK-002 approved and merged via PR #1.
+Current task: `TASK-004` topology foundation implemented; PR/CI and Chat Gate pending. TASK-003 approved and merged via PR #2.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -226,3 +226,29 @@ lifecycle decisions for future execution. No next TASK is authorized.
 
 TASK-003 PR: https://github.com/KIM0296/edit-program/pull/2
 Standard report: docs/reports/TASK_003_COMPLETION.md. Requested Gate: APPROVED (request only, not a Chat decision).
+
+
+## TASK-004 Timeline Topology / Preserve Editability - 2026-10-05
+
+Approved basis: user TASK-003 APPROVED / PR #2 merged; main 642f9f4.
+Spec and approved product/safety notes committed first (dc32051), tests written next
+and confirmed missing-topology-module collection failure, followed by minimal implementation.
+
+Implemented pure topology.py (no executor changes):
+- Track ID/type/order and object identity/current membership stored separately.
+- Snapshot projection and explicit one-to-one fake identity bindings; no matching by media.
+- Exact TopologyDiff and base-bound ExpectedTopologyChange comparison.
+- Track additions/removals/type/index changes and object additions/removals/moves detected.
+- Reject PREVIEW/RENDER/FLATTENED as editable source state regardless of approval.
+- Conservative REVIEW for native-tagged whole multi-layer collapse into one new replacement.
+- Existing native objects can survive explicitly approved layer deletion; count reduction
+  alone is not treated as flatten. Relationship records cannot silently change.
+- Pure projection/comparison does not alter snapshots, graphs or versions.
+
+Local verification: Windows/Python 3.14.6, 114 passed / 0 failed / 1 skipped;
+Ruff passed; mypy passed (5 source files). All TASK-001/002/003 test files unchanged.
+Python 3.11 CI pending. INV-019 coverage is limited to supplied fake topology/provenance;
+no production native editability or all P0 certification is claimed.
+OPEN-006/007 record identity/index/provenance uncertainties; OPEN-001/005 retained.
+Effect/VFX preferences are notes only. No Resolve/multi-track ripple/A-V/effect/Fusion/
+subtitle/B-roll/transaction/rollback/retime/AI/external-tool execution added.
