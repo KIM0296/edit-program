@@ -61,7 +61,7 @@ membership changes in the data comparison, with explicit correspondence supplied
 - [x] Existing graph compatible and unchanged; dangling/rebound wrong references reject.
 - [x] Pure comparison leaves source snapshots, graph and versions unchanged.
 - [x] TASK-001/002/003 regression files unchanged and full suite passes.
-- [ ] Python 3.11 CI, Ruff, mypy pass; standard report and PR for Chat Gate.
+- [x] Python 3.11 CI, Ruff, mypy pass; standard report and PR for Chat Gate.
 
 ## Architecture ambiguities
 
@@ -85,3 +85,5 @@ Edit Page/Resolve FX first for editorial effects; consider Fusion first for moti
  automation initially. Future effects should be editable/reversible/inspectable.
 Specialist VFX: prioritize Assist/Handoff. External tools later and only without
 breaking Native Editing Environment Preservation. None of this is implementation scope.
+
+Implementation and CI complete; PR #3 awaits Chat Gate. Standard report: docs/reports/TASK_004_COMPLETION.md.

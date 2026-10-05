@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-004` topology foundation implemented; PR/CI and Chat Gate pending. TASK-003 approved and merged via PR #2.
+Current task: `TASK-004` topology foundation implemented; PR #3 and Python 3.11 CI passed; Chat Gate pending. TASK-003 approved and merged via PR #2.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -247,8 +247,11 @@ Implemented pure topology.py (no executor changes):
 
 Local verification: Windows/Python 3.14.6, 114 passed / 0 failed / 1 skipped;
 Ruff passed; mypy passed (5 source files). All TASK-001/002/003 test files unchanged.
-Python 3.11 CI pending. INV-019 coverage is limited to supplied fake topology/provenance;
+Python 3.11.16 CI passed (run 37279654222): 114 passed / 0 failed / 1 skipped, Ruff/mypy passed. INV-019 coverage is limited to supplied fake topology/provenance;
 no production native editability or all P0 certification is claimed.
 OPEN-006/007 record identity/index/provenance uncertainties; OPEN-001/005 retained.
 Effect/VFX preferences are notes only. No Resolve/multi-track ripple/A-V/effect/Fusion/
 subtitle/B-roll/transaction/rollback/retime/AI/external-tool execution added.
+
+TASK-004 PR: https://github.com/KIM0296/edit-program/pull/3
+Standard report: docs/reports/TASK_004_COMPLETION.md. Requested Gate: APPROVED (request only, not Chat decision).

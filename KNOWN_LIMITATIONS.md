@@ -1,6 +1,6 @@
 # Known Limitations
 
-TASK-001/002 fake safety and TASK-003 relationship domain foundation are implemented; production execution remains out of scope. The following capabilities remain unsupported/unverified.
+TASK-001/002 fake safety, TASK-003 relationships and TASK-004 topology foundations are implemented; production execution remains out of scope. The following capabilities remain unsupported/unverified.
 
 ## Resolve API 미검증 영역
 

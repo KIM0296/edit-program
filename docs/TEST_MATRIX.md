@@ -71,7 +71,7 @@ a representational foundation is not proof of sync correction or relationship-aw
 
 ## TASK-004 topology foundation
 
-114 passed / 0 failed / 1 skipped locally (Python 3.14.6); Python 3.11 CI pending.
+114 passed / 0 failed / 1 skipped locally (Python 3.14.6) and on CI Python 3.11.16 (run 37279654222); Ruff/mypy passed.
 Track identity/type/order, membership, expected versus actual diff, artifact-origin rejection,
 whole-layer replacement REVIEW and immutable relationship-compatible projection are covered.
 TASK-001/002/003 regression files unchanged. INV-004..018 remain uncertified; INV-019
