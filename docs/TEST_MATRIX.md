@@ -103,7 +103,8 @@ INV-004/full INV-006 and rollback remain unverified; no new invariant is marked 
 ## TASK-006 candidate authority/concurrency state foundation
 
 Local: 210 passed / 0 failed / 1 skipped; 52 new state tests. Ruff/mypy PASS.
-Python 3.11 hosted CI pending. No earlier regression tests or executors changed.
+Python 3.11.16 hosted CI passed: run 37287250147, 210 passed / 1 skipped, Ruff/mypy PASS.
+No earlier regression tests or executors changed.
 
 | User scenario | Evidence in tests/test_candidate_authority.py |
 | --- | --- |

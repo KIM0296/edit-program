@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-006` candidate authority/concurrency state foundation implemented; PR/CI and Chat Gate pending. TASK-005 approved/merged via PR #6; ADR-015/016 accepted in main.
+Current task: `TASK-006` candidate authority/concurrency state foundation implemented; PR #8 and Python 3.11 CI passed; Chat Gate pending. TASK-005 approved/merged via PR #6; ADR-015/016 accepted in main.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -308,10 +308,14 @@ Implemented:
 - Attention Economy's four principles documented only; small commands remain allowed.
 
 Local Windows/Python 3.14.6: 210 passed / 0 failed / 1 skipped (52 new state tests).
-Ruff PASS; strict mypy PASS (7 source files). Python 3.11 hosted CI pending.
+Ruff PASS; strict mypy PASS (7 source files). Hosted Python 3.11.16 CI also passed:
+run 37287250147, 210 passed / 1 skipped, Ruff/mypy PASS.
 The skipped case remains the opt-in intentional naive failure; earlier regressions unchanged.
 OPEN-002 partially resolved by ADR-015/016, production representation/evidence still OPEN.
 OPEN-008 records DIRTY/STALE, scope/changeset/refresh, multiple approvals/revocation,
 retention/persistence questions. Production WorkingAuthority/result identity not settled.
 No actual timeline/candidate creation, apply/observer/rollback/Resolve/UI/AI introduced.
 Standard report: docs/reports/TASK_006_COMPLETION.md. Requested Gate: APPROVED (request only).
+
+TASK-006 PR: https://github.com/KIM0296/edit-program/pull/8
+CI evidence: https://github.com/KIM0296/edit-program/actions/runs/37287250147

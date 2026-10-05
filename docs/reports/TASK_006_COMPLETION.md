@@ -2,7 +2,7 @@
 
 TASK: TASK-006 — Candidate Authority & Concurrent Work State Foundation
 
-상태: 구현/로컬 검증 완료, hosted CI 및 Chat Gate 대기.
+상태: 구현 및 로컬/Python 3.11 CI 검증 완료, Chat Gate 대기.
 
 브랜치: `feat/task-006-candidate-concurrency-state`
 
@@ -11,7 +11,7 @@ Spec commit: `f552852` (구현 전). 구현 commit: `5fb6901`.
 Base main: `fe8ee5ee188df52fe930f4d1dac47d57fa329544`.
 후속 보고 commit은 문서만 변경합니다. 최종 제출 SHA는 PR 본문에 기록합니다.
 
-PR: 생성 대기.
+PR: https://github.com/KIM0296/edit-program/pull/8
 
 근거: [TASK-006 spec](../../tasks/TASK_006_CANDIDATE_CONCURRENCY_STATE.md),
 [ADR-015](../CANDIDATE_AUTHORITY.md), [ADR-016](../PARALLEL_EDITING.md).
@@ -49,7 +49,7 @@ PR: 생성 대기.
 | Active != Working | PASS: preview switch는 active ID만 변경 |
 | Determinism / no execution | PASS: 반복 event 결과 동일; FakeTimeline.apply를 실패하도록 교체해도 통과 |
 | TASK-001~005 regression | PASS: 기존 테스트·executor 파일 변경 없음 |
-| Python 3.11 CI | 대기: PR 생성 후 결과 반영 |
+| Python 3.11 CI | PASS: run 37287250147, CPython 3.11.16 |
 | Ruff / strict mypy | PASS: 7 source files |
 
 범위 밖의 Resolve, 실제 candidate timeline/duplication, actual Apply/postflight,
@@ -78,17 +78,17 @@ A/V/subtitle/B-roll/retime/effects/LLM 구현은 없습니다.
 
 ```text
  DECISIONS.md                                  |  50 ++-
- IMPLEMENTATION_STATUS.md                      |  31 +-
+ IMPLEMENTATION_STATUS.md                      |  35 +-
  KNOWN_LIMITATIONS.md                          |  24 ++
  docs/CANDIDATE_AUTHORITY.md                   |  17 +
  docs/PARALLEL_EDITING.md                      |  17 +
  docs/PRODUCT_SPEC.md                          |  17 +
- docs/TEST_MATRIX.md                           |  21 ++
+ docs/TEST_MATRIX.md                           |  22 ++
  docs/reports/TASK_006_COMPLETION.md           | 185 +++++++++++
  src/davinci_ai_editor/authority.py            | 432 +++++++++++++++++++++++++
  tasks/TASK_006_CANDIDATE_CONCURRENCY_STATE.md | 106 ++++++
  tests/test_candidate_authority.py             | 442 ++++++++++++++++++++++++++
- 11 files changed, 1333 insertions(+), 9 deletions(-)
+ 11 files changed, 1338 insertions(+), 9 deletions(-)
 ```
 
 ## 3. 테스트 결과
@@ -115,7 +115,7 @@ Red-first: spec `f552852` commit 후 새 테스트 실행은
 `ModuleNotFoundError: No module named 'davinci_ai_editor.authority'`로 실패했습니다.
 이후 최소 state foundation을 구현했습니다.
 
-Hosted CI: PR 생성 후 Python 3.11 결과를 반영합니다.
+Hosted CI: [run 37287250147](https://github.com/KIM0296/edit-program/actions/runs/37287250147), head `e7a5d3e` 기준. Ubuntu/CPython 3.11.16에서 210 passed / 1 skipped, Ruff PASS, mypy 7 files PASS를 job log로 확인했습니다. 후속 변경은 문서만이며, 최종 PR head CI도 검토 제출 전 확인합니다.
 
 ### Safety Gate
 
