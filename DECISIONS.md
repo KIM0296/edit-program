@@ -70,6 +70,43 @@ Status: ACCEPTED - Chat Gate Review, 2026-10-05
 TASK-001 FakeTimeline clip_id is fake placement lineage identity, not a production
 persistent TimelineItem ID. Resolve persistent identity remains OPEN-001.
 
+
+
+## ADR-013 - Relationship Execution Semantics v1
+Status: ACCEPTED - Chat Architecture Review, 2026-10-05
+
+Relationship data is descriptive, not directly executable. A relationship never by itself
+means "move together", "trim together", "delete together", or "retime together".
+
+Execution is action-specific. Relationship handling must be compiled as:
+Relationship × Edit Action → expected dependent actions → conflict detection → Safety Preflight.
+Do not implement relationship propagation as recursive side effects.
+
+Member roles use explicit semantics when execution is introduced:
+- PEER: symmetric participant; no leader/follower inference.
+- DRIVER: primary object whose edit may affect dependents.
+- DEPENDENT: object whose expected response is evaluated from the driver/action.
+Member tuple order has no semantic authority.
+
+Initial safety rules:
+1. AV_LINK and SYNC_GROUP do not imply identical boundaries or identical movement.
+2. Preserve existing A/V relative sync and intentional J/L-cut structure; do not normalize
+   audio/video start/end boundaries merely because objects are related.
+3. DELETE does not cascade automatically from DRIVER to DEPENDENT.
+4. SPLIT/DELETE/RETIME require concrete fragment rebinding or REVIEW; lineage alone is not
+   sufficient execution authority when fragment correspondence is ambiguous.
+5. Conflicting relationship outcomes for one object escalate to REVIEW. Do not hide conflict
+   behind implicit priority.
+6. Cycles are never executed recursively. Resolve the relationship closure against the base
+   snapshot, produce one finite expected-action set, detect cycles/conflicts, then either
+   validate the compiled plan or REVIEW.
+7. Unknown/unsupported relationship behavior defaults to REVIEW, not APPLY.
+
+These are v1 safety defaults. They may be extended when Resolve/native evidence or real
+editorial cases justify it, but changes require Chat Architecture Review and must not weaken
+existing invariants silently.
+
+
 # Open Decisions
 
 ## OPEN-006 - Topology correspondence and native track indices
@@ -100,22 +137,28 @@ Deferred: Resolve/render adapters and broad flatten detection beyond the scoped 
 
 
 ## OPEN-005 - Relationship execution semantics and lifecycle
-Status: OPEN
+Status: PARTIALLY RESOLVED by ADR-013
 
-Context: TASK-003 authorizes immutable relationship data, not policy execution.
-Evidence: the same-media fake may have multiple placements or disjoint fragments;
-AV_LINK may intentionally have different video/audio boundaries (J/L cuts).
-Affected requirements: future A/V sync, subtitle/anchor following, multi-track ripple.
-Options/trade-offs: directed roles versus symmetric/n-ary membership; per-type cardinality;
-retain lineage-level links versus explicit rebinding after split/delete; cycle/conflict review
-versus an approved deterministic resolution. These choices affect edit intent and safety.
-Recommendation: represent typed n-ary membership and per-member policy metadata only;
-do not infer direction, alignment, common displacement, conflict resolution, or propagation.
-Needed Chat decision: role/cardinality constraints and split/delete/policy-conflict semantics
-before any relationship execution. Review the internal representation in TASK-003's PR.
-Deferred: all relationship-aware edit execution. Nonempty relation-bearing plans explicitly
-reject for REVIEW. Independent foundation and existing relation-free regression work continue.
-OPEN-001 remains the separate unresolved production identity decision.
+Resolved:
+- relationships are descriptive, not executable by themselves
+- explicit PEER / DRIVER / DEPENDENT roles for future execution semantics
+- action-specific propagation rather than a generic FOLLOW behavior
+- preserve existing sync/J-L cuts; never normalize boundaries by default
+- no automatic delete cascade
+- conflicts escalate to REVIEW
+- cycles are compiled from the base snapshot, never recursively executed
+
+Still OPEN:
+- type-specific cardinality and exact role constraints
+- concrete fragment rebinding after split/delete
+- native Resolve linked-selection versus internal relationship semantics
+- source-timecode/offset representation for production sync evidence
+- multi-track ripple + relationship propagation interaction
+- Compound/Multicam/nested relationship semantics
+- actual subtitle/marker/effect object adapters
+
+These unresolved details block relationship-aware execution, not the approved domain foundation.
+OPEN-001 remains the separate production identity decision.
 
 
 ## OPEN-002 — Candidate Approval and Live Timeline Authority
