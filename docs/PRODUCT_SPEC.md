@@ -94,3 +94,20 @@ Track additions/removals/moves require explicit expected topology changes (INV-0
 6. Complex specialist VFX: prioritize VFX Assist / Handoff over direct automation.
 7. External VFX integrations are later priorities, considered only when they preserve the
    native editing environment. These notes authorize no TASK-004 effect implementation.
+
+## Attention Economy v1 (approved TASK-006 product notes)
+
+The goal is to minimize time to the final editable result by reducing Human Active
+Time, Mandatory Attention Time, Decision Interruptions, AI-induced idle time and
+conflict rework; maximizing the number of automated actions is not the objective.
+
+- **Batch Decisions by Default:** collect non-blocking review items for grouped review
+  rather than interrupting the editor with one question at a time.
+- **Automate Bundles, Not Clicks:** prioritize time-consuming bundles of search,
+  repetition, analysis and candidate generation. This does not prohibit small commands.
+- **Prepare the Decision, Don't Offload the Problem:** future review should prepare
+  Original, AI Proposal, Difference, Reason, Impact and Available choices, rather than
+  asking the editor to diagnose an unprepared problem.
+
+These are product/architecture notes only. TASK-006 adds no UI, notifications, review
+batching implementation, metric instrumentation or telemetry.

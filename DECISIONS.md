@@ -246,14 +246,41 @@ These unresolved details block relationship-aware execution, not the approved do
 OPEN-001 remains the separate production identity decision.
 
 
-## OPEN-002 — Candidate Approval and Live Timeline Authority
-Status: OPEN
+## OPEN-002 - Candidate authority representation and evidence boundary
+Status: PARTIALLY RESOLVED by ADR-015/016 and TASK-006 user instruction
 
-Context: 기존 요구는 별도 후보 비교와 승인 후 다음 기준본 자동 선택이다. 메인 계약은 Resolve 실제 상태 우선 및 stale plan 자동 실행 금지다.
-Observed behavior: 구 workflow.select는 로컬 선택만 기록하며, batch planner는 과거 후보 recipe를 사용한다. 사람의 이후 편집까지 보존하는 일반 snapshot 기반 revision은 미구현이다.
-Options: 후보 선택과 실제 현재 snapshot 검증을 분리하거나, 후보를 명시적으로 활성화한 후 검증된 snapshot을 다음 요청의 기준으로 채택한다.
-Recommendation: 선택/승인 이력은 유지하되 매 요청의 실행 기준은 최신 실제 snapshot으로 검증한다. 진행 중 plan의 자동 rebase/자동 승인은 하지 않는다.
-Needs Chat decision: 후보 승인 시 Resolve 활성 타임라인 전환·저장까지 포함하는지, 재생 후보와 현재 타임라인이 다를 때의 기본 UX. 이번 검토에서는 확정하거나 구현하지 않는다. TASK-001을 막지 않는다.
+Resolved: selection != approval != apply != verification != promotion; base identity/
+version required; verified apply prerequisite for promotion; active timeline separate;
+human edit priority; whole-version stale rejection; no automatic rebase.
+
+Still OPEN: candidate native duplicated timeline versus virtual plan; concrete result
+identity; production WorkingAuthority timeline-only versus timeline+version schema;
+evidence provenance and same-timeline apply/authority observation coordination.
+Evidence: the repository has only immutable fake snapshots and no live observer,
+Apply, postflight or persistent result identity. State flags cannot prove native facts.
+Options: native verified timeline references, virtual result references mapped by an
+adapter, or explicit fake observation/evidence values for foundation tests.
+Recommendation for TASK-006: the latter, with opaque fake result IDs and timeline/version
+comparison inputs. Do not adopt that fixture schema as the production architecture.
+Chat must decide production representation/provenance before adapter/persistence/apply.
+Deferred: real candidate creation, actual result binding/verification and coordination.
+
+## OPEN-008 - Concurrent work invalidation and candidate lifecycle details
+Status: OPEN (TASK-006, 2026-10-05)
+
+Questions: exact DIRTY vs STALE distinction; human changeset representation; scope-aware
+invalidation; partial candidate refresh; garbage collection/retention; simultaneous
+multiple approvals; approval revocation; crash/restart candidate-state persistence.
+Evidence: current state has a whole timeline version only, no changesets or authoritative
+observer. A single candidate transition context cannot settle session-wide approval policy.
+Options: infer region independence/lifecycle defaults now, or retain strict version
+invalidation and omit underspecified transitions. Recommendation: strict version mismatch
+=> STALE, sticky invalidation, no rebase/refresh/revoke/retention implementation.
+Work phase is separate descriptive progress, not validity. DIRTY is not given invented
+semantics. Single-candidate approval does not decide whether global multiple approvals
+are allowed. Branching preserves source base; applied-result branching remains OPEN-002.
+Needed Chat decision: contracts for these features before implementing them. Deferred:
+coordinator/observer/scope merge/refresh/revoke/persistence, not the pure state foundation.
 
 ## OPEN-001 — Persistent Timeline Item Identity
 Status: OPEN
@@ -344,3 +371,10 @@ only dependency-free inspection may be SAFE_TO_CONTINUE (never apply permission)
 Chat decisions are needed before lowering any candidate into executable action.
 Execution/rebinding/cardinality enforcement are deferred; pure diagnostic compilation
 can proceed. OPEN-001 and OPEN-006/007 are unchanged.
+
+
+## Chat Gate - TASK-005 approved / TASK-006 authorized
+
+User reports TASK-005 / PR #6 APPROVED and merged. ADR-015/016 are accepted in main.
+TASK-006 builds pure candidate/concurrent state only; no actual apply or postflight.
+Attention Economy notes follow the user-approved four principles without UI/telemetry.
