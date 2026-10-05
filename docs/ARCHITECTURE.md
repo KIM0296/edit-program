@@ -98,3 +98,22 @@ Transaction apply
 ```
 
 Safety Core는 Resolve API에 직접 종속되지 않는다.
+
+
+## Editable project topology and output boundary
+
+TASK-004 adds a pure topology projection/diff/validation foundation (INV-019), preserving
+track identity/type/order and object membership. A comparison model is not authoritative
+Resolve state and cannot execute changes. Expected topology diffs are explicit inputs.
+Preview/render are output artifacts, allowed to flatten for display; neither may replace
+native editable project state. Preserve Editability and Native Editing Environment
+Preservation remain required even when a topology change is explicitly expected.
+Cross-track correspondence/native indexing and provenance evidence remain OPEN-006/007.
+
+## Preferred Effects Implementation Path - documentation only
+
+Editorial effects prefer Edit Page / Resolve FX. For motion graphics, tracking and simple
+compositing, consider Fusion first when feasible: preferred, not required. No unrestricted
+full Fusion automation initially. Future automation favors editable/reversible/inspectable
+structures. Specialist VFX favors Assist/Handoff. External tools are later and must preserve
+the native editing environment. No effect, Fusion or external-tool integration in TASK-004.

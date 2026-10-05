@@ -71,6 +71,17 @@ ripple 후 temporal object마다 올바른 follow/stay policy를 적용한다.
 
 ---
 
+## INV-019 Track / Layer Topology Preservation
+Approved by user for TASK-004.
+
+Preserve existing Track IDs, types, order, and object-to-track membership. No unrequested
+track creation/deletion or object movement. Explicit expected topology change is required
+for AI track additions/removals/reordering/moves. Never flatten multiple editable video/audio
+layers into one replacement, or use preview/render as editable source of truth.
+TASK-004 validates the supplied domain topology/provenance only; no native execution.
+
+---
+
 # P1
 
 - J-cut Preservation
