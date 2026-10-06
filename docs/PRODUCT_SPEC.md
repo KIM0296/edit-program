@@ -255,3 +255,20 @@ Snapshot completeness is not feature readiness. Each downstream feature evaluate
 requirement profile, and readiness never implies Apply/Safety/Authority permission.
 
 Detailed contract: `docs/READ_ONLY_RESOLVE_SNAPSHOT_CONTRACT.md`.
+
+
+## Pause Edit Planning & Safety Lowering v1
+
+PauseCandidate expresses editorial intent, not executable cut geometry. KEEP produces no-op planning,
+REVIEW produces review-only planning, and destructive TIGHTEN/REMOVE requires a separate explicit
+PauseCutGeometry bound to the same base target.
+
+TIGHTEN v1 supports one contiguous removal range only. The geometry must exactly match the candidate
+retained duration and is never clamped or inferred from duration alone. REMOVE also retains a separate
+full-pause geometry artifact for provenance.
+
+The planner consumes already-computed target/snapshot/dependency readiness and stops at
+READY_FOR_PREFLIGHT. Planning readiness is not Safety PASS, approval or apply authority. Geometry
+generation is deferred to OPEN-013 / a future Cut Geometry Resolution Contract.
+
+Detailed contract: `docs/PAUSE_EDIT_PLANNING_CONTRACT.md`.
