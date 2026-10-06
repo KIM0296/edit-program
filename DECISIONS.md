@@ -264,6 +264,44 @@ timeline mutation, or a learned classifier. TASK-007 starts with immutable Pause
 domain/schema and a deterministic, conservative rule baseline over caller-supplied observations.
 
 
+
+
+## ADR-019 - Evaluation Data Contract & Feedback Event Schema v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+Pause Intelligence evaluation uses immutable raw records/events first and derives metrics second.
+Benchmark reference judgments and real product feedback are separate evidence classes.
+
+Core rules:
+1. Raw Events First, Derived Metrics Second. Store proposal/reference/final-decision/feedback/timing
+   evidence so metric formulas may be recomputed later.
+2. BENCHMARK, PILOT and PRODUCT_FEEDBACK are distinct source kinds.
+3. Product feedback never rewrites benchmark reference judgments automatically.
+4. AI proposal snapshots are immutable. Recalculation creates a new proposal.
+5. Feedback is append-only and ordered by explicit sequence number, not wall-clock timestamp alone.
+6. User final outcome, correction classes and metric snapshots are derived state, never more
+   authoritative than their raw source events.
+7. REMOVE restore/revert is a distinct safety signal from an ordinary correction.
+8. Missing timing evidence is unknown, never silently interpreted as zero.
+9. Producer version, decision contract version, feature contract version and metric-definition
+   version must be explicit enough to compare generations reproducibly.
+10. Product-feedback core schema must not require storing raw video/audio/full transcripts,
+    project names, filenames or user identity; prefer opaque references plus decision/event metadata.
+11. Feedback capture does not imply training consent or authorization.
+12. Numerical release thresholds are not embedded in evaluation records. GatePolicy is a separate,
+    versioned policy defined only after pilot evidence exists.
+13. Net Time Saved is based on human cost: instruction + review + correction + manual completion +
+    recovery, plus AI-blocked idle only when AI actually prevented useful parallel work.
+14. Decision Interruptions count actual attention requests/batches, not the number of review items.
+15. Evaluation schema is model-agnostic and must support deterministic rules, future VAD/STT/prosody/
+    semantic/LLM producers under the same comparison contract.
+
+TASK-008 may implement immutable schema, pure validation, pure final-outcome derivation and pure metric
+derivation only. It must not add DB/storage, telemetry collection, Resolve listeners, cloud upload,
+dashboard, model training, personalization updates, raw-media capture, automatic gate enforcement or
+numeric thresholds.
+
+
 # Open Decisions
 
 ## OPEN-006 - Topology correspondence and native track indices
