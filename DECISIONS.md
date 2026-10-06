@@ -475,7 +475,61 @@ Core rules:
 
 Detailed contract: docs/CUT_GEOMETRY_RESOLUTION_CONTRACT.md.
 
+
+
+## ADR-025 - Expected Diff & Temporal Displacement Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+Pause gap closure must be represented as explicit expected state changes before Safety or execution.
+
+Core rules:
+1. Primary range removal and collateral temporal displacement are separate change classes.
+2. Unlisted Object Invariance applies inside an explicit PreservationScope.
+3. A ripple boolean, all-downstream token or similar symbolic instruction is insufficient for
+   Safety-ready planning.
+4. Concrete displacement participants must be explicitly enumerated.
+5. ExpectedDiff Compiler consumes a precomputed DisplacementParticipationAssessment and does not
+   select participants itself.
+6. v1 supported participants are pure translations fully downstream of the removed interval.
+7. Every v1 participant uses uniform integer delta = -removed_duration; uniformity never selects who
+   participates.
+8. Crossing objects, nonuniform displacement and unresolved gap interaction are non-ready/unsupported.
+9. Pure displacement preserves placement/media/source identity, duration and track membership.
+10. ExpectedDiff completeness and Safety acceptability are separate. A fully described consequence
+    may be READY_FOR_PREFLIGHT even when a later Safety rule will reject it.
+11. Expected topology change is empty by default for Pause v1.
+12. Human edits stale ExpectedDiff; no silent rebase.
+13. Within PreservationScope, an object absent from ExpectedDiff is expected unchanged.
+14. Expected-vs-Actual verification uses exact integer-frame equality; no implicit tolerance.
+15. Extra, missing or wrong actual changes are mismatch.
+16. UNVERIFIED is not MATCH.
+17. Verified promotion requires Expected Diff = Actual Diff under ADR-015/INV-016.
+18. TASK-014 is pure foundation only; no participant policy, Resolve mutation, Safety verdict or
+    actual postflight capture.
+
+Detailed contract: docs/EXPECTED_DIFF_TEMPORAL_DISPLACEMENT_CONTRACT.md.
+
 # Open Decisions
+
+
+## OPEN-014 - Temporal Participation and Gap Interaction Policy
+Status: OPEN (created by ADR-025, 2026-10-06)
+
+ADR-025 requires an explicit resolved DisplacementParticipationAssessment but deliberately does not
+decide how production code selects participants or how existing gaps alter ripple participation.
+
+Future Chat Architecture Review must decide:
+- track-local vs dependency-resolved multi-track participation
+- native sync-lock/linked-selection evidence, if any
+- subtitle/marker temporal participation policy
+- gap preservation vs gap absorption semantics
+- behavior for objects crossing the removed interval
+- nonuniform displacement cases
+- production scope construction from Resolve snapshots
+
+Until resolved, TASK-014 may consume explicit synthetic/precomputed participant facts only and must
+not infer these policies.
+
 
 
 
