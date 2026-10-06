@@ -370,7 +370,67 @@ Core rules:
 
 Detailed contract: docs/NATIVE_TIME_SNAPSHOT_MAPPING.md.
 
+
+
+## ADR-022 - Read-only Resolve Snapshot & Adapter Observation Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+Resolve remains Source of Truth. A Resolve snapshot is an immutable, read-only observation of native
+state and never an independently authoritative timeline.
+
+Core rules:
+1. Snapshot capture is read-only; mutation belongs to later Safety/Authority-controlled paths.
+2. Identity lifetime is explicit and categorical: PERSISTENT_VERIFIED,
+   SESSION_LOCAL_VERIFIED, SNAPSHOT_LOCAL, UNKNOWN. Identity is never a confidence probability.
+3. Adapter capability and per-capture observed value are separate axes. SUPPORTED/UNSUPPORTED/UNKNOWN
+   capability must not be conflated with TRUE/FALSE/UNKNOWN observed state.
+4. Unsupported or unknown capability never becomes a false negative observation.
+5. Capture consistency is CONSISTENT / UNSTABLE / UNVERIFIED. UNVERIFIED is never assumed stable.
+6. state_token is an opaque mapping-relevant state identity, not a security token and not necessarily
+   a Resolve-native token. If a trustworthy token cannot be produced, the adapter must expose that
+   limitation rather than fabricate one.
+7. Snapshot completeness describes structural capture against declared capabilities only. It does
+   not imply feature safety/readiness.
+8. Feature readiness is evaluated separately against an explicit FeatureRequirementProfile.
+9. Snapshot READY means sufficient observation evidence for that feature, not Apply/Approval/Safety
+   authorization.
+10. Timeline/track/placement/media names, filenames and native ordinals are descriptive metadata,
+    not persistent identity or semantic roles.
+11. Media identity and placement identity remain separate. Same media may have multiple placements.
+12. UNKNOWN retime is not assumed IDENTITY_1X. Native time normalization must follow ADR-021.
+13. Partial/unstable/unverified captures remain visible; stale/new observations are not silently
+    mixed into one current snapshot.
+14. Native relationship/effect/transition/track-state observations are descriptive and
+    capability-based; absence of capability is not absence of structure.
+15. Persistent identity, native correspondence and scope-aware invalidation remain OPEN-001,
+    OPEN-006 and OPEN-008 until runtime evidence resolves them.
+
+Detailed contract: docs/READ_ONLY_RESOLVE_SNAPSHOT_CONTRACT.md.
+
 # Open Decisions
+
+
+## OPEN-012 - Resolve Adapter Runtime Capability / State Identity Realization
+Status: OPEN (created by ADR-022, 2026-10-06)
+
+ADR-022 defines the observation contract but deliberately does not claim which DaVinci Resolve
+versions/platforms expose each field reliably or how a production adapter derives a trustworthy
+mapping-relevant state token.
+
+Runtime validation is still required for:
+- persistent/session-local timeline, track and placement identity
+- media-pool/native media identity
+- source/timeline range fidelity
+- retime visibility
+- relationship/link visibility
+- transition/effect/keyframe and track-state visibility
+- capture start/end consistency checks
+- trustworthy state_token/fingerprint derivation
+- platform/Resolve-version differences
+
+Until validated, capability values and identity scopes must remain conservative. Do not upgrade
+UNKNOWN/SNAPSHOT_LOCAL/UNVERIFIED based on heuristics.
+
 
 
 
