@@ -439,30 +439,63 @@ Core rules:
 
 Detailed contract: docs/PAUSE_EDIT_PLANNING_CONTRACT.md.
 
+
+
+## ADR-024 - Cut Geometry Resolution Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+TIGHTEN cut location is resolved from explicit typed geometry constraints, never from retained
+duration alone.
+
+Core rules:
+1. v1 constraint vocabulary is exactly CUT_START_ANCHOR, CUT_END_ANCHOR,
+   MUST_PRESERVE_RANGE and ALLOWED_REMOVAL_RANGE.
+2. GeometryConfidence is a separate typed value (STRONG/MODERATE/WEAK/UNKNOWN) supplied by the
+   producer and preserved by the resolver.
+3. The resolver does not derive/calibrate GeometryConfidence from EvidenceStrength, PauseCandidate
+   Confidence, producer kind, agreement count or other metadata.
+4. GeometryConfidence never ranks competing valid candidates.
+5. Retained duration determines how much to remove, never where to remove it.
+6. Exact/current internal-frame mapping must precede geometry resolution; the resolver does not call
+   or reimplement native mapping.
+7. TIGHTEN v1 resolves exactly one contiguous removed range.
+8. Candidate production paths are limited to explicit geometry and exact explicit start/end anchor
+   pairs.
+9. MUST_PRESERVE_RANGE invalidates overlapping removal candidates; the resolver does not shift them.
+10. ALLOWED_REMOVAL_RANGE is optional; when multiple applicable allowed ranges exist, v1 uses
+    conservative intersection semantics.
+11. Equal geometric ranges supported by multiple producers count as one distinct geometry only if
+    all provenance/support is retained.
+12. Resolution rule: 0 distinct valid geometries -> UNRESOLVED; 1 -> RESOLVED; 2+ ->
+    REVIEW_REQUIRED.
+13. No latest-wins, hidden ranking, center/leading/trailing defaults or nearest-anchor repair.
+14. Geometry resolution does not change KEEP/TIGHTEN/REMOVE editorial action.
+15. Geometry does not decide ripple mechanics, seam treatment, Safety, Approval or Apply authority.
+16. TASK-013 is pure immutable foundation only; no audio/VAD/STT/prosody/LLM/media inference.
+
+Detailed contract: docs/CUT_GEOMETRY_RESOLUTION_CONTRACT.md.
+
 # Open Decisions
 
 
+
 ## OPEN-013 - Cut Geometry Resolution Contract
-Status: OPEN (created by ADR-023, 2026-10-06)
+Status: RESOLVED FOR v1 FOUNDATION by ADR-024 (2026-10-06)
 
-ADR-023 deliberately makes TASK-012 a geometry consumer only. The project still needs a separate
-contract for producing exact TIGHTEN cut geometry from media/context evidence.
+ADR-024 fixes the v1 geometry-resolution vocabulary, ambiguity behavior and confidence boundary.
+TASK-013 may implement pure explicit-constraint geometry resolution after TASK-012 is approved/merged.
 
-Future Chat Architecture Review must decide:
-- which inputs may produce geometry (human selection, speech boundaries, breath/prosody, local pacing)
-- whether one or multiple geometry candidates may be proposed
-- geometry confidence/provenance semantics
-- preservation of speech attack/release, breath and room tone
-- how geometry producer uncertainty routes to review
-- evaluation/reference data for geometry quality
-- whether any geometry class can become auto-eligible
-- interaction with mixed-FPS exact mapping and snapshot freshness
+Still deferred beyond the v1 foundation:
+- actual audio/VAD/STT/prosody/breath/semantic geometry producers
+- GeometryConfidence calibration/derivation
+- candidate ranking policy
+- multi-range/cross-placement geometry
+- ALLOWED_REMOVAL alternative/union semantics
+- audio seam/crossfade/room-tone treatment
+- numeric geometry quality gates
 
-Until that contract is accepted, no task may infer TIGHTEN cut positions from retained_frames,
-duration, waveform, VAD/STT/prosody or LLM context. TASK-012 accepts explicit caller-supplied geometry
-only and validates its structure/binding.
-
-
+These deferred producer/quality topics require future Chat Architecture Review and real pilot/media
+evidence. ADR-024 does not authorize them.
 
 ## OPEN-012 - Resolve Adapter Runtime Capability / State Identity Realization
 Status: OPEN (created by ADR-022, 2026-10-06)
