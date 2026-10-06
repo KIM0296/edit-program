@@ -240,3 +240,18 @@ time is not introduced globally in v1.
 Snapshot mismatch is STALE, and mappings do not silently rebase after human edits. EXACT temporal
 mapping is not approval or Safety authority. Detailed contract:
 `docs/NATIVE_TIME_SNAPSHOT_MAPPING.md`.
+
+
+## Read-only Resolve Snapshot & Adapter Observation v1
+
+Resolve remains the Source of Truth. The adapter produces immutable read-only snapshots and does not
+invent native facts that Resolve does not expose.
+
+Identity lifetime is explicit (persistent/session-local/snapshot-local/unknown), capability support
+is separate from observed values, and capture consistency distinguishes CONSISTENT, UNSTABLE and
+UNVERIFIED. Unknown/unsupported native state reduces automation rather than becoming a false default.
+
+Snapshot completeness is not feature readiness. Each downstream feature evaluates an explicit
+requirement profile, and readiness never implies Apply/Safety/Authority permission.
+
+Detailed contract: `docs/READ_ONLY_RESOLVE_SNAPSHOT_CONTRACT.md`.
