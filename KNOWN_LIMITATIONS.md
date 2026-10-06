@@ -196,3 +196,28 @@ unsafe → reject
   registry to prove references existed, compare changed payloads under reused IDs, or enforce
   append-only storage against external callers reconstructing values. Public raw types are
   evidence contracts, not persistence/security enforcement. No production metric accuracy claim.
+
+
+## TASK-009 evidence / pure preparation limits
+
+- Evidence is supplied descriptive metadata, not proof of truth, trust, calibrated probability,
+  approval or apply permission. No actual producer/media decoding/network/telemetry is present.
+- Strength is retained but never ranked or converted to editorial Confidence. All conflicting
+  positive claims are visible; no priority, latest-wins or averaging. Real producer policy and
+  calibration remain OPEN-009; missing required band/boundary/content and unknown claims review.
+- Optional missing cue/reference records stay absent. ABSENT does not invent its opposite.
+  Unknown local reference uses an UNKNOWN assertion on a typed value; missing reference needs
+  no record. Nonpositive reference payloads reject; oversized positive references review.
+- Constructor rejects malformed/mixed-binding/out-of-context/duplicate-ID bundles. Preparation
+  reports conflicts and all applicable reasons for structurally valid bundles. Unsupported
+  scope takes status precedence over stale, then review; stale reason is never lost.
+- Target/context must fit one concrete fragment of the supplied immutable fake snapshot.
+  No source conversion or native persistence proof; split-lineage spans and cross-placement
+  inputs are not READY. The caller must supply already-aligned data and the current snapshot.
+  A stale caller snapshot cannot be detected without a future live observer (out of scope).
+- Context is explicit same-placement scope, not a pacing extractor or license to bind unrelated
+  evidence. Crosstalk PRESENT requires review; cross-clip context requires unsupported handling.
+- The public result value validates shape/binding; it is not a cryptographic attestation of
+  derivation and cannot grant authority. No classifier/authority/executor integration.
+- Producer algorithms/semantic quality and production native mapping remain unverified under
+  OPEN-009/011 and OPEN-001. These synthetic domain tests make no real editing-quality claim.

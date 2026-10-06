@@ -1,6 +1,6 @@
 # TASK-009 — Observation Evidence & Producer Provenance Foundation
 
-Status: **Implementation started; approved scope unchanged**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_009_COMPLETION.md**
 
 Basis:
 - ADR-018 Pause / Dialogue Editing v1
