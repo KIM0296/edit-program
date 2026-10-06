@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-008` immutable evaluation evidence and pure metrics implemented; PR/CI and Chat Gate pending. TASK-007 approved/merged; ADR-019 accepted in main.
+Current task: `TASK-008` immutable evaluation evidence and pure metrics implemented; PR #13 and Python 3.11 CI passed; Chat Gate pending. TASK-007 approved/merged; ADR-019 accepted in main.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -363,10 +363,15 @@ Implemented:
 - PRODUCT_FEEDBACK cannot carry benchmark references; raw evidence never mutated by metrics.
 
 Local Windows/Python 3.14.6: 342 passed / 0 failed / 1 skipped (65 new tests).
-Ruff PASS; strict mypy PASS (10 source files). Python 3.11 hosted CI pending.
+Ruff PASS; strict mypy PASS (10 source files). Python 3.11.16 hosted CI passed:
+run 37408687466, 342 passed / 1 skipped, Ruff/mypy PASS.
 Existing TASK-001..007 code/tests unchanged. Classifier/executor/authority monkeypatch guard passes.
 Skip remains the opt-in intentional naive red demo. No production editing/P0 certification.
 OPEN-010 records event episode/recovery/timing completeness/overlap/pairing provenance;
 NEAR_RANGE tolerance and future numeric GatePolicy remain undefined.
 No DB, telemetry/listener/upload/UI, media capture, dataset/pilot, training/personalization.
 Report: docs/reports/TASK_008_COMPLETION.md. Chat Gate requested after PR/CI evidence.
+
+TASK-008 PR: https://github.com/KIM0296/edit-program/pull/13
+CI: https://github.com/KIM0296/edit-program/actions/runs/37408687466
+Requested Gate: APPROVED (request only, not Chat decision).

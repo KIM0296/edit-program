@@ -2,7 +2,7 @@
 
 TASK: TASK-008 — Evaluation Schema & Pure Metric Foundation
 
-상태: 구현/로컬 검증 완료, Python 3.11 CI 및 Chat Gate 대기.
+상태: 구현 및 로컬/Python 3.11 CI 검증 완료, Chat Gate 대기.
 
 브랜치: `feat/task-008-evaluation-schema`
 
@@ -11,7 +11,7 @@ Spec commit: `af180f8` (구현 전). 구현 commit: `ab189e5`.
 Base main: `3c1ca49ffc7c4be7f74620afb090de51d9a51f2e`.
 후속 보고 commit은 문서만 변경하며 최종 head는 PR 본문에 기록합니다.
 
-PR: 생성 대기.
+PR: https://github.com/KIM0296/edit-program/pull/13
 
 근거: [TASK-008 spec](../../tasks/TASK_008_EVALUATION_SCHEMA.md),
 [ADR-019 / Evaluation Contract](../EVALUATION_DATA_CONTRACT.md).
@@ -47,7 +47,7 @@ pure outcome/metric derivation을 구현했습니다. DB나 telemetry는 없습�
 | Explicit versioning / privacy | PASS: schema/producer/reference/metric version, opaque refs; media/username/consent 필수 아님 |
 | No executor/telemetry | PASS: classifier/executor/authority monkeypatch guard, 신규 모듈은 pure data/functions |
 | TASK-001~007 regression | PASS: 기존 코드/테스트 변경 없음 |
-| Python 3.11 CI | 대기 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37408687466 |
 | Ruff / strict mypy | PASS: 10 source files |
 
 ## 2. 변경된 파일
@@ -71,16 +71,16 @@ pure outcome/metric derivation을 구현했습니다. DB나 telemetry는 없습�
 
 ```text
  DECISIONS.md                                |  23 +
- IMPLEMENTATION_STATUS.md                    |  26 +-
+ IMPLEMENTATION_STATUS.md                    |  31 +-
  KNOWN_LIMITATIONS.md                        |  27 ++
  docs/EVALUATION_DATA_CONTRACT.md            |  18 +
- docs/TEST_MATRIX.md                         |  21 +
+ docs/TEST_MATRIX.md                         |  22 +
  docs/reports/TASK_008_COMPLETION.md         | 181 ++++++++
  src/davinci_ai_editor/evaluation.py         | 436 +++++++++++++++++++
  src/davinci_ai_editor/evaluation_metrics.py | 362 ++++++++++++++++
  tasks/TASK_008_EVALUATION_SCHEMA.md         | 131 ++++++
  tests/test_evaluation.py                    | 626 ++++++++++++++++++++++++++++
- 10 files changed, 1850 insertions(+), 1 deletion(-)
+ 10 files changed, 1856 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -108,7 +108,7 @@ Red-first: spec commit 뒤 `pytest tests/test_evaluation.py -q` 실행이
 `ModuleNotFoundError: No module named 'davinci_ai_editor.evaluation'`로 실패했습니다.
 사용자 20개 사례와 추가 binding/version/unknown/denominator/defensive-copy/recovery 사례를 검증했습니다.
 
-Hosted CI: PR 생성 후 근거를 반영합니다.
+Hosted CI: [run 37408687466](https://github.com/KIM0296/edit-program/actions/runs/37408687466), head `5784534` 기준. Ubuntu/CPython 3.11.16에서 342 passed / 1 skipped, Ruff PASS, mypy 10 files PASS를 로그로 확인했습니다. 후속 변경은 문서만이며 최종 head CI도 검토 제출 전에 확인합니다.
 
 ### Safety Gate
 

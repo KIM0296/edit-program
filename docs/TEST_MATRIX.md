@@ -148,7 +148,8 @@ production false-removal rate, dialogue cleanup and timeline editing remain unve
 ## TASK-008 evaluation schema / pure derivation
 
 Local: 342 passed / 0 failed / 1 skipped; 65 new tests. Ruff/mypy PASS.
-Python 3.11 hosted CI pending. Earlier source/regression files unchanged.
+Python 3.11.16 CI passed: run 37408687466, 342 passed / 1 skipped, Ruff/mypy PASS.
+Earlier source/regression files unchanged.
 
 | Coverage | tests/test_evaluation.py evidence |
 | --- | --- |
