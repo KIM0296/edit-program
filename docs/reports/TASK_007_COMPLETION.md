@@ -2,7 +2,7 @@
 
 TASK: TASK-007 — Pause Candidate Domain & Deterministic Baseline
 
-상태: 구현/로컬 검증 완료, Python 3.11 CI 및 Chat Gate 대기.
+상태: 구현 및 로컬/Python 3.11 CI 검증 완료, Chat Gate 대기.
 
 브랜치: `feat/task-007-pause-candidate-baseline`
 
@@ -11,7 +11,7 @@ Spec commit: `a18907c` (구현 전). 구현 commit: `e5e09fe`.
 Base main: `a7270ee43ae22b97789bebfddae7a4c6c058a000`.
 후속 보고 commit은 문서만 변경하며 최종 head는 PR 본문에서 확인할 수 있습니다.
 
-PR: 생성 대기.
+PR: https://github.com/KIM0296/edit-program/pull/11
 
 근거: [TASK-007 spec](../../tasks/TASK_007_PAUSE_CANDIDATE_BASELINE.md),
 [ADR-018](../../DECISIONS.md#adr-018---pause--dialogue-editing-v1-product-contract).
@@ -42,7 +42,7 @@ PauseCandidate를 반환합니다. 실제 음성 intelligence나 timeline editin
 | Safe tighten target | PASS: caller reference 일치와 strict bounds; arbitrary target 거부 |
 | Routing != execution | PASS: routing 검사, executor/authority monkeypatch 차단 |
 | TASK-001~006 regression | PASS: 기존 코드·테스트 변경 없음 |
-| Python 3.11 CI | 대기 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37405319840 |
 | Ruff / strict mypy | PASS: 8 source files |
 
 STT/VAD/Whisper/prosody/LLM/ML/feature extractor/real edit/Resolve/authority transition/
@@ -67,14 +67,14 @@ shadow 생성/dialogue cleanup/UI 등 범위 밖 기능은 구현하지 않았�
 
 ```text
  DECISIONS.md                               |  24 ++
- IMPLEMENTATION_STATUS.md                   |  24 +-
+ IMPLEMENTATION_STATUS.md                   |  29 ++-
  KNOWN_LIMITATIONS.md                       |  19 ++
- docs/TEST_MATRIX.md                        |  22 ++
+ docs/TEST_MATRIX.md                        |  23 ++
  docs/reports/TASK_007_COMPLETION.md        | 167 +++++++++++++
  src/davinci_ai_editor/pause.py             | 240 +++++++++++++++++++
  tasks/TASK_007_PAUSE_CANDIDATE_BASELINE.md |  92 ++++++++
  tests/test_pause_baseline.py               | 361 +++++++++++++++++++++++++++++
- 8 files changed, 948 insertions(+), 1 deletion(-)
+ 8 files changed, 954 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -102,7 +102,7 @@ Red-first: spec commit 뒤 `pytest tests/test_pause_baseline.py -q`가
 band 5개 × boundary 6개를 검사합니다. FakeTimeline.apply, safety.preflight,
 authority.transition을 실패하도록 monkeypatch한 상태에서도 classifier가 동작합니다.
 
-Hosted CI: PR 생성 후 근거를 반영합니다.
+Hosted CI: [run 37405319840](https://github.com/KIM0296/edit-program/actions/runs/37405319840), head `25a28d6` 기준. Ubuntu/CPython 3.11.16에서 277 passed / 1 skipped, Ruff PASS, mypy 8 files PASS를 로그로 확인했습니다. 후속 변경은 문서만이며 최종 head CI도 검토 제출 전에 확인합니다.
 
 ### Safety Gate
 

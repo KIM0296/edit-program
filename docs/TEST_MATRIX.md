@@ -125,7 +125,8 @@ fully PASS: live observer, actual concurrent apply and transaction/rollback rema
 ## TASK-007 pause candidates (pure rules, not editing quality certification)
 
 Local 277 passed / 0 failed / 1 skipped; 67 new tests. Ruff/mypy PASS.
-Python 3.11 hosted CI pending. Earlier source and regression tests unchanged.
+Python 3.11.16 CI passed: run 37405319840, 277 passed / 1 skipped, Ruff/mypy PASS.
+Earlier source and regression tests unchanged.
 
 | Coverage | tests/test_pause_baseline.py evidence |
 | --- | --- |
