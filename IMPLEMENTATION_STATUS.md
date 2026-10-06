@@ -483,7 +483,7 @@ Preserve overlap rejects; all allowed ranges must contain the cut. No repair/inf
 Mixed binding/unsupported inputs fail closed; snapshot mismatch is STALE, without rebase.
 
 Local Windows CPython 3.14.6: 732 passed / 0 failed / 1 skipped; 87 TASK-013 tests.
-Ruff PASS; strict mypy PASS (15 source files). Python 3.11 CI pending PR.
+Ruff PASS; strict mypy PASS (15 source files). Python 3.11.16 CI PASS: run 37426493653, 732 passed / 1 skipped, Ruff/mypy PASS.
 Earlier TASK-001..012 source/tests unchanged. Skip is intentional opt-in naive red demo.
 OPEN-001/006/008/012 production guarantees and deferred OPEN-013 topics remain unresolved.
 No media analysis, mapper/evaluator/planner/safety/authority/executor invocation.

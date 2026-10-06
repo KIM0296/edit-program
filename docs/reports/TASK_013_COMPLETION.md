@@ -2,12 +2,12 @@
 
 TASK: TASK-013 — Cut Geometry Resolution Foundation
 
-상태: 구현 및 로컬 검증 완료, Python 3.11 CI/Chat Gate 대기.
+상태: 구현·로컬 및 Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-013-cut-geometry-resolution`.
 Base main: `bedeb8a59b9486bdd4460bb7db31578e701e8a05`.
 Spec notes: `dae94b0`, red tests: `7cc71f8`, 구현: `b1fcc47`.
 후속 문서 commit을 포함한 최종 제출 head는 PR 본문에 기록합니다.
-PR: 생성 후 기록.
+PR: https://github.com/KIM0296/edit-program/pull/26
 근거: [TASK-013 spec](../../tasks/TASK_013_CUT_GEOMETRY_RESOLUTION.md),
 [ADR-024 상세 계약](../CUT_GEOMETRY_RESOLUTION_CONTRACT.md).
 요청 Gate: **APPROVED** (Codex 요청이며 Chat 판정 아님).
@@ -34,7 +34,7 @@ pure immutable resolver를 구현했습니다. 결과는 실행 명령이나 Saf
 | Layer isolation | PASS: mapper/evaluator/classifier/planner/compiler/safety/authority/executor monkeypatch 및 import 검사 |
 | Regression | PASS: TASK-001~012 포함 전체 732 passed / 1 skipped |
 | Ruff / strict mypy | PASS: 15 source files |
-| Python 3.11 CI | PR 생성 후 확인 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37426493653 |
 
 REMOVE helper, Planner 실행/변환, audio/VAD/STT/prosody/LLM, native mapping/Resolve API,
 Expected Diff, ripple, Safety, mutation, seam treatment, DB/network/UI 및 TASK-014는 구현하지 않았습니다.
@@ -61,11 +61,11 @@ Expected Diff, ripple, Safety, mutation, seam treatment, DB/network/UI 및 TASK-
  IMPLEMENTATION_STATUS.md                  |  22 ++
  KNOWN_LIMITATIONS.md                      |  17 +
  docs/TEST_MATRIX.md                       |  18 +
- docs/reports/TASK_013_COMPLETION.md       | 145 +++++++++
+ docs/reports/TASK_013_COMPLETION.md       | 147 +++++++++
  src/davinci_ai_editor/cut_geometry.py     | 472 +++++++++++++++++++++++++++
  tasks/TASK_013_CUT_GEOMETRY_RESOLUTION.md |  29 +-
  tests/test_cut_geometry.py                | 524 ++++++++++++++++++++++++++++++
- 8 files changed, 1242 insertions(+), 1 deletion(-)
+ 8 files changed, 1244 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -80,7 +80,9 @@ Expected Diff, ripple, Safety, mutation, seam treatment, DB/network/UI 및 TASK-
 - Red-first: spec notes 이후 source 작성 전 신규 테스트 실행 시
   `ModuleNotFoundError: davinci_ai_editor.cut_geometry`, collection error 1건 확인.
   Red tests commit `7cc71f8` 이후 구현으로 green 전환했습니다.
-- Python 3.11 GitHub CI: PR 생성 후 확인.
+- Python 3.11.16 GitHub CI: [run 37426493653](https://github.com/KIM0296/edit-program/actions/runs/37426493653), 732 passed / 1 skipped, Ruff/strict mypy PASS.
+- CI 검증 head: `8c15388f339c1f82ad167b877ff246c83f5e957a`. 후속 문서 commit의 CI는 PR 본문에 기록합니다.
+- 작업 중 main에 후속 Safety 계약 문서가 추가됐습니다(`e9dd7c6`). TASK-013 범위 변경 없이 PR merge 결과 CI가 통과했습니다.
 - 실제 Resolve 통합/미디어 품질/실행/rollback 검증: 범위 밖으로 미실행.
 
 ### Safety Gate

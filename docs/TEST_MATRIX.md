@@ -281,4 +281,4 @@ excludes media-analysis and execution dependencies.
 Red first: spec notes dae94b0, test commit 7cc71f8; missing cut_geometry module produced
 one collection error before implementation. Local full suite: 732 passed, 0 failed,
 1 intentional naive-demo skip. Ruff and strict mypy (15 source files) PASS.
-Python 3.11 CI pending PR. Earlier TASK-001..012 source/tests unchanged.
+Python 3.11.16 CI PASS: run 37426493653, 732 passed / 1 skipped; Ruff/mypy PASS. Earlier TASK-001..012 source/tests unchanged.
