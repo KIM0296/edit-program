@@ -509,7 +509,61 @@ Core rules:
 
 Detailed contract: docs/EXPECTED_DIFF_TEMPORAL_DISPLACEMENT_CONTRACT.md.
 
+
+
+## ADR-026 - Safety Preflight Integration Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+Safety Preflight validates an already specified ExpectedDiff against current safety evidence; it
+does not invent, repair or optimize the edit.
+
+Core rules:
+1. PreflightStatus and SafetyVerdict are separate axes.
+2. Status precedence is STALE > UNSUPPORTED > INCOMPLETE > EVALUATED.
+3. SafetyVerdict exists only for EVALUATED and uses REJECT > REVIEW_REQUIRED > PASS.
+4. Unknown/missing mandatory safety state reduces autonomy and never defaults safe.
+5. All evaluable findings are retained; no diagnostic short-circuit.
+6. PAUSE_DESTRUCTIVE_PREFLIGHT_V1 has exactly 17 mandatory checks.
+7. PASS requires every mandatory check to be evaluated.
+8. ExpectedDiff completeness and Safety acceptability remain separate.
+9. Safety consumes consequences and never repairs/replans them.
+10. Protected direct change/displacement and locked-track mutation are hard rejects.
+11. Unsupported retime/topology is UNSUPPORTED, not silently REVIEW/PASS.
+12. Pure displacement must preserve media identity, source range, duration and track membership.
+13. Transition/effect/keyframe states distinguish absent, unknown, present-without-proof,
+    PRESERVATION_PROVEN and explicit violation.
+14. Known transition/effect/keyframe presence may PASS only with a valid typed PreservationProof.
+15. Known presence without proof yields REVIEW_REQUIRED; unknown yields INCOMPLETE; explicit
+    violation yields REJECT.
+16. Safety consumes PreservationProof but does not generate it.
+17. Safety PASS is bound to exact ExpectedDiff, snapshot, profile, protection context and proofs.
+18. Human edits or relevant safety-context changes invalidate prior PASS.
+19. No generic v1 hard-safety override.
+20. Safety PASS is not Approval, Apply, Verified Apply or Promotion.
+
+Detailed contract: docs/SAFETY_PREFLIGHT_INTEGRATION_CONTRACT.md.
+
 # Open Decisions
+
+
+## OPEN-015 - Native Preservation Proof Production
+Status: OPEN (created by ADR-026, 2026-10-06)
+
+ADR-026 allows transition/effect/keyframe structures to pass preflight when a valid typed
+PRESERVATION_PROVEN proof is supplied, but Safety does not create that proof.
+
+Future runtime/API work must decide:
+- what native observations are sufficient to prove transition preservation
+- what effect/node/editability state must be compared
+- how keyframe integrity is represented and verified
+- proof scope and identity requirements across snapshots
+- which Resolve versions/platforms expose sufficient evidence
+- proof invalidation after human/native changes
+- whether some structures remain permanently REVIEW-only
+
+Until resolved, TASK-015 may consume synthetic/precomputed PreservationProof records only and must not
+invent proof-generation semantics.
+
 
 
 ## OPEN-014 - Temporal Participation and Gap Interaction Policy
