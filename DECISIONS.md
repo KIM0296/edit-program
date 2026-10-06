@@ -304,6 +304,23 @@ numeric thresholds.
 
 # Open Decisions
 
+## OPEN-010 - Evaluation event episodes and timing completeness
+Status: OPEN (TASK-008, 2026-10-06)
+
+ADR-019 settles raw evidence, source separation and metric formulas; real collection is absent.
+Remaining questions: finalized-episode reopening/late events, reaccept after recovery,
+partial versus full pause restoration, cross-proposal/run ordering, batch-event deduplication
+in collectors, activity overlap/coverage provenance, manual estimates and pairing governance.
+Options: infer missing decision/timing/collection semantics, or accept explicit complete
+single-proposal episodes and reject/return unknown outside the supported subset.
+Recommendation: latter. TASK-008 spec records contiguous sequences, terminal finalization,
+unknown result after revert, sticky recovery flags and explicit timing coverage/zero evidence.
+These are conservative pure-evidence constraints, not authorization for production tracking.
+Frame tolerance NEAR_RANGE and GatePolicy thresholds remain undefined; no numeric guesses.
+Needs Chat decision before real collection, late-event/reopen/partial-restore support,
+overlap correction or actual pilot pairing. None blocks immutable records/pure metrics.
+
+
 ## OPEN-006 - Topology correspondence and native track indices
 Status: OPEN
 
@@ -512,3 +529,9 @@ This OPEN does not block pure domain/rule tests and does not resolve OPEN-001.
 User reports TASK-006 APPROVED/merged; ADR-018 is accepted in main. TASK-007 is solely
 Pause Candidate domain and conservative deterministic rules over supplied observations.
 Dialogue cleanup and actual intelligence/editing remain outside the implementation task.
+
+## Chat Gate - TASK-007 approved / TASK-008 authorized
+
+User reports TASK-007 / PR #11 APPROVED and merged. ADR-019 accepted in main.
+TASK-008 is evaluation language and pure derivation only; no telemetry, storage, raw media,
+training consent inference or automatic reference/model update.

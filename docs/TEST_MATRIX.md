@@ -143,3 +143,25 @@ Earlier source and regression tests unchanged.
 
 One skip remains the opt-in intentional naive failure. Real intelligence accuracy,
 production false-removal rate, dialogue cleanup and timeline editing remain unverified.
+
+
+## TASK-008 evaluation schema / pure derivation
+
+Local: 342 passed / 0 failed / 1 skipped; 65 new tests. Ruff/mypy PASS.
+Python 3.11.16 CI passed: run 37408687466, 342 passed / 1 skipped, Ruff/mypy PASS.
+Earlier source/regression files unchanged.
+
+| Coverage | tests/test_evaluation.py evidence |
+| --- | --- |
+| Source isolation / immutable refresh | Feedback cannot carry reference; new proposal/reference values retain old records |
+| Append-only ordering | Sequence permutations, immutable append, duplicate IDs/gaps/replay/finalization rejection |
+| Typed decision / reference | Payload shape, bound TIGHTEN target, inclusive reference range invariant |
+| Outcomes / correction | Finalization, unknown revert result, KEEP vs actual restore, more/less retained direction |
+| Missing timing | None/absent kind/partial coverage != explicit zero, measured source metadata retained |
+| Paired savings | Scope/mode/case checks, absent pair, zero baseline, negative savings, blocked idle only |
+| Editorial metrics | Exact critical definition/denominator, range comparison, review fraction, attention-event count |
+| Identity / version | Case/proposal/activity/event binding and uniqueness, schema/producer/reference/metric versions |
+| Purity / privacy | Immutable nested collections, deterministic derived result, no classifier/executor/authority calls, no required media/user identity |
+
+Single skip is the intentional naive red demo. Actual benchmark data, pilot experiments,
+telemetry accuracy, timing provenance and numerical release gates remain outside scope.
