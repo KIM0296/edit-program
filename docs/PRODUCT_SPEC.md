@@ -206,3 +206,21 @@ Numerical gate thresholds remain a separate versioned policy and are not set bef
 
 The core product-feedback contract should work with opaque references and metadata without requiring
 raw media/full transcripts. Feedback collection does not imply training consent.
+
+
+## Observation Evidence & Producer Provenance v1
+
+Pause Intelligence does not allow VAD/STT/prosody/semantic producers to directly author executable
+edits. Producers emit immutable, typed evidence bound to a specific timeline snapshot, placement and
+observed range.
+
+Evidence assertions distinguish PRESENT, ABSENT and UNKNOWN; missing evidence is the absence of a
+record and is never interpreted as ABSENT. Evidence strength is separate from editorial decision
+confidence. Conflicting producer evidence remains visible and is not resolved by latest-wins or
+hidden producer priority.
+
+v1 preparation supports already-aligned single-placement internal frame ranges only. Stale,
+cross-placement, cross-clip or unresolved conflicting evidence fails closed rather than silently
+rebasing or synthesizing meaning. Native Resolve time/FPS/source mapping is a separate next contract.
+
+Detailed architecture: docs/OBSERVATION_EVIDENCE_CONTRACT.md.

@@ -302,7 +302,65 @@ dashboard, model training, personalization updates, raw-media capture, automatic
 numeric thresholds.
 
 
+
+
+## ADR-020 - Observation Evidence & Producer Provenance Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+Future media-intelligence producers must communicate through immutable, typed, snapshot-bound
+evidence rather than directly authoring editorial decisions or executable commands.
+
+Core rules:
+1. Evidence is descriptive, never apply/approval/authority permission.
+2. Producer evidence strength and PauseCandidate editorial confidence are separate types with no
+   implicit conversion.
+3. Every evidence record carries producer kind/name/version/evidence-contract provenance.
+4. Every record is bound to timeline ID, base version, placement identity and observed range.
+5. Evidence from different timeline/version/placement identities is not silently merged into one
+   READY PauseObservation in v1.
+6. Explicit evidence assertions are PRESENT / ABSENT / UNKNOWN. Missing means no record and is not
+   equivalent to ABSENT or UNKNOWN.
+7. ABSENT does not imply the opposite positive cue. Silence/duration does not imply dead air.
+8. Conflicting producer evidence remains visible; no latest-wins, hidden producer priority or
+   confidence arithmetic.
+9. Stale evidence is never silently rebased after human timeline changes.
+10. v1 supports already-aligned single-placement internal FrameRange evidence only. Native
+    timecode/FPS/drop-frame/mixed-FPS mapping is deferred.
+11. Cross-clip/multi-placement and unresolved crosstalk cases fail closed to REVIEW_REQUIRED or
+    UNSUPPORTED.
+12. Pure preparation may create an existing PauseObservation only from explicit, supported,
+    non-conflicting typed evidence. It does not execute the classifier or timeline mutation.
+13. Raw media, full transcripts, filenames/project names and user identity are not required in the
+    core evidence domain.
+14. TASK-009 implements immutable evidence/provenance/bundle/conflict/preparation only; no actual
+    VAD/STT/diarization/prosody/semantic inference or Resolve media extraction.
+
+Detailed contract: docs/OBSERVATION_EVIDENCE_CONTRACT.md.
+
 # Open Decisions
+
+
+
+## OPEN-011 - Native Time & Snapshot Mapping
+Status: OPEN (created after ADR-020, 2026-10-06)
+
+ADR-020 requires evidence to be bound to timeline ID/version/placement/range but deliberately accepts
+already-aligned internal integer half-open FrameRange values. Production Resolve source/timeline
+timecode, drop-frame, media FPS, timeline FPS, retime, mixed-FPS and native object correspondence are
+not yet mapped into that domain.
+
+Needs Chat contract before production media producers or cross-clip evidence binding:
+- authoritative timeline/source time domains
+- frame-rate and drop-frame conversion ownership
+- mixed-FPS mapping
+- source-range vs timeline-range correspondence
+- clip boundary / split fragment mapping
+- retime interaction
+- snapshot fingerprint/version evidence
+- stale/revalidation behavior against live Resolve
+- relationship with OPEN-001 persistent identity and OPEN-006 native correspondence
+
+No TASK-009 code may invent these mappings. TASK-009 operates only on already-aligned internal ranges.
 
 ## OPEN-010 - Evaluation event episodes and timing completeness
 Status: OPEN (TASK-008, 2026-10-06)
@@ -507,7 +565,7 @@ TASK-006 builds pure candidate/concurrent state only; no actual apply or postfli
 Attention Economy notes follow the user-approved four principles without UI/telemetry.
 
 ## OPEN-009 - Pause observation producers and media mapping
-Status: OPEN (TASK-007, 2026-10-06)
+Status: PARTIALLY RESOLVED by ADR-020 (TASK-007 onward, 2026-10-06)
 
 Evidence: ADR-018 defines decisions/confidence but the repository has no audio/transcript
 analysis, feature provenance or native media mapping. Caller observations cannot prove
