@@ -1,6 +1,6 @@
 # TASK-011 — Read-only Resolve Snapshot Domain Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-010 IS APPROVED/MERGED**
+Status: **Authorized after TASK-010 approval/merge; implementation in progress**
 
 Basis:
 - ADR-001 Resolve is Source of Truth
@@ -115,3 +115,33 @@ intelligence, EditPlan lowering, Safety execution, DB/network/UI.
 9. Write docs/reports/TASK_011_COMPLETION.md.
 10. Open PR and request Chat Gate.
 11. Do not merge or start the next task automatically.
+
+
+## Implementation notes (recorded before source)
+
+`native_snapshot.py` will provide frozen identities with explicit scope/basis, provenance,
+capability entries/manifest, typed observed flags, track/placement/timeline snapshots,
+versioned FeatureRequirementProfile and pure evaluate_readiness. Existing TrackType and
+ADR-021 range/rate/MappingKind/NativeSnapshotRef values are reused; mapper is never called.
+Opaque references are supplied, never derived from names/index/filename. Explicit filename
+identity basis is rejected; no lexical guessing of whether an opaque ref looks like a filename.
+
+One supplied capture ID binds each track/placement to the top-level capture. Mixed capture
+IDs reject rather than silently merging cached state. CONSISTENT requires caller evidence
+reference; the pure domain cannot verify its truth. Optional state_token is never generated.
+Capability and observed flags remain separate: unsupported/unknown capability admits only
+UNKNOWN or absent observations. Explicit UNKNOWN under SUPPORTED remains valid. A complete
+claim with absent supported fields rejects; explicit UNKNOWN is structurally present, not ready.
+
+PAUSE_ANALYSIS v1 requires complete capture, verified consistency, explicit current snapshot
+comparison, usable (snapshot/session/persistent, never UNKNOWN) identity scopes, typed rates/
+ranges and known supported retime kind. This is readiness of analysis inputs, not exact mapped
+boundaries, spoken-content determination or editing authority. It does not call mapping or
+produce evidence. Richer profiles can require more capabilities/observations and narrower
+identity scopes. Profile IDs/versions identify caller requirements, not new execution policies.
+
+Readiness collects machine-readable issues and preserves raw snapshot/profile/current-ref.
+Detected snapshot mismatch -> STALE; unsupported requirements -> UNSUPPORTED; partial/unstable/
+insufficient identity -> REVIEW_REQUIRED; unknown/missing evidence -> UNVERIFIED; otherwise
+READY. All issues remain visible regardless of top-level status. OPEN-001/006/008/012 remain
+unresolved for runtime guarantees. TASK-012 is not started.
