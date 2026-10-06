@@ -169,3 +169,30 @@ unsafe → reject
 - Dialogue restart/repetition/self-correction/filler remains product scope only; no dialogue
   classifier or deletion, UI, learned confidence or actual edit plan in this foundation.
 - Synthetic rule tests do not establish real-world pause quality, false-removal rates or time saved.
+
+
+## TASK-008 evaluation language / pure metric limits
+
+- No collection, storage, live observers, dashboards, raw media, training or gate enforcement.
+  Opaque identity/provenance is caller-supplied and cannot prove evidence authenticity.
+  Feedback events never imply training consent or rewrite reference judgments.
+- One case/proposal episode per log; contiguous sequence starts at 1 and finalization is
+  terminal. Late-event/reopen/cross-proposal ordering and partial restore remain OPEN-010.
+- Revert alone leaves final action unknown, while accepted_as_is is definitively false.
+  Recovery flags stay visible even after later reaccept; no inferred post-revert KEEP.
+- Final outcome requires terminal finalization and an explicit known decision. Restore is
+  retained as a strong safety signal even before finalization, not erased by later edits.
+- Timing needs explicit complete-kind coverage plus known durations for each required kind.
+  Explicit zero records are valid; absent/None/partial coverage is not computable. Overlap
+  detection, collector completeness, manual estimate calibration are not implemented.
+- Paired savings requires explicit manual/assisted runs with same scope AND case set.
+  No automatic pairing, estimation of missing baseline, or inference of independent work.
+- Rates use exact Fraction. Critical false removal denominator is reference KEEP/REVIEW
+  cases; reference/unknown counts are reported. Ambiguous supplied references are retained,
+  not re-adjudicated or silently excluded. NEAR_RANGE/threshold policies remain undefined.
+- Batches choose one proposal per case explicitly; no automatic latest-proposal selection.
+  Finalized known outcomes define accepted-as-is denominator; unknown outcomes are separate.
+- RUN_FINALIZED holds a supplied run reference. This in-memory layer has no global run/ID
+  registry to prove references existed, compare changed payloads under reused IDs, or enforce
+  append-only storage against external callers reconstructing values. Public raw types are
+  evidence contracts, not persistence/security enforcement. No production metric accuracy claim.

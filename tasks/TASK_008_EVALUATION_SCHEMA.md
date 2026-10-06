@@ -1,4 +1,4 @@
-﻿# TASK-008 — Evaluation Schema & Pure Metric Foundation
+# TASK-008 — Evaluation Schema & Pure Metric Foundation
 
 Status: implementation spec for approved TASK-008 / ADR-019, before code.
 Base main 3c1ca49. TASK-007 approved/merged. Raw Events First, Derived Metrics Second.
@@ -58,7 +58,8 @@ Process canonical raw events:
 - ATTENTION/REVIEW_OPENED do not imply any decision.
 UserFinalOutcome includes case/proposal/event IDs, metric_definition_version, final action/
 retained frames (None until finalized, or if unknown), accepted_as_is/modified (optional),
-reverted/restored and finalized flag/run_id. Accepted_as_is requires finalized known result
+reverted/restored and finalized flag/run_id. Revert/restore proves accepted_as_is=False
+even if the final action is unknown. Otherwise accepted_as_is requires finalized known result
 identical to proposal AND no revert/restore in this episode. modified compares final tuple
 with proposal tuple; it does not erase historical recovery. No events => outcome unknown.
 
@@ -77,7 +78,7 @@ This extra raw coverage field prevents partial event samples from masquerading a
 measurement. It is not produced by instrumentation in this task.
 ActivityRecord: activity_id, run_id, optional case_id, activity_kind, duration_ms int|None,
 measurement_source INSTRUMENTED/MANUAL_ESTIMATE. Nonnegative integer, bool excluded.
-RunEvidence binds run and activities; rejects duplicate IDs, wrong run/case/kind coverage.
+RunEvidence binds run and activities; rejects duplicate IDs, wrong run/case or invalid activity kind. Partial coverage remains valid raw evidence.
 Each metric requires coverage declared for every included kind AND at least one known
 record for each kind. Explicit zero record means measured zero; absent kind or any None
 means not computable. No default zero or timing estimation. Multiple records of a kind sum;

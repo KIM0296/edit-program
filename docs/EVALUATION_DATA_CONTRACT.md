@@ -126,3 +126,21 @@ Implement only immutable domain/schema, structural validation, pure user-outcome
 metric derivation. No DB, SQL, storage service, telemetry uploader, Resolve observer, background
 tracking, cloud upload, dashboard, UI, training, personalization update, raw-media capture, automatic
 gate enforcement or numerical thresholds.
+
+
+## TASK-008 implemented subset
+
+See [TASK-008 specification](../tasks/TASK_008_EVALUATION_SCHEMA.md) for the exact
+schema and metric definition `evaluation-metrics-v1`. Pure derivation consumes raw
+records; no references or source events are rewritten. PRODUCT_FEEDBACK cannot carry
+benchmark/pilot reference annotations or judgments in a bound evaluation record.
+
+The Critical False Removal Rate denominator is reference KEEP/REVIEW cases; zero
+eligible cases means not computable. Timing requires caller-declared complete activity
+kinds and explicit known records, including measured zero where applicable. Finalized
+known outcomes alone form the accepted-as-is denominator. A revert proves not accepted
+as-is but does not imply a known final action; actual restoration remains a distinct signal.
+
+Event log episodes are contiguous and finalized once. Late-event/reopen/partial-restore,
+timing overlap/provenance and pilot pairing policies remain OPEN-010. No NEAR_RANGE
+tolerance or numerical GatePolicy is defined. This subset is not a telemetry system.
