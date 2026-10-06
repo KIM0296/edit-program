@@ -450,3 +450,27 @@ can proceed. OPEN-001 and OPEN-006/007 are unchanged.
 User reports TASK-005 / PR #6 APPROVED and merged. ADR-015/016 are accepted in main.
 TASK-006 builds pure candidate/concurrent state only; no actual apply or postflight.
 Attention Economy notes follow the user-approved four principles without UI/telemetry.
+
+## OPEN-009 - Pause observation producers and media mapping
+Status: OPEN (TASK-007, 2026-10-06)
+
+Evidence: ADR-018 defines decisions/confidence but the repository has no audio/transcript
+analysis, feature provenance or native media mapping. Caller observations cannot prove
+meaning or safely map a pause spanning native items.
+Questions: RelativePauseBand calculation and local pacing window size; prosody feature
+schema; transcript boundaries; emotion/thinking signal producer; numeric confidence
+calibration; genre/content-mode detection; exact tighten target generation; frame-rate/
+mixed-FPS mapping; clip-boundary spans; multi-speaker overlap/crosstalk; dialogue cleanup.
+Options: infer these using arbitrary global duration thresholds (contrary to TASK-007),
+or accept explicit typed observations and preserve/review uncertain inputs.
+Recommendation: latter for TASK-007. Positive local reference must be shorter than the
+original for TIGHTEN; no synthesized target, signal extraction or native binding.
+Chat must approve producer/provenance/mapping and dialogue schema before those layers
+are implemented. Deferred: Intelligence/Media Analysis, real clip binding, execution.
+This OPEN does not block pure domain/rule tests and does not resolve OPEN-001.
+
+## Chat Gate - TASK-006 approved / TASK-007 authorized
+
+User reports TASK-006 APPROVED/merged; ADR-018 is accepted in main. TASK-007 is solely
+Pause Candidate domain and conservative deterministic rules over supplied observations.
+Dialogue cleanup and actual intelligence/editing remain outside the implementation task.

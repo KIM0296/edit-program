@@ -150,3 +150,22 @@ unsafe → reject
 - Multiple concurrent approvals, revoke, DIRTY distinction, partial refresh and crash/restart
   lifecycle remain OPEN-008. WorkPhase is descriptive progress only, no execution gate.
 - No production Human Edit Wins or rollback guarantee is claimed from simulated state tests.
+
+
+## TASK-007 pause baseline scope
+
+- All contextual features are caller observations; no media analysis or feature truth/provenance
+  checks. HIGH is a deterministic rule label, not empirically calibrated model confidence.
+- No snapshot binding: caller supplies already aligned single-placement frame ranges. Cross-clip,
+  mixed-FPS, crosstalk and real identity mapping remain OPEN-009/001, never inferred here.
+- Explicit removal signal can be accepted with unknown band/boundary, but explicit UNKNOWN
+  signal vetoes proactive edits. Preserve/removal conflicts REVIEW, including breath/hesitation.
+- Generic long pauses with unknown boundary preserve LOW; missing/unsafe local reference
+  returns REVIEW. No target generation or clamp. Baseline emits only MEDIUM TIGHTEN.
+- Candidate schema/routing can represent HIGH TIGHTEN, but no baseline rule emits it.
+  SHADOW_ELIGIBLE is planning metadata only; no shadow creation or authority/apply permission.
+- Public candidate values validate structural shape, not media truth or approved editing intent.
+  All supplied evidence must be independently validated before any future executable plan.
+- Dialogue restart/repetition/self-correction/filler remains product scope only; no dialogue
+  classifier or deletion, UI, learned confidence or actual edit plan in this foundation.
+- Synthetic rule tests do not establish real-world pause quality, false-removal rates or time saved.

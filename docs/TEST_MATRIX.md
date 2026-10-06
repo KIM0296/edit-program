@@ -120,3 +120,26 @@ No earlier regression tests or executors changed.
 
 The single skip is the intentional naive red demonstration. INV-012/017 are not marked
 fully PASS: live observer, actual concurrent apply and transaction/rollback remain absent.
+
+
+## TASK-007 pause candidates (pure rules, not editing quality certification)
+
+Local 277 passed / 0 failed / 1 skipped; 67 new tests. Ruff/mypy PASS.
+Python 3.11.16 CI passed: run 37405319840, 277 passed / 1 skipped, Ruff/mypy PASS.
+Earlier source and regression tests unchanged.
+
+| Coverage | tests/test_pause_baseline.py evidence |
+| --- | --- |
+| No duration-only edit | Different absolute lengths, identical context; no absolute threshold |
+| Explicit dead air | Dead-air/failed-take only REMOVE across short and long durations |
+| Meaningful pauses | Emotional/thinking/QA/speaker KEEP; conflicts REVIEW |
+| Natural breath/hesitation/generic long | Positive supplied target only; never hesitation REMOVE |
+| Unsafe target | Missing/zero/negative/equal/longer -> REVIEW, no synthesized target |
+| Unknown/scope | Preserve LOW or REVIEW; unsupported scope never proactive edit |
+| Routing | HIGH edits -> shadow hint, MEDIUM -> batch, no Apply method/authority |
+| Immutable/deterministic | Defensive canonical tuples, permutations, frozen nested reference |
+| Systematic combinations | All 128 signal subsets x 5 relative bands x 6 boundaries |
+| No execution | FakeTimeline.apply, safety.preflight and authority.transition patched to fail |
+
+One skip remains the opt-in intentional naive failure. Real intelligence accuracy,
+production false-removal rate, dialogue cleanup and timeline editing remain unverified.
