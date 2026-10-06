@@ -1,6 +1,6 @@
 # TASK-010 — Native Time & Snapshot Mapping Foundation
 
-Status: **Authorized after TASK-009 approval/merge; implementation in progress**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_010_COMPLETION.md**
 
 Basis:
 - ADR-008 Integer Half-open Internal FrameRange

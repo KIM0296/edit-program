@@ -398,3 +398,24 @@ OPEN-009 producer semantics remain open; OPEN-011 v1 contract is now resolved by
 merged from newer main f229576 during submission. No TASK-010 implementation; OPEN-001 unchanged.
 No media analysis, native conversion, classifier invocation, authority transition or mutation.
 Report: docs/reports/TASK_009_COMPLETION.md. Chat Gate pending; no merge or next task.
+
+
+## TASK-010 Native Time / Snapshot Mapping - 2026-10-06
+
+TASK-009 APPROVED/merged per user. Started from main 90bbe30 on
+feat/task-010-native-time-mapping. Authoritative ADR-021 and prepared TASK-010 retained.
+Spec/API notes committed 5922433 before source; red tests a52d63b failed collection
+with missing davinci_ai_editor.temporal_mapping before implementation.
+
+Implemented exact rational FrameRate, distinct integer source/timeline range wrappers,
+NativeSnapshotRef, explicit placement binding, request/result/status/reason values and
+pure bidirectional map_range. Only IDENTITY_1X/equal spans and explicit AFFINE_FORWARD
+lower. Both boundaries must be integral; no rounding, clamping or FPS-derived mapping.
+Snapshot mismatch is STALE; ambiguous fragments never combine. EXACT is no authority.
+
+Local Windows CPython 3.14.6: 486 passed / 0 failed / 1 skipped; 71 new TASK-010 tests.
+Ruff PASS; strict mypy PASS (12 source files). Python 3.11 CI: pending PR run.
+Existing TASK-001..009 code/tests unchanged; skip remains intentional opt-in naive demo.
+No Resolve, producer, evidence creation, execution or TASK-011 implementation.
+OPEN-001/006/008/012 remain unresolved for production identity/state/runtime behavior.
+Report: docs/reports/TASK_010_COMPLETION.md. Chat Gate pending; do not merge/start TASK-011.

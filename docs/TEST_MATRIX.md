@@ -189,3 +189,27 @@ Earlier regression code/tests unchanged; intentional naive red demo remains opt-
 
 Native FPS/timecode, real media intelligence, live snapshot acquisition, producer truth and
 production integration are not verified or implemented by these tests.
+
+
+## TASK-010 native time / snapshot mapping
+
+Local Windows CPython 3.14.6: 486 passed / 0 failed / 1 skipped; 71 new tests.
+Ruff / strict mypy PASS (12 source files). Python 3.11 CI: pending PR run.
+Earlier source/tests unchanged. The skip remains the opt-in intentional naive red demo.
+
+| Contract | tests/test_temporal_mapping.py evidence |
+| --- | --- |
+| Exact rates | Positive ints, canonical equivalent fractions, 30000/1001 != 30/1, reject floats/bools |
+| Coordinate separation | Distinct typed wrappers; raw/wrong domain rejected, same numbers mean different positions |
+| Explicit correspondence | IDENTITY_1X/equal spans and AFFINE_FORWARD both directions; rates never used as transform |
+| Mixed FPS | Integral boundaries EXACT, either/both fractional boundaries NON_INTEGRAL; no output pair on failure |
+| Exact arithmetic | Large 10**30 origins and exhaustive small-span divisibility/roundtrip oracle |
+| Containment | One-frame outside rejects, exact endpoints, half-open split boundary, no clamp or fragment union |
+| Identity / ambiguity | Repeated media placements, wrong identity, multiple containing spans, duplicate mapping refs |
+| Staleness | Timeline/version/state token mismatch; old+fresh candidates never silently replace historical binding |
+| Unsupported kinds | REVERSE/FREEZE/VARIABLE_RETIME/UNKNOWN never identity-lowered |
+| Immutable / deterministic | Frozen nested values, defensive tuples, permutations, invalid result shapes rejected |
+| Purity | Classifier/authority/preflight/FakeTimeline/evidence calls forbidden; only pure stdlib/domain imports |
+
+These tests do not certify retime safety, native correspondence, production timecode parsing,
+state-token realization, real Resolve behavior, actual A/V sync or rollback.
