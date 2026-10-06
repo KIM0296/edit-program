@@ -139,3 +139,50 @@ time savings and safety for bounded E1/E2 primitives. A future validated Effect 
 be reconsidered over an approved primitive set; it is not part of the initial scope.
 
 Color, Audio and Generative Asset Creation remain separate product verticals.
+
+
+## Pause / Dialogue Editing v1
+
+The first value vertical is spoken-content pacing and conservative dialogue cleanup.
+
+### Decision vocabulary
+
+- KEEP: preserve the pause.
+- TIGHTEN: reduce, but do not erase, the pause.
+- REMOVE: only high-confidence meaningless recording gaps/dead air.
+- REVIEW: defer ambiguous editorial intent to the editor.
+
+Absolute pause duration never determines removal by itself. Local pacing, dialogue structure,
+speaker transition, question/answer context, semantic continuity and supplied prosodic evidence
+may influence the decision when available.
+
+The first implementation uses HIGH / MEDIUM / LOW confidence bands. HIGH-confidence changes may
+enter a Shadow Candidate, MEDIUM-confidence items are batched for review, and LOW-confidence
+items remain unchanged or require review. Main is never silently mutated by confidence alone.
+
+### v1 dialogue scope
+
+Included: immediate restarts, short repetitions, obvious self-corrections, excessive hesitation
+and conservative filler candidates.
+
+Excluded from automatic deletion: long-range semantic redundancy, story restructuring, best-take
+selection, narrative pacing, automatic B-roll/effect/music decisions and fully automatic filler
+removal.
+
+### Initial genre scope
+
+Interview, talking head, podcast/video podcast, lecture, commentary and similar spoken content.
+Narrative film, drama, music video and experimental pacing remain outside the first vertical.
+
+### Success metrics
+
+Primary: Net Time Saved, Human Active Time, Review Time, Correction Time, false removal of necessary
+pauses, accepted suggestion rate and reverted AI edits.
+
+Compression ratio is not a quality target.
+
+### TASK-007 implementation boundary
+
+Start with immutable Pause Candidate domain/schema and deterministic conservative rules over
+caller-supplied observations. Do not add STT/VAD/prosody inference/LLM reasoning or real timeline
+mutation in the first implementation.

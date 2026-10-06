@@ -232,6 +232,38 @@ editability and correction cost. A future validated Effect Auto Pass may be reco
 only over an approved bounded primitive set and only if evidence shows favorable net time saved.
 
 
+
+
+## ADR-018 - Pause / Dialogue Editing v1 Product Contract
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+The first editing vertical targets spoken-content pacing and dialogue cleanup, not generic
+silence removal or story restructuring.
+
+1. Pause decisions use KEEP / TIGHTEN / REMOVE / REVIEW.
+2. Absolute silence duration is evidence, never the sole decision rule.
+3. TIGHTEN is the primary proactive edit for natural speech pacing.
+4. REMOVE is reserved for high-confidence meaningless recording gaps/dead air.
+5. The cost of a false removal is treated as higher than the cost of a false keep.
+6. Immediate restart, short repetition, and obvious self-correction are in v1 scope.
+7. Long-range semantic redundancy is not auto-deleted in v1.
+8. Filler removal is conservative and context-sensitive; natural speech texture may remain.
+9. Product-level confidence bands are HIGH / MEDIUM / LOW.
+10. HIGH confidence may auto-populate a Shadow Candidate but never silently mutate Main.
+11. MEDIUM confidence goes to batched review rather than interrupting the editor immediately.
+12. Audio + transcript/dialogue structure are the primary v1 evidence sources; visual context
+    is optional supporting evidence and is not required for the first implementation.
+13. Initial supported content focuses on interview, talking-head, podcast, lecture and similar
+    spoken-content workflows; narrative/drama/music-video pacing is outside the first vertical.
+14. Success is measured by net time saved, human active/review/correction time, accepted
+    suggestions, reverted edits, and especially false removal of necessary pauses.
+15. Compression ratio or total duration reduction is not a quality metric.
+
+The first implementation must not introduce STT, VAD, prosody models, LLM reasoning, actual
+timeline mutation, or a learned classifier. TASK-007 starts with immutable Pause Candidate
+domain/schema and a deterministic, conservative rule baseline over caller-supplied observations.
+
+
 # Open Decisions
 
 ## OPEN-006 - Topology correspondence and native track indices
