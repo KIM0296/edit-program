@@ -2,13 +2,13 @@
 
 TASK: TASK-011 — Read-only Resolve Snapshot Domain Foundation
 
-상태: 구현·로컬 검증 완료, Python 3.11 CI 및 Chat Gate 대기.
+상태: 구현·로컬 및 Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-011-read-only-snapshot`.
 Base main: `d69a9f275e125be674b86eeee5ed39002a4b2505`.
 Spec notes: `a730b83`, red tests: `661474c`, 구현: `91a1e4b`.
 후속 보고 commit은 문서 변경이며 최종 제출 head는 PR 본문에 기록합니다.
 
-PR: 생성 후 기록.
+PR: https://github.com/KIM0296/edit-program/pull/21
 근거: [TASK-011 spec](../../tasks/TASK_011_READ_ONLY_RESOLVE_SNAPSHOT.md),
 [ADR-022 상세 계약](../READ_ONLY_RESOLVE_SNAPSHOT_CONTRACT.md).
 요청 Gate: **APPROVED** (Codex 요청이며 Chat 판정 아님).
@@ -48,7 +48,7 @@ PR: 생성 후 기록.
 | Provenance/determinism | PASS: adapter version 및 snapshot/profile/current-ref 결과에 유지 |
 | No side effects | PASS: mapper/classifier/relationship/evidence/safety/authority/executor 차단 |
 | TASK-001~010 regression | PASS: 기존 source/test 변경 없음 |
-| Python 3.11 CI | PR 생성 후 확인 예정 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37422177969 |
 | Ruff / strict mypy | PASS: 13 source files |
 
 실제 Resolve capture/discovery/token generation, persistent identity 해결, semantic role inference,
@@ -77,11 +77,11 @@ DB/network/UI 및 TASK-012는 구현하지 않았습니다.
  IMPLEMENTATION_STATUS.md                     |  24 +
  KNOWN_LIMITATIONS.md                         |  31 ++
  docs/TEST_MATRIX.md                          |  26 ++
- docs/reports/TASK_011_COMPLETION.md          | 175 +++++++
+ docs/reports/TASK_011_COMPLETION.md          | 177 +++++++
  src/davinci_ai_editor/native_snapshot.py     | 664 +++++++++++++++++++++++++++
  tasks/TASK_011_READ_ONLY_RESOLVE_SNAPSHOT.md |  32 +-
  tests/test_native_snapshot.py                | 540 ++++++++++++++++++++++
- 8 files changed, 1505 insertions(+), 1 deletion(-)
+ 8 files changed, 1507 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -91,7 +91,9 @@ DB/network/UI 및 TASK-012는 구현하지 않았습니다.
 - Passed: 563개, 신규 TASK-011 77개. Ruff PASS, strict mypy PASS (13 source files).
 - Failed: 최종 로컬 검사 0개.
 - Skipped: 1개 — test_naive_inv001.py의 opt-in intentional red demo. 일반 INV-001 회귀는 PASS.
-- CI: Python 3.11 PR run 대기.
+- CI: Ubuntu CPython 3.11.16, 563 passed / 1 skipped, Ruff 및 strict mypy PASS.
+  [검증 run 37422177969](https://github.com/KIM0296/edit-program/actions/runs/37422177969).
+  문서 갱신 후 최종 head CI도 확인하여 PR 본문에 연결합니다.
 - 미실행: 실제 Resolve/API, native capture consistency/identity/token truth 검증 — 승인 범위 밖.
 
 Red-first: source 작성 전 `davinci_ai_editor.native_snapshot` import가 ModuleNotFoundError로

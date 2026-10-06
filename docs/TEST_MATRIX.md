@@ -218,7 +218,7 @@ state-token realization, real Resolve behavior, actual A/V sync or rollback.
 ## TASK-011 read-only snapshot / feature readiness
 
 Local Windows CPython 3.14.6: 563 passed / 0 failed / 1 skipped; 77 new tests.
-Ruff / strict mypy PASS (13 source files). Python 3.11 CI: pending PR run.
+Ruff / strict mypy PASS (13 source files). Python 3.11.16 CI PASS: run 37422177969, 563 passed / 1 skipped, Ruff/mypy PASS.
 Previous source/tests unchanged. One skip remains the intentional opt-in naive failure.
 
 | Contract | tests/test_native_snapshot.py evidence |

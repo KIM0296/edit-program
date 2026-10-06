@@ -438,7 +438,7 @@ membership reject; missing supported fields cannot claim complete capture. Unkno
 unknown. Retime vocabulary/ranges/rates reuse TASK-010 values without calling its mapper.
 
 Local Windows CPython 3.14.6: 563 passed / 0 failed / 1 skipped, 77 TASK-011 tests.
-Ruff PASS; strict mypy PASS (13 source files). Python 3.11 CI: pending PR run.
+Ruff PASS; strict mypy PASS (13 source files). Python 3.11.16 CI PASS: run 37422177969, 563 passed / 1 skipped, Ruff/mypy PASS.
 Earlier TASK-001..010 source/tests unchanged. Skip is intentional opt-in naive red demo.
 OPEN-001/006/008/012 remain unresolved for production identity/runtime/token guarantees.
 No Resolve, mapping/evidence/planning execution, mutations, DB/network/UI or TASK-012.
