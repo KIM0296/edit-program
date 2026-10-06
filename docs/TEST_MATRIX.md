@@ -213,3 +213,29 @@ Earlier source/tests unchanged. The skip remains the opt-in intentional naive re
 
 These tests do not certify retime safety, native correspondence, production timecode parsing,
 state-token realization, real Resolve behavior, actual A/V sync or rollback.
+
+
+## TASK-011 read-only snapshot / feature readiness
+
+Local Windows CPython 3.14.6: 563 passed / 0 failed / 1 skipped; 77 new tests.
+Ruff / strict mypy PASS (13 source files). Python 3.11 CI: pending PR run.
+Previous source/tests unchanged. One skip remains the intentional opt-in naive failure.
+
+| Contract | tests/test_native_snapshot.py evidence |
+| --- | --- |
+| Immutable snapshots/provenance/profile/result | Frozen fields, nested defensive tuples, repeated deterministic evaluation |
+| Identity lifetime | Four categorical scopes, no numeric confidence, filename basis rejected, snapshot-assigned not promoted |
+| Capability versus value | SUPPORTED + UNKNOWN valid; unsupported/unknown cannot carry TRUE/FALSE; omitted capability unknown |
+| Consistency | CONSISTENT needs supplied reference, UNSTABLE review, UNVERIFIED fails consistency requirement |
+| Completeness versus readiness | PARTIAL not auto-ready, absent supported fields reject complete claim, richer profile UNKNOWN review |
+| Freshness | No state token synthesis, missing token/current ref blocked; timeline/version/token mismatch STALE |
+| Native membership | Repeated media distinct, duplicate IDs/member mismatch/unknown tracks/mixed captures reject |
+| Descriptive metadata | Track index/name no role/identity inference; provenance retained |
+| Retime/ranges/rates | UNKNOWN retained, unsupported kinds represented but analysis blocked; timeline rate coherence |
+| Optional risks/states | Effects/transitions/keyframes/hierarchy/link/sync and lock/mute/enable/solo/autoselect typed only |
+| Execution boundary | Mapper/classifier/relationship compiler/evidence/safety/authority/FakeTimeline forbidden; pure imports |
+
+Initial missing-module red reproduced before source. Additional tests reproduced unknown
+track type passing READY and conflicting timeline rate acceptance before fixing both.
+Real Resolve/API capability, identity/token truth, actual atomic capture, A/V or rollback
+integration remain unverified; no production P0 certification.

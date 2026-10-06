@@ -1,6 +1,6 @@
 # TASK-011 — Read-only Resolve Snapshot Domain Foundation
 
-Status: **Authorized after TASK-010 approval/merge; implementation in progress**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_011_COMPLETION.md**
 
 Basis:
 - ADR-001 Resolve is Source of Truth
@@ -134,7 +134,7 @@ UNKNOWN or absent observations. Explicit UNKNOWN under SUPPORTED remains valid. 
 claim with absent supported fields rejects; explicit UNKNOWN is structurally present, not ready.
 
 PAUSE_ANALYSIS v1 requires complete capture, verified consistency, explicit current snapshot
-comparison, usable (snapshot/session/persistent, never UNKNOWN) identity scopes, typed rates/
+comparison, usable (snapshot/session/persistent, never UNKNOWN) identity scopes, known track types, typed rates/
 ranges and known supported retime kind. This is readiness of analysis inputs, not exact mapped
 boundaries, spoken-content determination or editing authority. It does not call mapping or
 produce evidence. Richer profiles can require more capabilities/observations and narrower

@@ -419,3 +419,27 @@ Existing TASK-001..009 code/tests unchanged; skip remains intentional opt-in nai
 No Resolve, producer, evidence creation, execution or TASK-011 implementation.
 OPEN-001/006/008/012 remain unresolved for production identity/state/runtime behavior.
 Report: docs/reports/TASK_010_COMPLETION.md. Chat Gate pending; do not merge/start TASK-011.
+
+
+## TASK-011 Read-only Native Snapshot Domain - 2026-10-06
+
+User confirms TASK-010 APPROVED/merged. Started from latest main d69a9f2 on branch
+feat/task-011-read-only-snapshot. ADR-022 and prepared TASK-011 are authoritative.
+Spec notes a730b83 and red tests 661474c precede source implementation. Initial red:
+missing davinci_ai_editor.native_snapshot caused one collection error.
+
+Implemented immutable identity scope/basis, adapter provenance, capability manifest,
+observed flags, capture-bound tracks/placements/timeline, versioned requirement profile,
+and deterministic read-only readiness. PAUSE_ANALYSIS requires usable identity, known
+ranges/rates/track type/retime, complete and consistent capture, and explicit freshness.
+Capability and value, consistency and completeness, and READY and authority stay separate.
+No token/identity generation or runtime API claim. Mixed capture IDs and inconsistent
+membership reject; missing supported fields cannot claim complete capture. Unknown remains
+unknown. Retime vocabulary/ranges/rates reuse TASK-010 values without calling its mapper.
+
+Local Windows CPython 3.14.6: 563 passed / 0 failed / 1 skipped, 77 TASK-011 tests.
+Ruff PASS; strict mypy PASS (13 source files). Python 3.11 CI: pending PR run.
+Earlier TASK-001..010 source/tests unchanged. Skip is intentional opt-in naive red demo.
+OPEN-001/006/008/012 remain unresolved for production identity/runtime/token guarantees.
+No Resolve, mapping/evidence/planning execution, mutations, DB/network/UI or TASK-012.
+Report: docs/reports/TASK_011_COMPLETION.md. Chat Gate pending; no merge/next task.
