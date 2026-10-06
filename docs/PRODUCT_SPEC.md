@@ -224,3 +224,19 @@ cross-placement, cross-clip or unresolved conflicting evidence fails closed rath
 rebasing or synthesizing meaning. Native Resolve time/FPS/source mapping is a separate next contract.
 
 Detailed architecture: docs/OBSERVATION_EVIDENCE_CONTRACT.md.
+
+
+## Native Time & Snapshot Mapping v1
+
+Native/source/timeline frame coordinates remain separate typed domains and are mapped only through an
+explicit snapshot-bound placement correspondence. Frame-rate metadata uses exact rational values and
+is not itself mapping authority.
+
+Mixed FPS is supported conservatively: explicit mappings are EXACT only when requested boundaries
+land exactly on integer internal frames. Non-integral boundaries return NON_INTEGRAL and are never
+rounded. The project-wide time primitive remains integer half-open FrameRange; sub-frame/rational
+time is not introduced globally in v1.
+
+Snapshot mismatch is STALE, and mappings do not silently rebase after human edits. EXACT temporal
+mapping is not approval or Safety authority. Detailed contract:
+`docs/NATIVE_TIME_SNAPSHOT_MAPPING.md`.
