@@ -337,12 +337,45 @@ Core rules:
 
 Detailed contract: docs/OBSERVATION_EVIDENCE_CONTRACT.md.
 
+
+
+## ADR-021 - Native Time & Snapshot Mapping Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+Native/source/timeline time must be mapped through explicit snapshot-bound placement correspondence;
+it must never be guessed from filenames, similar timecodes, frame-rate ratios or float seconds.
+
+Core rules:
+1. TIMELINE_FRAME and SOURCE_FRAME are distinct coordinate domains.
+2. Internal project ranges remain integer half-open FrameRange values (ADR-008).
+3. Frame-rate metadata is exact rational; 30000/1001 is not 30/1. Drop-frame labeling is separate
+   from actual frame cadence.
+4. Frame-rate metadata alone never proves source↔timeline placement mapping.
+5. Mapping is bound to timeline ID, product timeline version, opaque native state token, placement
+   identity, media identity and explicit source/timeline spans.
+6. Snapshot mismatch is STALE in v1. No silent rebase or scope-aware reuse.
+7. Mixed FPS is not globally prohibited. An explicit mapping may return EXACT only when both requested
+   boundaries land exactly on integer internal frames.
+8. A mathematically non-integral frame boundary returns NON_INTEGRAL. Never round/floor/ceil.
+9. OUT_OF_RANGE is not clamped and ambiguous placement correspondence is not guessed.
+10. TASK-010 pure lowering supports IDENTITY_1X and explicit AFFINE_FORWARD only.
+    REVERSE/FREEZE/VARIABLE_RETIME/UNKNOWN remain UNSUPPORTED in v1.
+11. Mapping EXACT proves temporal correspondence only; it is not edit approval, Safety clearance or
+    Candidate Authority.
+12. Cross-placement ranges are not collapsed into one SourceRange for ADR-020 single-placement
+    evidence.
+13. Production persistent identity and native track/object correspondence remain OPEN-001/OPEN-006.
+14. Sub-frame/rational time is not introduced as the system-wide domain primitive in v1. If real
+    audio/sample-accurate use proves integer frames insufficient, that requires a separate ADR.
+
+Detailed contract: docs/NATIVE_TIME_SNAPSHOT_MAPPING.md.
+
 # Open Decisions
 
 
 
 ## OPEN-011 - Native Time & Snapshot Mapping
-Status: OPEN (created after ADR-020, 2026-10-06)
+Status: RESOLVED FOR v1 FOUNDATION by ADR-021 (2026-10-06)
 
 ADR-020 requires evidence to be bound to timeline ID/version/placement/range but deliberately accepts
 already-aligned internal integer half-open FrameRange values. Production Resolve source/timeline
