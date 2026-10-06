@@ -186,3 +186,23 @@ Compression ratio is not a quality target.
 Start with immutable Pause Candidate domain/schema and deterministic conservative rules over
 caller-supplied observations. Do not add STT/VAD/prosody inference/LLM reasoning or real timeline
 mutation in the first implementation.
+
+
+## Evaluation Data Contract & Feedback Event Schema v1
+
+Pause Intelligence evaluation separates immutable evidence from derived metrics.
+
+- BENCHMARK: fixed adjudicated reference judgments for regression/model comparison.
+- PILOT: reference + assisted workflow evidence for gate calibration.
+- PRODUCT_FEEDBACK: real-use decisions, corrections, reverts and timing; not benchmark truth.
+
+Store immutable AI proposal snapshots and append-only feedback/timing evidence. Derived outcomes,
+correction classes and metrics must be reproducible from raw evidence. Proposal refresh creates a new
+proposal rather than mutating the old one.
+
+Primary derived product metrics include critical false removal, TIGHTEN range quality, review load,
+decision interruptions, correction debt, human active/mandatory attention time and net time saved.
+Numerical gate thresholds remain a separate versioned policy and are not set before pilot evidence.
+
+The core product-feedback contract should work with opaque references and metadata without requiring
+raw media/full transcripts. Feedback collection does not imply training consent.
