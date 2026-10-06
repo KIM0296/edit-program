@@ -315,3 +315,20 @@ unsafe → reject
   PASS, protection override, approval, actual EditPlan, apply/postflight/promotion or rollback.
   Existing editable topology is not replaced/flattened. Future expected diff/Safety remains
   responsible for actual displacement, protected state, transitions and all other invariants.
+
+
+## TASK-013 geometry resolution limits
+
+- Caller supplies aligned placement range, current snapshot and precomputed mapping status.
+  These values are checked for agreement, not authenticated against Resolve/native state.
+- Only TIGHTEN with one contiguous removal is resolved. Other editorial actions remain
+  unchanged and unsupported here; no REMOVE helper or Planner conversion/execution exists.
+- Invalid individual one-range candidates retain diagnostics and do not suppress another
+  valid candidate. Mixed bindings, multi-range inputs and out-of-pause constraint scope
+  block the whole bundle; no unsupported constraint is silently dropped.
+- Confidence is supplied per support, with all labels retained after equal-range dedup.
+  There is no aggregate confidence, ranking, calibration or producer trust algorithm.
+- Geometry IDs are resolution-scoped metadata, not production persistent object identity.
+- Native freshness/identity (OPEN-001/006/008/012) and deferred OPEN-013 producer/confidence
+  questions remain. No editing quality, seam treatment, native safety or rollback claim.
+- TASK-014 remains unstarted despite prepared ADR-025/spec documents.

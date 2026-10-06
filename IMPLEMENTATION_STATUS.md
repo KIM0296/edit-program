@@ -466,3 +466,25 @@ OPEN-001/006/008/012 remain unresolved for production identity/fact authenticity
 ADR-024 resolves OPEN-013 v1 contract but TASK-013 implementation is not started.
 No geometry inference, mapper/evaluator/compiler invocation, execution, DB/network/UI.
 Report: docs/reports/TASK_012_COMPLETION.md. Chat Gate pending; no merge or next task.
+
+
+## TASK-013 Cut Geometry Resolution Foundation - 2026-10-06
+
+TASK-012 APPROVED/merged per user. Base main bedeb8a; branch
+feat/task-013-cut-geometry-resolution. ADR-024 and prepared TASK-013 retained.
+Spec notes dae94b0 and red tests 7cc71f8 precede implementation. Initial red:
+missing davinci_ai_editor.cut_geometry caused one collection error.
+
+Implemented pure immutable typed constraints, producer-supplied confidence/provenance,
+explicit geometry and anchor-pair paths, exact range validation, diagnostics and resolver.
+Zero/one/multiple distinct valid geometries yield UNRESOLVED/RESOLVED/REVIEW_REQUIRED.
+Equal ranges merge all support metadata; confidence never ranks or determines validity.
+Preserve overlap rejects; all allowed ranges must contain the cut. No repair/inference.
+Mixed binding/unsupported inputs fail closed; snapshot mismatch is STALE, without rebase.
+
+Local Windows CPython 3.14.6: 732 passed / 0 failed / 1 skipped; 87 TASK-013 tests.
+Ruff PASS; strict mypy PASS (15 source files). Python 3.11 CI pending PR.
+Earlier TASK-001..012 source/tests unchanged. Skip is intentional opt-in naive red demo.
+OPEN-001/006/008/012 production guarantees and deferred OPEN-013 topics remain unresolved.
+No media analysis, mapper/evaluator/planner/safety/authority/executor invocation.
+Report: docs/reports/TASK_013_COMPLETION.md. Chat Gate pending; no merge or TASK-014.

@@ -264,3 +264,21 @@ Previous source/tests unchanged. Single skip remains intentional opt-in naive re
 
 No geometry resolver, native runtime, Safety certification, actual A/V sync, mutation or
 rollback integration is implemented/tested. READY_FOR_PREFLIGHT is not Safety PASS.
+
+
+## TASK-013 Cut Geometry Resolution
+
+87 tests in tests/test_cut_geometry.py cover typed immutable inputs/results, defensive
+copies, four constraint kinds, confidence type separation, all confidence combinations,
+explicit and paired-anchor paths, no duration-only defaults, exact arithmetic/no repair,
+preserve overlap, allowed-range intersection, dedup with all provenance, deterministic
+permutations, mixed/current binding, non-EXACT mapping, cross-placement/multi-range failure,
+unchanged editorial action, retained leading/trailing totals and invalid diagnostics.
+Monkeypatch isolation blocks mapper, snapshot readiness, classifier, evidence preparation,
+planner, relationship compiler, safety, authority and FakeTimeline.apply. Import whitelist
+excludes media-analysis and execution dependencies.
+
+Red first: spec notes dae94b0, test commit 7cc71f8; missing cut_geometry module produced
+one collection error before implementation. Local full suite: 732 passed, 0 failed,
+1 intentional naive-demo skip. Ruff and strict mypy (15 source files) PASS.
+Python 3.11 CI pending PR. Earlier TASK-001..012 source/tests unchanged.

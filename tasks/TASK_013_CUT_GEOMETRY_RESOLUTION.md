@@ -1,6 +1,6 @@
 # TASK-013 — Cut Geometry Resolution Foundation
 
-Status: **Authorized after TASK-012 approval/merge; implementation in progress**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_013_COMPLETION.md**
 
 Basis:
 - ADR-018 Pause / Dialogue Editing v1
