@@ -414,7 +414,7 @@ lower. Both boundaries must be integral; no rounding, clamping or FPS-derived ma
 Snapshot mismatch is STALE; ambiguous fragments never combine. EXACT is no authority.
 
 Local Windows CPython 3.14.6: 486 passed / 0 failed / 1 skipped; 71 new TASK-010 tests.
-Ruff PASS; strict mypy PASS (12 source files). Python 3.11 CI: pending PR run.
+Ruff PASS; strict mypy PASS (12 source files). Python 3.11.16 CI PASS: run 37419956502, 486 passed / 1 skipped, Ruff/mypy PASS.
 Existing TASK-001..009 code/tests unchanged; skip remains intentional opt-in naive demo.
 No Resolve, producer, evidence creation, execution or TASK-011 implementation.
 OPEN-001/006/008/012 remain unresolved for production identity/state/runtime behavior.

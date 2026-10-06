@@ -2,13 +2,13 @@
 
 TASK: TASK-010 — Native Time & Snapshot Mapping Foundation
 
-상태: 구현·로컬 검증 완료, Python 3.11 CI 및 Chat Gate 대기.
+상태: 구현·로컬 및 Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-010-native-time-mapping`.
 Base main: `90bbe30d014436c1aa750114f526c3ae93ea5c6f`.
 Spec/API notes: `5922433`, red tests: `a52d63b`, 구현: `0350554`.
 후속 보고 commit은 문서 변경이며 최종 제출 head는 PR 본문에 기록합니다.
 
-PR: 생성 후 기록.
+PR: https://github.com/KIM0296/edit-program/pull/19
 근거: [TASK-010 spec](../../tasks/TASK_010_NATIVE_TIME_MAPPING.md),
 [ADR-021 상세 계약](../NATIVE_TIME_SNAPSHOT_MAPPING.md).
 요청 Gate: **APPROVED** (Codex 요청이며 Chat 판정 아님).
@@ -45,7 +45,7 @@ FrameRate만으로 transform을 만들지 않으며, fractional boundary를 반�
 | Immutable / deterministic | PASS: frozen nested values, defensive tuple, permutation |
 | No execution / evidence generation | PASS: monkeypatch와 pure import 경계 검사 |
 | TASK-001~009 regression | PASS: 기존 source/test 변경 없음 |
-| Python 3.11 CI | PR 생성 후 확인 예정 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37419956502 |
 | Ruff / strict mypy | PASS: 12 source files |
 
 Resolve API, SMPTE parser, native discovery, persistent ID 해결, media 분석, Evidence 생성,
@@ -73,11 +73,11 @@ StableTarget/EditPlan lowering, retime execution, DB/network/UI 및 TASK-011은 
  IMPLEMENTATION_STATUS.md                  |  21 ++
  KNOWN_LIMITATIONS.md                      |  30 ++
  docs/TEST_MATRIX.md                       |  24 ++
- docs/reports/TASK_010_COMPLETION.md       | 173 +++++++++++
+ docs/reports/TASK_010_COMPLETION.md       | 175 +++++++++++
  src/davinci_ai_editor/temporal_mapping.py | 322 +++++++++++++++++++++
  tasks/TASK_010_NATIVE_TIME_MAPPING.md     |  26 +-
  tests/test_temporal_mapping.py            | 464 ++++++++++++++++++++++++++++++
- 8 files changed, 1071 insertions(+), 1 deletion(-)
+ 8 files changed, 1073 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -87,7 +87,9 @@ StableTarget/EditPlan lowering, retime execution, DB/network/UI 및 TASK-011은 
 - Passed: 486개 (신규 TASK-010 71개), Ruff PASS, strict mypy PASS (12 files).
 - Failed: 최종 로컬 검사 0개.
 - Skipped: 1개 — test_naive_inv001.py의 opt-in intentional red demo. 일반 INV-001 회귀는 실행/PASS.
-- CI: Python 3.11 PR run 대기.
+- CI: Ubuntu CPython 3.11.16, 486 passed / 1 skipped, Ruff 및 strict mypy PASS.
+  [검증 run 37419956502](https://github.com/KIM0296/edit-program/actions/runs/37419956502).
+  보고서 갱신 후 최종 head CI도 확인하여 PR 본문에 연결합니다.
 - 미실행: 실제 Resolve/native token/mapping 정확성 및 retime/A/V/rollback 통합 검증. 범위 밖입니다.
 
 Red-first: 신규 테스트를 source 작성 전에 실행하여 `davinci_ai_editor.temporal_mapping`이 없는

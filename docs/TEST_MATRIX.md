@@ -194,7 +194,7 @@ production integration are not verified or implemented by these tests.
 ## TASK-010 native time / snapshot mapping
 
 Local Windows CPython 3.14.6: 486 passed / 0 failed / 1 skipped; 71 new tests.
-Ruff / strict mypy PASS (12 source files). Python 3.11 CI: pending PR run.
+Ruff / strict mypy PASS (12 source files). Python 3.11.16 CI PASS: run 37419956502, 486 passed / 1 skipped, Ruff/mypy PASS.
 Earlier source/tests unchanged. The skip remains the opt-in intentional naive red demo.
 
 | Contract | tests/test_temporal_mapping.py evidence |
