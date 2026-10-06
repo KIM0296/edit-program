@@ -284,3 +284,34 @@ unsafe → reject
 - Real native capture, capability discovery, time normalization, feature evidence, Safety,
   authority, observer/partial refresh, DB/network/UI and TASK-012 remain outside this task.
   Public result values are structural evidence records, not security/authorization tokens.
+
+
+## TASK-012 pause planning limits
+
+- Planner consumes explicitly bound caller facts and assessment references. It does not
+  authenticate underlying mapper/native/dependency output, bridge native refs to fake IDs,
+  or prove real-time currentness. OPEN-001/006/008/012 remain relevant.
+- Existing PauseCandidate has no artifact ID/state token; caller supplies PlanningBinding.
+  Candidate timeline/version/object/pause is checked against it. No Candidate Authority
+  identity or production native identity is inferred. Inputs are not authorization tokens.
+- Only caller-supplied geometry v1 is consumed. No confidence, waveform, retained duration,
+  global threshold or anchor rule generates a cut. TASK-013 is not implemented.
+- Exactly one removal range is supported; zero/multiple ranges, out-of-pause cuts and
+  arithmetic conflicts fail closed. Geometry retains original range order/shape for audit.
+  Noninteger/negative duration and malformed values reject structurally; no rounding/repair.
+- EXACT target fact must cover the actual removed primary range, and its explicit placement
+  span must contain the pause. Exactness of the whole pause alone is insufficient. No mapper
+  or boundary conversion is executed. Geometry spanning placements is unsupported.
+- Dependency readiness must name the same geometry artifact, primary range and temporal
+  intent. Resolved is only a supplied assessment; no relation policy, ripple displacement,
+  linked delete/trim or subtitle movement is generated.
+- Required snapshot readiness is always supplied as a typed status plus profile/assessment
+  reference, never recomputed. No weak readiness is promoted to READY by candidate confidence.
+- KEEP/REVIEW bypass destructive planning entirely and produce no proposal even if stale or
+  invalid semantic geometry is supplied. This is not a freshness certification for that input.
+- Failure reasons accumulate; disposition precedence is stale, unsupported, target, geometry,
+  then dependency requirements. Only successful READY_FOR_PREFLIGHT carries a proposal.
+- SHORTEN_GAP/CLOSE_GAP are descriptive temporal intents. There is no ripple boolean, Safety
+  PASS, protection override, approval, actual EditPlan, apply/postflight/promotion or rollback.
+  Existing editable topology is not replaced/flattened. Future expected diff/Safety remains
+  responsible for actual displacement, protected state, transitions and all other invariants.

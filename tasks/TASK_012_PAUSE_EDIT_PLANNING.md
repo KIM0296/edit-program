@@ -1,6 +1,6 @@
 # TASK-012 — Pause Edit Planning Foundation
 
-Status: **Authorized after TASK-011 approval/merge; implementation in progress**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_012_COMPLETION.md**
 
 Basis:
 - ADR-013 Relationship Execution Semantics v1

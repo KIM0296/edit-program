@@ -239,3 +239,28 @@ Initial missing-module red reproduced before source. Additional tests reproduced
 track type passing READY and conflicting timeline rate acceptance before fixing both.
 Real Resolve/API capability, identity/token truth, actual atomic capture, A/V or rollback
 integration remain unverified; no production P0 certification.
+
+
+## TASK-012 pause edit planning
+
+Local Windows CPython 3.14.6: 645 passed / 0 failed / 1 skipped; 82 new tests.
+Ruff / strict mypy PASS (14 source files). Python 3.11 CI: pending PR run.
+Previous source/tests unchanged. Single skip remains intentional opt-in naive red demo.
+
+| Contract | tests/test_pause_planning.py evidence |
+| --- | --- |
+| KEEP / REVIEW | NO_OP / REVIEW_ONLY even with supplied invalid/stale geometry; no proposal |
+| Explicit geometry | Missing TIGHTEN/REMOVE geometry blocked; no retained-only generation |
+| TIGHTEN | One contained range, exact retained arithmetic; multi/zero/outside/mismatch fail closed |
+| REMOVE | Explicit full-pause, zero retained; partial/adjacent-speech expansion rejected |
+| No repair | One-frame overflow and arbitrary valid supplied cut positions preserved verbatim |
+| Binding / Human priority | Candidate/geometry/facts timeline/version/token, placement/pause/candidate ref checks |
+| Target / snapshot readiness | Only supplied current EXACT/READY; missing and all other statuses block |
+| Primary-range exactness | Whole-pause EXACT cannot authorize different removal boundaries |
+| Dependency | Unresolved/conflict/unsupported, geometry ID/range/intent mismatch blocks; no cascade |
+| Confidence / repeated media | HIGH cannot bypass gates; media identity cannot rebind placement |
+| Immutable / deterministic | Frozen nested values, defensive tuples, raw reasons/input retention |
+| Pure boundary | No mapper/evaluator/classifier/compiler/evidence/safety/authority/executor; import whitelist |
+
+No geometry resolver, native runtime, Safety certification, actual A/V sync, mutation or
+rollback integration is implemented/tested. READY_FOR_PREFLIGHT is not Safety PASS.
