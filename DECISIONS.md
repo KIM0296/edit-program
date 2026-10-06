@@ -407,7 +407,61 @@ Core rules:
 
 Detailed contract: docs/READ_ONLY_RESOLVE_SNAPSHOT_CONTRACT.md.
 
+
+
+## ADR-023 - Pause Edit Planning & Safety Lowering Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-06
+
+Pause editorial decisions must not be lowered directly into executable timeline commands.
+
+Core rules:
+1. A Pause decision specifies editorial intent, not cut geometry.
+2. TIGHTEN may not be lowered until exact retained/removed temporal geometry is explicitly resolved.
+3. PlanningDisposition and SafetyDisposition are separate; READY_FOR_PREFLIGHT is not Safety PASS.
+4. KEEP -> NO_OP and REVIEW -> REVIEW_ONLY; neither creates a destructive plan.
+5. TIGHTEN v1 supports exactly one contiguous removed range.
+6. TIGHTEN geometry must be contained in the original pause and its removed duration must exactly
+   equal original duration minus candidate retained frames. Do not clamp/repair mismatches.
+7. REMOVE also uses a separate explicit geometry artifact; v1 full-pause removal geometry removes
+   exactly the pause and retains zero frames.
+8. TASK-012 is a geometry consumer only. Caller-supplied geometry is structurally/binding validated
+   but not inferred from audio, prosody, semantics or candidate confidence.
+9. Geometry production belongs to a separate future Cut Geometry Resolution Contract.
+10. Candidate confidence never bypasses current target, exact mapping, geometry, dependency or Safety.
+11. Planner consumes already-computed mapping/snapshot/dependency readiness and does not reimplement
+    those layers or invoke them as side effects.
+12. Ripple mechanics are not inferred directly from TIGHTEN/REMOVE; expected displacement must be
+    explicit in later plan compilation/Safety.
+13. Relationship membership never implies automatic delete/trim/move propagation; ADR-013 remains
+    authoritative.
+14. Human edits invalidate stale candidate/geometry/dependency artifacts; no silent rebase.
+15. Planner output remains immutable descriptive proposal data, not Approval/Apply authority.
+
+Detailed contract: docs/PAUSE_EDIT_PLANNING_CONTRACT.md.
+
 # Open Decisions
+
+
+## OPEN-013 - Cut Geometry Resolution Contract
+Status: OPEN (created by ADR-023, 2026-10-06)
+
+ADR-023 deliberately makes TASK-012 a geometry consumer only. The project still needs a separate
+contract for producing exact TIGHTEN cut geometry from media/context evidence.
+
+Future Chat Architecture Review must decide:
+- which inputs may produce geometry (human selection, speech boundaries, breath/prosody, local pacing)
+- whether one or multiple geometry candidates may be proposed
+- geometry confidence/provenance semantics
+- preservation of speech attack/release, breath and room tone
+- how geometry producer uncertainty routes to review
+- evaluation/reference data for geometry quality
+- whether any geometry class can become auto-eligible
+- interaction with mixed-FPS exact mapping and snapshot freshness
+
+Until that contract is accepted, no task may infer TIGHTEN cut positions from retained_frames,
+duration, waveform, VAD/STT/prosody or LLM context. TASK-012 accepts explicit caller-supplied geometry
+only and validates its structure/binding.
+
 
 
 ## OPEN-012 - Resolve Adapter Runtime Capability / State Identity Realization
