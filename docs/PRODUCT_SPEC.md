@@ -272,3 +272,27 @@ READY_FOR_PREFLIGHT. Planning readiness is not Safety PASS, approval or apply au
 generation is deferred to OPEN-013 / a future Cut Geometry Resolution Contract.
 
 Detailed contract: `docs/PAUSE_EDIT_PLANNING_CONTRACT.md`.
+
+
+## Cut Geometry Resolution v1
+
+TIGHTEN retained duration defines how much pause remains, not where the cut occurs. Exact cut
+geometry is resolved from explicit typed constraints only.
+
+The v1 vocabulary is limited to CUT_START_ANCHOR, CUT_END_ANCHOR, MUST_PRESERVE_RANGE and
+ALLOWED_REMOVAL_RANGE. GeometryConfidence is producer-supplied descriptive metadata and is neither
+derived nor used to rank alternatives.
+
+The resolver preserves natural editorial ambiguity:
+
+```text
+0 distinct valid geometries -> UNRESOLVED
+1 distinct valid geometry  -> RESOLVED
+2+ distinct valid geometries -> REVIEW_REQUIRED
+```
+
+TASK-013 is a pure geometry-resolution foundation. Raw audio/VAD/STT/prosody/semantic geometry
+producers, confidence calibration, alternative ranking, seam treatment and actual editing remain
+outside v1.
+
+Detailed contract: `docs/CUT_GEOMETRY_RESOLUTION_CONTRACT.md`.
