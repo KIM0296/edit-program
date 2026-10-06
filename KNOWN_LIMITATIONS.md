@@ -253,3 +253,34 @@ unsafe → reject
 - No native SMPTE/drop-frame parsing, mapping inference, decoding, actual adapter, media
   intelligence, execution, storage/network/UI or TASK-011. Synthetic tests prove arithmetic
   and domain boundaries only; real Resolve correspondence awaits separate approved work.
+
+
+## TASK-011 read-only snapshot / readiness limits
+
+- Caller supplies identity scopes/bases, capability declarations, capture IDs, consistency
+  evidence refs and state token. This domain validates their shape/coherence, not native
+  truth, persistent continuity or live freshness (OPEN-001/006/008/012). No tokens generated.
+- Explicit FILENAME_ONLY identity basis rejects. Opaque reference strings are not lexically
+  classified as filenames; lying about NATIVE/ADAPTER_VERIFIED basis cannot be detected here.
+  Snapshot-assigned identities cannot claim session/persistent lifetime. No fuzzy score.
+- Known observations require SUPPORTED capability. SUPPORTED + explicit UNKNOWN is valid.
+  Missing supported fields require PARTIAL, while explicit UNKNOWN can be structurally complete.
+  A manifest's omitted capability reads UNKNOWN, never FALSE or implicitly SUPPORTED.
+- Different capture IDs reject instead of joining old cached/new values. CONSISTENT needs a
+  supplied evidence ref. This cannot prove that an adapter actually read everything atomically.
+- PAUSE_ANALYSIS v1 is whole-snapshot input readiness, requiring all captured placements'
+  identity/ranges/rates/retime and known track types, complete capture, consistency and current
+  snapshot comparison. Unknown required fields fail closed; empty input requires review.
+  It does not determine spoken content or exact mapping boundaries, or run pause analysis.
+- Snapshot-local identities are usable only for this explicitly current captured analysis;
+  readiness never promotes lifetime or grants cross-capture identity correspondence.
+- Optional native observations are typed presence/state flags only; links/sync do not bind
+  member graphs or imply move/delete together. No policy propagation or semantic track role.
+- Profiles carry explicit ID/version, capability/scopes and requirements. Richer profiles
+  cannot infer values from completeness. Only the conservative analysis profile is shipped;
+  arbitrary caller profiles are metadata, not an approved destructive product contract.
+- Multiple problems are preserved as issues. Status precedence: STALE, UNSUPPORTED,
+  REVIEW_REQUIRED, UNVERIFIED, then READY. Snapshot data never changes during evaluation.
+- Real native capture, capability discovery, time normalization, feature evidence, Safety,
+  authority, observer/partial refresh, DB/network/UI and TASK-012 remain outside this task.
+  Public result values are structural evidence records, not security/authorization tokens.

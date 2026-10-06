@@ -778,3 +778,17 @@ Inferring these from FPS/filename/timecode would violate ADR-021; the alternativ
 (recommended here) is explicit binding plus fail-closed validation. Runtime discovery,
 scope-aware reuse and production correspondence stay deferred. No new native policy
 or accepted architecture decision is introduced. TASK-011 remains unstarted.
+
+
+## TASK-011 application of OPEN-012 (and OPEN-001/006/008)
+
+User confirms TASK-010 APPROVED/merged. ADR-022 leaves native identity lifetime evidence,
+capability availability, consistency proof and state-token derivation dependent on actual
+runtime/API validation. This foundation accepts explicit categorical claims and evidence
+references; it cannot verify native truth or turn opaque strings into persistent identity.
+Options: infer capabilities/identity/freshness from metadata (forbidden), or preserve
+unknown/partial/unverified values and block readiness (recommended). Runtime capability
+verification and producer-specific token algorithms remain OPEN-012, not implemented.
+PAUSE_ANALYSIS is a versioned conservative input-readiness profile only. Passing it is not
+mapping EXACT, content classification, Safety clearance or authority. Native integration,
+partial refresh and production identity remain deferred; TASK-012 is not authorized here.
