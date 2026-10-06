@@ -2,13 +2,13 @@
 
 TASK: TASK-012 — Pause Edit Planning Foundation
 
-상태: 구현·로컬 검증 완료, Python 3.11 CI 및 Chat Gate 대기.
+상태: 구현·로컬 및 Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-012-pause-edit-planning`.
 Base main: `34b3e3547d370404c5179ac37c227c0065e1224d`.
 Spec notes: `4cfb682`, red tests: `9fc5fe8`, 구현: `1441154`.
 후속 보고 commit은 문서 변경이며 최종 제출 head는 PR 본문에 기록합니다.
 
-PR: 생성 후 기록.
+PR: https://github.com/KIM0296/edit-program/pull/23
 근거: [TASK-012 spec](../../tasks/TASK_012_PAUSE_EDIT_PLANNING.md),
 [ADR-023 상세 계약](../PAUSE_EDIT_PLANNING_CONTRACT.md).
 요청 Gate: **APPROVED** (Codex 요청이며 Chat 판정 아님).
@@ -47,7 +47,7 @@ preflight를 위한 primary temporal proposal 준비 여부만 판단하는 pure
 | Confidence not bypass | PASS: MEDIUM/HIGH 모두 필수 stage 검사 |
 | Planning vs Safety | PASS: proposal은 READY_FOR_PREFLIGHT에만, authority/실행 필드·호출 없음 |
 | TASK-001~011 regression | PASS: 기존 source/test 변경 없음 |
-| Python 3.11 CI | PR 생성 후 확인 예정 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37424238137 |
 | Ruff / strict mypy | PASS: 14 source files |
 
 TASK-013 resolver/constraints/anchors, waveform/VAD/STT/prosody, native API, mapping execution,
@@ -76,11 +76,11 @@ EditPlan execution, approval/apply/postflight/rollback 및 DB/network/UI는 구�
  IMPLEMENTATION_STATUS.md                |  23 ++
  KNOWN_LIMITATIONS.md                    |  31 ++
  docs/TEST_MATRIX.md                     |  25 ++
- docs/reports/TASK_012_COMPLETION.md     | 175 ++++++++++++
+ docs/reports/TASK_012_COMPLETION.md     | 177 ++++++++++++
  src/davinci_ai_editor/pause_planning.py | 489 ++++++++++++++++++++++++++++++++
  tasks/TASK_012_PAUSE_EDIT_PLANNING.md   |  31 +-
  tests/test_pause_planning.py            | 459 ++++++++++++++++++++++++++++++
- 8 files changed, 1247 insertions(+), 1 deletion(-)
+ 8 files changed, 1249 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -90,7 +90,9 @@ EditPlan execution, approval/apply/postflight/rollback 및 DB/network/UI는 구�
 - Passed: 645개, 신규 TASK-012 82개. Ruff PASS, strict mypy PASS (14 source files).
 - Failed: 최종 로컬 검사 0개.
 - Skipped: 1개 — test_naive_inv001.py의 opt-in intentional red demo. 일반 INV-001 회귀는 PASS.
-- CI: Python 3.11 PR run 대기.
+- CI: Ubuntu CPython 3.11.16, 645 passed / 1 skipped, Ruff 및 strict mypy PASS.
+  [검증 run 37424238137](https://github.com/KIM0296/edit-program/actions/runs/37424238137).
+  문서 갱신 후 최종 head CI도 확인하여 PR 본문에 연결합니다.
 - 미실행: 실제 native runtime, geometry 품질/producer, execution/Safety/A/V/rollback 통합 검증 — 범위 밖.
 
 Red-first: source 작성 전 `davinci_ai_editor.pause_planning`이 없어 ModuleNotFoundError / collection

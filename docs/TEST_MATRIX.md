@@ -244,7 +244,7 @@ integration remain unverified; no production P0 certification.
 ## TASK-012 pause edit planning
 
 Local Windows CPython 3.14.6: 645 passed / 0 failed / 1 skipped; 82 new tests.
-Ruff / strict mypy PASS (14 source files). Python 3.11 CI: pending PR run.
+Ruff / strict mypy PASS (14 source files). Python 3.11.16 CI PASS: run 37424238137, 645 passed / 1 skipped, Ruff/mypy PASS.
 Previous source/tests unchanged. Single skip remains intentional opt-in naive red demo.
 
 | Contract | tests/test_pause_planning.py evidence |

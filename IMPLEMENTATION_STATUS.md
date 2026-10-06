@@ -460,7 +460,7 @@ Snapshot mismatch blocks STALE. Primary-range target and action/geometry-specifi
 facts must agree. Only READY_FOR_PREFLIGHT carries a proposal; no Safety/Authority fields.
 
 Local Windows CPython 3.14.6: 645 passed / 0 failed / 1 skipped; 82 TASK-012 tests.
-Ruff PASS; strict mypy PASS (14 source files). Python 3.11 CI: pending PR run.
+Ruff PASS; strict mypy PASS (14 source files). Python 3.11.16 CI PASS: run 37424238137, 645 passed / 1 skipped, Ruff/mypy PASS.
 Earlier TASK-001..011 source/tests unchanged. Skip is intentional opt-in naive red demo.
 OPEN-001/006/008/012 remain unresolved for production identity/fact authenticity/freshness.
 ADR-024 resolves OPEN-013 v1 contract but TASK-013 implementation is not started.
