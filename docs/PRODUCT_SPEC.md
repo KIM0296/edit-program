@@ -296,3 +296,21 @@ producers, confidence calibration, alternative ranking, seam treatment and actua
 outside v1.
 
 Detailed contract: `docs/CUT_GEOMETRY_RESOLUTION_CONTRACT.md`.
+
+
+## Expected Diff & Temporal Displacement v1
+
+Pause gap closure is represented as an explicit primary range removal plus an explicit concrete
+displacement manifest. A ripple boolean or all-downstream instruction is not sufficient.
+
+The compiler consumes a precomputed participant assessment and does not decide who participates.
+Initial supported participants are pure translations with uniform integer delta equal to negative
+removed duration. Within an explicit PreservationScope, any object not listed as changed is expected
+unchanged.
+
+ExpectedDiff completeness is separate from Safety acceptability: a fully described consequence may
+be READY_FOR_PREFLIGHT even when Safety will reject it. Future postflight verification requires exact
+Expected Diff = Actual Diff; unverified, missing, extra or one-frame-wrong changes do not count as a
+match.
+
+Detailed contract: `docs/EXPECTED_DIFF_TEMPORAL_DISPLACEMENT_CONTRACT.md`.
