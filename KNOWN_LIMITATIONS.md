@@ -223,3 +223,33 @@ unsafe → reject
   OPEN-009 and OPEN-001/006. ADR-021 now resolves OPEN-011 v1 mapping semantics, but
   that implementation belongs to TASK-010 and is not started here. These synthetic tests
   make no real editing-quality claim.
+
+
+## TASK-010 temporal mapping limits
+
+- Mathematical correspondence is conditional on caller-supplied bindings and current
+  snapshot. No Resolve truth, live freshness, state-token generation, native discovery or
+  persistent identity is proven (OPEN-001/006/008/012). Object IDs remain fake lineage.
+- Distinct SourceFrameRange/TimelineFrameRange wrap existing integer half-open FrameRange.
+  Rational arithmetic stays inside the mapper; no global fractional time primitive.
+  Rate canonicalization is exact gcd reduction, not temporal boundary rounding.
+- Explicit IDENTITY_1X has equal span lengths; AFFINE_FORWARD slope comes from supplied
+  spans, never FPS. FPS metadata is not physical retime validation or INV-007 certification.
+- Reverse/freeze/variable/unknown kinds are representable descriptors but never lowered.
+  FrameRange remains nonempty even for unsupported descriptor spans; this is not a complete
+  production freeze/retime representation or sample-accurate audio model.
+- Requests require placement AND media. Single-fragment containment resolves explicit
+  fragments of that identity only; multiple containing bindings are AMBIGUOUS. Cross-fragment
+  ranges never union. If no containing binding exists, multiple overlapping supplied spans
+  conservatively report ambiguity; otherwise OUT_OF_RANGE, without clamp.
+- Any relevant old-snapshot binding blocks as STALE, even alongside a fresh candidate.
+  No latest-binding winner or scope-aware reuse. Unrelated identities are not selected.
+- No supplied binding -> UNSUPPORTED; identity mismatch -> AMBIGUOUS. Duplicate references
+  within requested placement/media candidates are AMBIGUOUS. No global ID registry exists.
+- Only EXACT carries a complete source/timeline range pair and selected binding. Failures
+  retain raw request/candidate/current-snapshot provenance, not a usable mapped output.
+- Public values are data contracts, not authorization/security tokens. Even EXACT cannot
+  bypass future ordinary Safety/Authority checks or create Evidence/StableTarget/EditPlan.
+- No native SMPTE/drop-frame parsing, mapping inference, decoding, actual adapter, media
+  intelligence, execution, storage/network/UI or TASK-011. Synthetic tests prove arithmetic
+  and domain boundaries only; real Resolve correspondence awaits separate approved work.

@@ -1,6 +1,6 @@
 # TASK-010 — Native Time & Snapshot Mapping Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-009 IS APPROVED/MERGED**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_010_COMPLETION.md**
 
 Basis:
 - ADR-008 Integer Half-open Internal FrameRange
@@ -148,3 +148,27 @@ timeline mutation, DB/telemetry/network/UI.
 9. Write docs/reports/TASK_010_COMPLETION.md.
 10. Open PR and request Chat Gate.
 11. Do not merge or start the next task automatically.
+
+
+## Implementation notes recorded before source
+
+Use `temporal_mapping.py` with frozen FrameRate, NativeSnapshotRef, distinct
+SourceFrameRange/TimelineFrameRange wrappers over existing FrameRange, explicit
+PlacementTemporalBinding, MappingRequest and TemporalMappingResult.
+`map_range(request, bindings, current_snapshot)` reads an immutable copy of supplied
+bindings. Identity is explicitly requested, never selected from media/ranges alone.
+Concrete fragment containment disambiguates fragments within that requested identity;
+multiple containing bindings are AMBIGUOUS. A range crossing supplied fragments is
+AMBIGUOUS, never combined. No containing binding otherwise yields OUT_OF_RANGE.
+Missing correspondence or identity mismatch cannot produce EXACT. Relevant snapshot
+mismatches return STALE before lowering; no current binding silently replaces an old one.
+
+IDENTITY_1X requires equal explicit span lengths. AFFINE_FORWARD uses span endpoints,
+not rate ratios. Only internal calculation uses Fraction; successful outputs remain
+integer FrameRange wrappers. Result retains request, supplied bindings and current
+snapshot provenance; only EXACT contains the mapped source/timeline pair and selected
+binding. Mapping references are opaque caller values, not native persistent identities.
+
+Existing OPEN-001/006/008 and ADR-022 OPEN-012 retain production identity, state-token
+realization and scope-aware invalidation questions. This task does not implement the
+already-prepared TASK-011 or any adapter capability.
