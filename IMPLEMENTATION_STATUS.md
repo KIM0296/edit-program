@@ -443,3 +443,26 @@ Earlier TASK-001..010 source/tests unchanged. Skip is intentional opt-in naive r
 OPEN-001/006/008/012 remain unresolved for production identity/runtime/token guarantees.
 No Resolve, mapping/evidence/planning execution, mutations, DB/network/UI or TASK-012.
 Report: docs/reports/TASK_011_COMPLETION.md. Chat Gate pending; no merge/next task.
+
+
+## TASK-012 Pause Edit Planning Foundation - 2026-10-06
+
+TASK-011 APPROVED/merged per user. Latest-main base 34b3e35; branch
+feat/task-012-pause-edit-planning. ADR-023 and prepared TASK-012 retained.
+Spec notes 4cfb682 and red tests 9fc5fe8 precede source. Initial red was one
+collection error: missing davinci_ai_editor.pause_planning.
+
+Implemented immutable explicit geometry/provenance/binding, supplied target/snapshot/
+dependency facts, temporal intent, proposal and pure plan_pause. KEEP/REVIEW never
+produce destructive proposals. TIGHTEN requires one contained removal with exact retained
+arithmetic; REMOVE requires explicit full-pause geometry with zero retained. No repair.
+Snapshot mismatch blocks STALE. Primary-range target and action/geometry-specific dependency
+facts must agree. Only READY_FOR_PREFLIGHT carries a proposal; no Safety/Authority fields.
+
+Local Windows CPython 3.14.6: 645 passed / 0 failed / 1 skipped; 82 TASK-012 tests.
+Ruff PASS; strict mypy PASS (14 source files). Python 3.11.16 CI PASS: run 37424238137, 645 passed / 1 skipped, Ruff/mypy PASS.
+Earlier TASK-001..011 source/tests unchanged. Skip is intentional opt-in naive red demo.
+OPEN-001/006/008/012 remain unresolved for production identity/fact authenticity/freshness.
+ADR-024 resolves OPEN-013 v1 contract but TASK-013 implementation is not started.
+No geometry inference, mapper/evaluator/compiler invocation, execution, DB/network/UI.
+Report: docs/reports/TASK_012_COMPLETION.md. Chat Gate pending; no merge or next task.
