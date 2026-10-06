@@ -1,6 +1,6 @@
 # TASK-013 — Cut Geometry Resolution Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-012 IS APPROVED/MERGED**
+Status: **Authorized after TASK-012 approval/merge; implementation in progress**
 
 Basis:
 - ADR-018 Pause / Dialogue Editing v1
@@ -288,3 +288,30 @@ Given a TIGHTEN candidate and explicit current typed constraints, the foundation
 one-range geometry candidates, preserves ambiguity and provenance, and returns RESOLVED only when one
 distinct valid geometry remains — without guessing cut location, deriving confidence, ranking
 alternatives, analyzing media or crossing execution boundaries.
+
+
+## Implementation notes (before source)
+
+`cut_geometry.py` reuses PlanningBinding and existing integer FrameRange; no Planner call.
+GeometryResolutionInput includes caller resolution ref, TIGHTEN candidate, binding/current
+NativeSnapshotRef, explicit placement span and precomputed MappingStatus. Only current EXACT
+already-aligned input is considered. No mapping/native identity discovery occurs.
+
+Constraint payloads are typed integer anchors or FrameRange values according to exactly four
+kinds. ExplicitGeometryInput keeps a tuple of supplied ranges so multi-range input can return
+UNSUPPORTED without repair. Duplicate source IDs reject. Mixed binding/version/contract or
+out-of-pause constraint scope blocks the bundle rather than silently dropping constraints.
+Invalid individual one-range explicit geometries/anchor pairs are diagnosed independently.
+
+Candidate ranges arise only from each explicit geometry or explicit start/end pair. Every
+preserve/allowed constraint applies to each candidate; allowed constraints use intersection.
+Canonical output sorts by exact range, never preference. Equal ranges merge support records
+including every contributing producer, supplied GeometryConfidence and constraint/input ID.
+Candidate confidence metadata is per-support (with a descriptive set of supplied labels),
+not an invented aggregate/winning confidence. This avoids deciding deferred calibration policy.
+
+Retained leading/trailing/total values are derived from the unmodified range. Candidate IDs
+are deterministic within caller resolution_ref plus boundaries; not persistent native IDs.
+Results retain immutable raw inputs and rejection diagnostics. 0/1/2+ valid distinct ranges
+map to UNRESOLVED/RESOLVED/REVIEW_REQUIRED, barring stale/unsupported contract failures.
+Non-TIGHTEN actions are UNSUPPORTED, unchanged; no REMOVE helper or Planner lowering is added.
