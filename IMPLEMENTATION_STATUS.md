@@ -62,7 +62,7 @@
 - [ ] Safe Delete
 - [ ] Safe Ripple
 
-Current task: `TASK-006` candidate authority/concurrency state foundation implemented; PR #8 and Python 3.11 CI passed; Chat Gate pending. TASK-005 approved/merged via PR #6; ADR-015/016 accepted in main.
+Current task: `TASK-007` Pause Candidate baseline implemented; PR/CI and Chat Gate pending. TASK-006 approved/merged; ADR-018 accepted in main.
 
 
 ## TASK-001 completion - 2026-10-05
@@ -319,3 +319,25 @@ Standard report: docs/reports/TASK_006_COMPLETION.md. Requested Gate: APPROVED (
 
 TASK-006 PR: https://github.com/KIM0296/edit-program/pull/8
 CI evidence: https://github.com/KIM0296/edit-program/actions/runs/37287250147
+
+## TASK-007 Pause Candidate Domain / Deterministic Baseline - 2026-10-06
+
+Approved basis: TASK-006 APPROVED/merged and ADR-018; main a7270ee.
+Spec/OPEN-009 committed first (a18907c). New tests failed collection with missing
+pause module before implementation. Branch feat/task-007-pause-candidate-baseline.
+
+Implemented immutable PauseObservation/PauseCandidate and pure classify_pause:
+- Caller-supplied relative band, boundary, multi-signal evidence, scope and local reference.
+- KEEP/TIGHTEN/REMOVE/REVIEW, HIGH/MEDIUM/LOW, structured reasons and routing metadata.
+- Explicit gap evidence only for REMOVE; meaningful pause KEEP; conflicts REVIEW.
+- TIGHTEN uses only a positive supplied reference shorter than the original pause.
+- No seconds thresholds, inferred feature values, global targets or numeric probabilities.
+- UNKNOWN/unsupported/unsafe target fail closed. Routing is not execution permission.
+
+Local Windows/Python 3.14.6: 277 passed / 0 failed / 1 skipped; 67 new tests.
+Ruff PASS; strict mypy PASS (8 source files). Hosted Python 3.11 CI pending.
+Systematic all signal subsets x relative bands x boundaries check removal/target safety.
+Existing TASK-001..006 tests/source unchanged. Executor/authority monkeypatch guard passes.
+OPEN-009 records observation producers/media mapping/dialogue schema; OPEN-001 retained.
+No STT/VAD/ML/LLM/media analysis/Resolve/edit plan/authority integration/shadow/UI added.
+Report: docs/reports/TASK_007_COMPLETION.md. Chat Gate requested after PR/CI evidence.
