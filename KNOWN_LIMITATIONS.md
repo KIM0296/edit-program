@@ -220,4 +220,6 @@ unsafe → reject
 - The public result value validates shape/binding; it is not a cryptographic attestation of
   derivation and cannot grant authority. No classifier/authority/executor integration.
 - Producer algorithms/semantic quality and production native mapping remain unverified under
-  OPEN-009/011 and OPEN-001. These synthetic domain tests make no real editing-quality claim.
+  OPEN-009 and OPEN-001/006. ADR-021 now resolves OPEN-011 v1 mapping semantics, but
+  that implementation belongs to TASK-010 and is not started here. These synthetic tests
+  make no real editing-quality claim.

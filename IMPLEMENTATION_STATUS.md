@@ -392,8 +392,9 @@ fragment; lineage is fake-only. Missing required values, unknown assertions, uns
 semantic/value conflicts and overlap fail closed. Optional missing cues/reference stay missing.
 
 Local Windows/Python 3.14.6: 415 passed / 0 failed / 1 skipped, including 73 TASK-009 tests.
-Ruff PASS; strict mypy PASS (11 source files). Python 3.11 CI: pending PR run.
+Ruff PASS; strict mypy PASS (11 source files). Python 3.11.16 CI PASS: run 37416008719, 415 passed / 1 skipped, Ruff/mypy PASS.
 Earlier source/tests unchanged. The one skip is the opt-in intentional naive red demo.
-OPEN-009/011 remain OPEN for producer semantics and native mapping; OPEN-001 unchanged.
+OPEN-009 producer semantics remain open; OPEN-011 v1 contract is now resolved by ADR-021
+merged from newer main f229576 during submission. No TASK-010 implementation; OPEN-001 unchanged.
 No media analysis, native conversion, classifier invocation, authority transition or mutation.
 Report: docs/reports/TASK_009_COMPLETION.md. Chat Gate pending; no merge or next task.

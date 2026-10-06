@@ -2,15 +2,17 @@
 
 TASK: TASK-009 — Observation Evidence & Producer Provenance Foundation
 
-상태: 구현·로컬 검증 완료, Python 3.11 CI 및 Chat Gate 대기.
+상태: 구현·로컬 및 Python 3.11 CI 검증 완료, Chat Gate 대기.
 
 브랜치: `feat/task-009-observation-evidence`
 
-Base main: `7d4a3a7db6ebca40a67f0c0fe17bd80691218002`.
+시작 main: `7d4a3a7db6ebca40a67f0c0fe17bd80691218002`.
+제출 비교 base: `f229576115e681ebf0102e414dc666032c7100c2`.
+작업 중 ADR-021/TASK-010 준비 문서가 main에 병합되어 동기화했습니다. TASK-010 구현은 없습니다.
 Spec 사전 기록: `4e31a52`, red test: `b0907b2`, 구현: `85cd676`.
 후속 보고 commit은 문서만 변경하며 최종 제출 head는 PR 본문에 기록합니다.
 
-PR: 생성 후 기록.
+PR: https://github.com/KIM0296/edit-program/pull/17
 
 근거: [TASK-009 spec](../../tasks/TASK_009_OBSERVATION_EVIDENCE.md),
 [ADR-020 상세 계약](../OBSERVATION_EVIDENCE_CONTRACT.md).
@@ -50,7 +52,7 @@ Caller가 제공한 observation evidence를 immutable value로 보존하고, 현
 | Immutable deterministic result | PASS: order permutations 및 raw snapshot/bundle 유지 |
 | No classifier / authority / executor | PASS: 네 진입점을 실패하도록 monkeypatch한 purity test |
 | TASK-001~008 regression | PASS: 기존 source/test 파일 변경 없음 |
-| Python 3.11 CI | PR 생성 후 확인 예정 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37416008719 |
 | Ruff / strict mypy | PASS: 11 source files |
 
 실제 producer, VAD/STT/LLM, decoding, Resolve API, source/native FPS mapping, classifier 호출,
@@ -74,15 +76,15 @@ Candidate Authority integration, timeline mutation, DB/telemetry/network/UI는 �
 비교 기준: 위 base main 대비 제출 tree (보고서 포함).
 
 ```text
- DECISIONS.md                           |  17 ++
- IMPLEMENTATION_STATUS.md               |  22 ++
- KNOWN_LIMITATIONS.md                   |  25 ++
+ DECISIONS.md                           |  26 ++
+ IMPLEMENTATION_STATUS.md               |  23 ++
+ KNOWN_LIMITATIONS.md                   |  27 ++
  docs/TEST_MATRIX.md                    |  24 ++
- docs/reports/TASK_009_COMPLETION.md    | 179 ++++++++++++
+ docs/reports/TASK_009_COMPLETION.md    | 184 ++++++++++++
  src/davinci_ai_editor/evidence.py      | 423 ++++++++++++++++++++++++++++
- tasks/TASK_009_OBSERVATION_EVIDENCE.md |  25 +-
+ tasks/TASK_009_OBSERVATION_EVIDENCE.md |  30 +-
  tests/test_observation_evidence.py     | 492 +++++++++++++++++++++++++++++++++
- 8 files changed, 1206 insertions(+), 1 deletion(-)
+ 8 files changed, 1228 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -94,7 +96,9 @@ Candidate Authority integration, timeline mutation, DB/telemetry/network/UI는 �
 - skipped: 1개 — tests/test_naive_inv001.py의 opt-in intentional red demo.
   해당 INV-001의 일반 regression은 항상 실행되어 통과합니다.
 - 미실행: 실제 Resolve/media producer/native mapping 통합 검증 — 승인 범위 밖.
-- CI: Python 3.11은 PR 생성 후 결과와 run link를 기록합니다.
+- CI: Ubuntu CPython 3.11.16, 415 passed / 1 skipped, Ruff 및 strict mypy PASS.
+  [검증 run 37416008719](https://github.com/KIM0296/edit-program/actions/runs/37416008719).
+  문서 동기화 후 최종 head CI 결과는 PR 본문에 연결합니다.
 
 Red-first: source가 존재하기 전 신규 테스트를 실행하여
 `ModuleNotFoundError: No module named 'davinci_ai_editor.evidence'`와 collection error 1건 확인.
@@ -137,6 +141,8 @@ REVIEW합니다. 누락 required value와 UNKNOWN을 임의 default로 채우지
 
 새 accepted ADR 또는 별도 OPEN ID를 만들지 않았습니다. 기존 **OPEN-009 / OPEN-011**에
 TASK-009 적용 내용을 기록했으며 **OPEN-001**도 유지합니다.
+작업 중 main에 병합된 **ADR-021이 OPEN-011을 v1 foundation에 대해 해결**했으므로
+추가 reconciliation note로 갱신했습니다. 실제 mapping 구현은 이번 TASK에 포함하지 않습니다.
 
 - 결정 대상: 실제 producer 의미/강도 해석과 calibration, native time/snapshot correspondence.
 - 대안: producer-specific readiness/native binding을 추론하거나, supplied aligned facts만 검증하고
@@ -153,7 +159,7 @@ TASK-009 적용 내용을 기록했으며 **OPEN-001**도 유지합니다.
 - UNKNOWN assertion은 conservative review, optional missing cue/reference는 합성하지 않습니다.
 - Structurally invalid bundle은 constructor에서 거절되므로 PreparationResult를 만들지 않습니다.
 - Public result는 shape/binding을 검증하는 값이며 실행 허가나 인증 토큰이 아닙니다.
-- 실제 Native Time & Snapshot Mapping Contract 및 producer 계약 승인/실측이 한계 해소 조건입니다.
+- 확정된 ADR-021의 별도 mapping 구현과 producer 계약/실측이 한계 해소 조건입니다.
 
 ## 7. Specification과 다르게 구현한 부분
 
@@ -164,11 +170,10 @@ Native mapping/identity/producer 정책을 임의 확정하지 않았습니다.
 
 ## 8. 다음 TASK 제안
 
-제안만: Native Time & Snapshot Mapping Contract를 Chat에서 먼저 확정한 후 별도 TASK 범위를 정합니다.
-OPEN-001/011의 coordinate domain, source/timeline frame conversion, version/currentness,
-fragment correspondence와 unsupported mapping 처리를 결정해야 합니다.
-Acceptance 초안: approved mapping fixtures, invalid/ambiguous/stale fail closed, pure mapping과
-read-only adapter 경계 명시. 현재 구현 승인은 없으며 TASK-010은 시작하지 않았습니다.
+제안만: 새 main에 확정된 ADR-021 및 준비된 TASK-010 Native Time Mapping을 다음 Chat Gate에서 검토합니다.
+정확한 유리수 mapping, NON_INTEGRAL/OUT_OF_RANGE/STALE fail closed 및 mutation 없는 pure foundation이
+준비된 spec의 범위입니다. OPEN-001/006의 production correspondence는 여전히 별도입니다.
+이번 요청에서 TASK-010 구현 승인은 없으며 시작하지 않았습니다.
 
 ## 9. Chat 검토란
 

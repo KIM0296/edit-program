@@ -170,7 +170,7 @@ telemetry accuracy, timing provenance and numerical release gates remain outside
 ## TASK-009 observation evidence / provenance
 
 Local: 415 passed / 0 failed / 1 skipped; 73 new tests in test_observation_evidence.py.
-Ruff and strict mypy PASS. Python 3.11 CI: pending PR run.
+Ruff and strict mypy PASS. Python 3.11.16 CI PASS: run 37416008719, 415 passed / 1 skipped, Ruff/mypy PASS.
 Earlier regression code/tests unchanged; intentional naive red demo remains opt-in.
 
 | Contract coverage | Evidence |

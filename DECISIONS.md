@@ -643,3 +643,12 @@ local target generation is introduced. Alternatives are producer-specific readin
 rules (need future approved semantics) versus conservative review (recommended for
 v1). Actual producer algorithms/calibration and native binding stay deferred under
 OPEN-009/011; no new architecture decision is marked accepted.
+
+
+### TASK-009 submission reconciliation with newer main
+
+During TASK-009, main advanced to f229576 with accepted ADR-021 and prepared TASK-010.
+Merged that documentation into this branch without implementing TASK-010. OPEN-011 is
+now RESOLVED FOR v1 FOUNDATION, superseding the pre-implementation OPEN status recorded
+above. Actual native mapping implementation remains outside TASK-009. OPEN-009 producer
+algorithms/calibration and OPEN-001/006 production correspondence remain unresolved.

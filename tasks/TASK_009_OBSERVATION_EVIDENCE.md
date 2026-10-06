@@ -114,3 +114,8 @@ Evidence contract version support is explicit (`v1`); unknown or mixed contracts
 remain representable but prepare as UNSUPPORTED. These API details introduce no
 producer trust/strength policy, native mapping or editing authority. OPEN-009 and
 OPEN-011 remain unresolved for real producers and native snapshot correspondence.
+
+Submission note: newer main f229576 introduced accepted ADR-021 during TASK-009.
+OPEN-011 is now resolved for the v1 contract; the preceding notes retain their original
+pre-implementation context. TASK-009 still accepts only already-aligned ranges and does
+not implement the separately prepared TASK-010.
