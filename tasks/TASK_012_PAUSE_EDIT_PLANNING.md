@@ -1,6 +1,6 @@
 # TASK-012 — Pause Edit Planning Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-011 IS APPROVED/MERGED**
+Status: **Authorized after TASK-011 approval/merge; implementation in progress**
 
 Basis:
 - ADR-013 Relationship Execution Semantics v1
@@ -205,3 +205,32 @@ The planner consumes already-computed inputs only.
 9. Write docs/reports/TASK_012_COMPLETION.md.
 10. Open PR and request Chat Gate.
 11. Do not merge or start the next task automatically.
+
+
+## Implementation notes (before source)
+
+`pause_planning.py` consumes immutable caller-supplied facts only. PlanningBinding holds
+candidate_ref, NativeSnapshotRef, fake TimelineObjectId and original pause range. Existing
+PauseCandidate lacks an ID/state token, so the caller supplies this binding; planner checks
+its timeline/version/object/range against the candidate observation and supplied current ref.
+No candidate authority identity or production native correspondence is invented.
+
+Geometry carries explicit caller provenance, contract version, binding, removed ranges and
+retained integer duration. Invalid semantic geometry remains inspectable and yields reasons;
+noninteger/negative frame counts and malformed typed values reject at construction. No repair.
+
+TargetReadinessInput reuses MappingStatus and carries assessment_ref, binding, media identity,
+explicit placement range and resolved primary range. SnapshotReadinessInput reuses ReadinessStatus
+and carries assessment/profile refs and binding. These are precomputed facts, not adapters or
+new evaluations. Missing inputs fail closed. EXACT target range must match the actual removal,
+not merely the original pause; placement must contain that pause. DependencyReadinessInput
+binds assessment to geometry ID, primary range and temporal intent, and distinguishes RESOLVED,
+UNRESOLVED, CONFLICT and UNSUPPORTED. Planner never constructs those assessments itself.
+
+KEEP/REVIEW return without interpreting supplied geometry/readiness for destructive planning.
+Other results collect reasons: stale dominates, then unsupported, target, geometry, dependency
+requirements. Only READY_FOR_PREFLIGHT contains PauseEditProposal. Proposal ID is caller-supplied
+for determinism, and intent is SHORTEN_GAP/CLOSE_GAP without ripple/displacement or Safety fields.
+
+OPEN-001/006/008/012 retain actual identity/currentness/correspondence verification. ADR-024
+resolves OPEN-013 v1 semantics, but TASK-013 resolver/constraints/producers are not implemented.

@@ -825,3 +825,18 @@ verification and producer-specific token algorithms remain OPEN-012, not impleme
 PAUSE_ANALYSIS is a versioned conservative input-readiness profile only. Passing it is not
 mapping EXACT, content classification, Safety clearance or authority. Native integration,
 partial refresh and production identity remain deferred; TASK-012 is not authorized here.
+
+
+## TASK-012 precomputed-fact boundary (OPEN-001/006/008/012 remain OPEN)
+
+TASK-011 APPROVED/merged per user. ADR-023 authorizes geometry consumption and precomputed
+readiness only. Native readiness identities and existing fake placement IDs have no approved
+production correspondence bridge yet (OPEN-001/006). TASK-012 therefore requires explicitly
+bound caller facts with assessment references rather than inventing a bridge, calling mapper/
+adapter/compiler, or interpreting relationship members. Scope-aware freshness/assessment
+refresh and runtime authenticity remain OPEN-008/012. Reusing a pause-level EXACT fact for
+another cut range could bypass fractional-boundary checks: require an explicit primary-range
+assessment and matching geometry/action-specific dependency input instead. Recommendation:
+keep this conservative contract until a separately approved orchestration/lowering layer can
+validate real provenance. Actual integration and Safety remain deferred. OPEN-013 v1 contract
+is resolved by ADR-024; this does not authorize TASK-013 implementation in this task.
