@@ -314,3 +314,22 @@ Expected Diff = Actual Diff; unverified, missing, extra or one-frame-wrong chang
 match.
 
 Detailed contract: `docs/EXPECTED_DIFF_TEMPORAL_DISPLACEMENT_CONTRACT.md`.
+
+
+## Safety Preflight Integration v1
+
+Safety validates a fully specified ExpectedDiff against current safety evidence and does not repair
+or replan the edit. Preflight readiness is distinct from the Safety verdict: STALE, UNSUPPORTED and
+INCOMPLETE never become PASS.
+
+The Pause destructive v1 profile has 17 mandatory checks covering freshness, ExpectedDiff integrity,
+protection, track locks, relationship/dependency coverage, retime, displacement preservation,
+topology, transition/effect/keyframe editability and PreservationScope.
+
+Unknown mandatory safety state always reduces autonomy. Transition/effect/keyframe structures that
+are present may pass only with a valid typed PRESERVATION_PROVEN proof; present-without-proof requires
+review, unknown evidence is incomplete, and explicit integrity violations reject.
+
+Safety PASS remains separate from approval, execution and verified promotion.
+
+Detailed contract: `docs/SAFETY_PREFLIGHT_INTEGRATION_CONTRACT.md`.
