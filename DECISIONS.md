@@ -712,3 +712,15 @@ Merged that documentation into this branch without implementing TASK-010. OPEN-0
 now RESOLVED FOR v1 FOUNDATION, superseding the pre-implementation OPEN status recorded
 above. Actual native mapping implementation remains outside TASK-009. OPEN-009 producer
 algorithms/calibration and OPEN-001/006 production correspondence remain unresolved.
+
+
+## TASK-010 application of OPEN-001 / OPEN-006 / OPEN-008 / OPEN-012
+
+User confirms TASK-009 APPROVED and merged. TASK-010 follows accepted ADR-021 only.
+Opaque supplied state tokens and explicit concrete spans are sufficient for pure
+mathematical validation, but do not establish native identity, live freshness or an
+adapter token-generation algorithm. Those remain OPEN under the existing decisions.
+Inferring these from FPS/filename/timecode would violate ADR-021; the alternative
+(recommended here) is explicit binding plus fail-closed validation. Runtime discovery,
+scope-aware reuse and production correspondence stay deferred. No new native policy
+or accepted architecture decision is introduced. TASK-011 remains unstarted.
