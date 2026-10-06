@@ -1,6 +1,6 @@
 # TASK-009 — Observation Evidence & Producer Provenance Foundation
 
-Status: **Prepared for Codex; implementation not started**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_009_COMPLETION.md**
 
 Basis:
 - ADR-018 Pause / Dialogue Editing v1
@@ -91,3 +91,31 @@ At minimum prove:
 No VAD/STT/Whisper/diarization/prosody/LLM/media decode/Resolve extraction/native FPS mapping,
 cross-clip rebinding, producer ranking, numerical calibration, database, telemetry, UI, training,
 personalization or actual timeline editing.
+
+## TASK-009 implementation notes (before code)
+
+`evidence.py` will expose frozen provenance/binding/record/bundle values and a pure
+`prepare_observation(bundle, current_snapshot)` function. The existing immutable
+snapshot supplies only already-aligned fake placement ranges and current version;
+no source conversion, adapter or snapshot resolver is called. A target and its
+context must fit one concrete fragment of the named placement.
+
+Payloads reuse typed pause band/boundary/content enums, a positive integer local
+reference value, and a presence marker for kinds whose meaning is already typed.
+Bundle construction rejects duplicate IDs, mixed bindings and out-of-context ranges.
+Preparation retains the raw bundle and evidence IDs in diagnostics. Different
+positive values, positive/negative contradictions and preserve/removal conflicts
+block READY, regardless of order, strength or producer. Unknown assertions are
+reviewed conservatively. Missing required boundary/band/content values require
+review; missing optional cues remain missing and local reference stays None.
+Only explicitly spoken content is supported. Invalid local targets are never repaired.
+
+Evidence contract version support is explicit (`v1`); unknown or mixed contracts
+remain representable but prepare as UNSUPPORTED. These API details introduce no
+producer trust/strength policy, native mapping or editing authority. OPEN-009 and
+OPEN-011 remain unresolved for real producers and native snapshot correspondence.
+
+Submission note: newer main f229576 introduced accepted ADR-021 during TASK-009.
+OPEN-011 is now resolved for the v1 contract; the preceding notes retain their original
+pre-implementation context. TASK-009 still accepts only already-aligned ranges and does
+not implement the separately prepared TASK-010.

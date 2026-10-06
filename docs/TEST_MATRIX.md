@@ -165,3 +165,27 @@ Earlier source/regression files unchanged.
 
 Single skip is the intentional naive red demo. Actual benchmark data, pilot experiments,
 telemetry accuracy, timing provenance and numerical release gates remain outside scope.
+
+
+## TASK-009 observation evidence / provenance
+
+Local: 415 passed / 0 failed / 1 skipped; 73 new tests in test_observation_evidence.py.
+Ruff and strict mypy PASS. Python 3.11.16 CI PASS: run 37416008719, 415 passed / 1 skipped, Ruff/mypy PASS.
+Earlier regression code/tests unchanged; intentional naive red demo remains opt-in.
+
+| Contract coverage | Evidence |
+| --- | --- |
+| Immutable / defensive copy | Producer, binding, record, bundle, conflict, result and nested tuples |
+| Provenance / typed payloads | Required name/version, config, kind-specific types, unknown contract fails closed |
+| Strength / assertions | Distinct Confidence type; PRESENT/ABSENT/UNKNOWN versus no record; no confidence conversion |
+| Binding / staleness | Mixed timeline/version/placement rejected; current snapshot mismatch; no base rewrite |
+| Concrete ranges | Out-of-context rejection, same-media wrong placement, split spans and cross-clip context |
+| Narrow mapping | Six explicit PRESENT cues only; absent/unknown/missing do not become positive |
+| Conflict diagnostics | Emotional/dead-air, QA/failed-take, assertions, band/boundary/content/reference; IDs retained even stale |
+| No hidden priority | Input permutations, agreeing producers, mixed strengths and producer kinds |
+| No meaning inference | Silence/duration and TAKE_GAP do not create editorial removal cues |
+| Conservative preparation | Required missing/unknown values, unsupported content, crosstalk, unsafe/missing local target |
+| Purity / boundary | Determinism and raw retention; classifier/authority/preflight/FakeTimeline patched to fail |
+
+Native FPS/timecode, real media intelligence, live snapshot acquisition, producer truth and
+production integration are not verified or implemented by these tests.

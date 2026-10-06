@@ -626,3 +626,29 @@ Dialogue cleanup and actual intelligence/editing remain outside the implementati
 User reports TASK-007 / PR #11 APPROVED and merged. ADR-019 accepted in main.
 TASK-008 is evaluation language and pure derivation only; no telemetry, storage, raw media,
 training consent inference or automatic reference/model update.
+
+
+## TASK-009 application of OPEN-009 / OPEN-011 (remain OPEN)
+
+ADR-020 provides evidence vocabulary but not a native mapping proof or a calibrated
+producer/strength interpretation policy. The existing fake snapshot can validate
+already-aligned single-fragment containment only. Inferring native binding from
+lineage/range would violate OPEN-001/011; resolving it requires the separately
+approved Native Time & Snapshot Mapping Contract. TASK-009 reads snapshot ranges
+without source conversion and fails closed on missing/cross-fragment targets.
+
+Unknown assertions and missing required preparation values remain reviewable; no
+producer ranking, strength-to-confidence rule, negative-to-positive inference or
+local target generation is introduced. Alternatives are producer-specific readiness
+rules (need future approved semantics) versus conservative review (recommended for
+v1). Actual producer algorithms/calibration and native binding stay deferred under
+OPEN-009/011; no new architecture decision is marked accepted.
+
+
+### TASK-009 submission reconciliation with newer main
+
+During TASK-009, main advanced to f229576 with accepted ADR-021 and prepared TASK-010.
+Merged that documentation into this branch without implementing TASK-010. OPEN-011 is
+now RESOLVED FOR v1 FOUNDATION, superseding the pre-implementation OPEN status recorded
+above. Actual native mapping implementation remains outside TASK-009. OPEN-009 producer
+algorithms/calibration and OPEN-001/006 production correspondence remain unresolved.

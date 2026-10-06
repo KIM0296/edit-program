@@ -375,3 +375,26 @@ Report: docs/reports/TASK_008_COMPLETION.md. Chat Gate requested after PR/CI evi
 TASK-008 PR: https://github.com/KIM0296/edit-program/pull/13
 CI: https://github.com/KIM0296/edit-program/actions/runs/37408687466
 Requested Gate: APPROVED (request only, not Chat decision).
+
+
+## TASK-009 Observation Evidence / Producer Provenance - 2026-10-06
+
+User reports TASK-008 APPROVED/merged. Basis: ADR-020 and the prepared TASK-009 spec.
+Base main: 7d4a3a7. Branch: feat/task-009-observation-evidence.
+Spec implementation notes committed first (4e31a52); red tests committed b0907b2.
+Red proof: missing davinci_ai_editor.evidence caused collection failure before source existed.
+
+Implemented frozen producer/binding/typed evidence/bundle/conflict/result values and pure
+prepare_observation(bundle, current_snapshot). Raw bundle and diagnostic evidence IDs survive
+preparation. No producer winner, meaning from silence/duration, automatic rebase or execution.
+Only READY carries PauseObservation. Supplied snapshot ranges validate one aligned concrete
+fragment; lineage is fake-only. Missing required values, unknown assertions, unsafe targets,
+semantic/value conflicts and overlap fail closed. Optional missing cues/reference stay missing.
+
+Local Windows/Python 3.14.6: 415 passed / 0 failed / 1 skipped, including 73 TASK-009 tests.
+Ruff PASS; strict mypy PASS (11 source files). Python 3.11.16 CI PASS: run 37416008719, 415 passed / 1 skipped, Ruff/mypy PASS.
+Earlier source/tests unchanged. The one skip is the opt-in intentional naive red demo.
+OPEN-009 producer semantics remain open; OPEN-011 v1 contract is now resolved by ADR-021
+merged from newer main f229576 during submission. No TASK-010 implementation; OPEN-001 unchanged.
+No media analysis, native conversion, classifier invocation, authority transition or mutation.
+Report: docs/reports/TASK_009_COMPLETION.md. Chat Gate pending; no merge or next task.
