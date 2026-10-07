@@ -1,6 +1,6 @@
 # TASK-015 — Safety Preflight Integration Foundation
 
-Status: **Authorized after TASK-014 approval/merge; implementation in progress**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_015_COMPLETION.md**
 
 Basis:
 - ADR-010 ProtectedRange HARD_LOCK

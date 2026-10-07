@@ -300,3 +300,28 @@ Red first: notes 46adfff, tests 99bab2e; missing expected_diff module caused one
 error before implementation. Local full suite: 810 passed / 0 failed / 1 intentional naive
 skip. Ruff and strict mypy (16 source files) PASS. Python 3.11.16 CI PASS: run 37558489702, 810 passed / 1 skipped; Ruff/mypy PASS.
 Existing TASK-001..013 source/tests unchanged; native integration/rollback remain unverified.
+
+
+## TASK-015 Safety Preflight Integration
+
+126 tests in tests/test_safety_preflight.py cover all 55 prepared-spec requirements:
+
+| Required IDs | Coverage |
+| --- | --- |
+| 1-6 | Frozen values, defensive ordering, exact 17-check profile, strict result aggregation constructors |
+| 7-9 | All status/verdict combinations and retention of reject/review/incomplete findings |
+| 10-12 | Current/context freshness, non-ready ExpectedDiff, primary/proposal integrity and no repair |
+| 13-19 | Complete-empty/incomplete protection, direct/displacement HARD_LOCK, every affected track lock |
+| 20-23 | Precomputed relationship/dependency unknown, exact forward, unknown/unsupported/conflicting retime |
+| 24-28 | Corrupted displacement media/source/duration/track guards and unsupported topology |
+| 29-35 | Transition/effect/keyframe full five-state matrices |
+| 36-38 | Wrong/stale diff/snapshot/subject/kind/version/outcome proof; no proof production |
+| 39-43 | Scope omission, all-check PASS, review/reject and diagnostic precedence |
+| 44-45 | No confidence/override path or repair/replanning |
+| 46-54 | Monkeypatch layer isolation, import whitelist, no runtime/execution dependencies |
+| 55 | TASK-001..014 full regression retained unchanged |
+
+Red-first notes e565d81 and tests 05b12a5 precede source; missing safety_preflight module
+caused one collection error. Local full regression: 936 passed / 0 failed / 1 intentional
+naive-demo skip. Ruff PASS; strict mypy PASS (17 source files). Python 3.11 CI pending PR.
+Native proof authenticity, actual Resolve integration and rollback remain unverified.

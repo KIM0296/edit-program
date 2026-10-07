@@ -353,3 +353,26 @@ unsafe → reject
 - Known protected risk can coexist with a complete ExpectedDiff. No Safety PASS/REJECT,
   approval, Apply, postflight capture, transaction/rollback or production P0 claim is made.
 - TASK-015 remains unstarted; no later task implementation is bundled here.
+
+
+## TASK-015 pure preflight limits
+
+- Safety validates caller-supplied categorical evidence and proof bindings; it does not
+  authenticate native truth, discover runtime capabilities or generate preservation proofs.
+  OPEN-015 and OPEN-001/006/008/012 remain unresolved.
+- Primary safety subject is the exact removed range; a displacement subject is its full
+  before range. Missing/misbound observations never count as known absence. Conflicting
+  supported retime metadata is incomplete rather than silently selecting either claim.
+- Invalid/missing proof for known presence yields REVIEW; a stale supplied proof additionally
+  makes the result STALE. Unknown structure cannot become proven from a proof alone.
+- HARD_LOCK range occupancy is checked before/after translation and against primary removal.
+  There is no unlock, override, geometry repair or problematic-participant exclusion.
+- Corrupted frozen test fixtures bypass normal TASK-014 constructors solely to exercise
+  defense-in-depth checks. No mutable/raw alternate execution schema was introduced.
+- All check findings remain available even when aggregate status prevents any verdict.
+  An integrity REJECT plus missing evidence can correctly produce INCOMPLETE/verdict None;
+  the known rejection remains in the individual findings.
+- PASS is bound to raw immutable diff/proposal/current/profile/protection/evidence/proof inputs.
+  It is neither Approval nor Apply permission, native verification, transaction or promotion.
+- Existing fake safety.py remains a separate scoped regression layer. No production P0,
+  actual A/V, rollback, runtime proof production, TASK-016 or later execution claim is made.
