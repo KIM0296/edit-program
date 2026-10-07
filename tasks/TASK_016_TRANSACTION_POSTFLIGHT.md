@@ -1,6 +1,6 @@
 # TASK-016 — Transaction State & Postflight Verification Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-015 IS APPROVED/MERGED**
+Status: **Authorized after TASK-015 approval/merge; implementation in progress**
 
 Basis:
 - ADR-006 LLM Emits IR Only
@@ -330,3 +330,37 @@ At minimum prove:
 Represent and validate the full logical transaction lifecycle from authorization through postflight,
 recovery state and promotion eligibility without performing native mutation, assuming rollback, or
 mistaking uncertain/partial execution for verified success.
+
+
+## TASK-016 implementation notes (before source)
+
+- Add transaction.py with immutable bound authorization, caller facts, ordered opaque step
+  refs (not commands/IR), typed event payloads and append-only journal. Only value enums/
+  snapshot refs are imported from earlier layers; no evaluator or executor is called.
+- Transaction validates its journal through a deterministic pure fold. Its derived state
+  cannot be submitted as a replacement history. Constructors reject illegal phase/outcome,
+  payload, sequence, artifact and step-order combinations. Sequence gaps are allowed;
+  duplicates/reversal and mixed transaction journals are rejected, never sorted/repaired.
+- Add explicit PRECOMMIT_STARTED and POSTFLIGHT_STALE events alongside suggested event kinds.
+  Precommit consumes current snapshot, bound Safety status/verdict/currentness, authorization
+  currentness, target/capability facts and recovery lockdown. Stale takes precedence over
+  other before-mutation failures. No mutation report is legal on a failed-precommit path.
+- STEP_STARTED is journal progress, not a fifth execution status. One active step at a time;
+  a report is required before continuing. SUCCEEDED may have mutated; FAILED explicitly
+  records whether mutation may have occurred; OUTCOME_UNKNOWN always preserves uncertainty.
+- Unknown reports require bound fresh StepReconciliation before classification/continuation
+  or recovered claims. No retry transition is implemented, even after reconciliation.
+  Unresolved uncertainty may terminate unrecovered, never committed/recovered.
+- Postflight consumes precomputed DiffVerificationStatus and independently supplied current
+  authorization/Safety facts. MATCH plus all accounted successful steps permits commit only
+  after POSTFLIGHT_VERIFYING. No verification function or TimelineVersion update is called.
+- Rollback requests are explicit caller events. Policy is no more permissive than capability;
+  automatic eligibility is metadata only. Recovery requires a command-report record followed
+  by fresh base-state verification MATCH. Base verification is also reconciliation of an
+  uncertain rollback response; native return alone never certifies recovery.
+- Terminal outcomes are explicit requested classifications validated against prior evidence.
+  Failed edits remain failures after recovery. Terminal journals cannot be rewritten/resumed.
+- Unrecovered outcomes derive recovery_required. UNVERIFIED_APPLY also blocks promotion and
+  new-destructive-attempt eligibility; no lockdown-release/runtime policy is implemented.
+- Promotion consumes freshly supplied bound authorization/Safety/current post-state facts,
+  verified commit, successful accounted steps and no lockdown. It never calls Authority.
