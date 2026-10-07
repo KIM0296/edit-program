@@ -333,3 +333,20 @@ review, unknown evidence is incomplete, and explicit integrity violations reject
 Safety PASS remains separate from approval, execution and verified promotion.
 
 Detailed contract: `docs/SAFETY_PREFLIGHT_INTEGRATION_CONTRACT.md`.
+
+
+## Execution Transaction & Postflight Verification v1
+
+Destructive execution is not committed when native commands merely return successfully. The product
+commit point is after a fresh postflight observation proves ExpectedDiff == ActualDiff.
+
+Transaction phase and terminal outcome are separate. Uncertain mutation responses use explicit
+OUTCOME_UNKNOWN and may not be blindly retried. Rollback capability is never assumed and is separate
+from automatic rollback policy; even rollback command success must be verified against the original
+base state.
+
+Any unrecovered partial mutation triggers a recovery-required lockdown that blocks further
+destructive AI execution and promotion until a coherent authoritative state is explicitly
+re-established.
+
+Detailed contract: `docs/EXECUTION_TRANSACTION_POSTFLIGHT_CONTRACT.md`.
