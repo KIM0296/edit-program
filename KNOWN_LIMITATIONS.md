@@ -332,3 +332,24 @@ unsafe → reject
 - Native freshness/identity (OPEN-001/006/008/012) and deferred OPEN-013 producer/confidence
   questions remain. No editing quality, seam treatment, native safety or rollback claim.
 - TASK-014 remains unstarted despite prepared ADR-025/spec documents.
+
+
+## TASK-014 Expected Diff / synthetic verification limits
+
+- Participation and exact uniform-consequence assurance are caller-supplied facts. The
+  compiler neither discovers participants nor proves native gap/ripple consequences.
+- PlacementState defaults retime to UNKNOWN; changed objects require explicit supported
+  IDENTITY_1X/AFFINE_FORWARD metadata. Translation preserves source metadata without mapping.
+- Primary removal is a typed semantic effect, not generated native post fragments. Extra
+  primary modifications must be supplied as unexpected changes. Native fragment capture and
+  correspondence remain OPEN-001/006/008/012; no filename/media/lineage heuristic is introduced.
+- ActualDiff is synthetic caller evidence. Identity and base/post evidence references must
+  be present for MATCH but are not authenticated against Resolve or executor state.
+- All non-primary scoped placements require before/after observations, including unchanged
+  ones. Missing expected moves mismatch; missing unchanged observation leaves UNVERIFIED.
+  Unknown space outside PreservationScope is not certified. Reported extra changes mismatch.
+- Only pure uniform -removed-duration translations of fully downstream surviving placements
+  are supported. Crossing, nonuniform, cross-track, unknown retime and mixed base fail closed.
+- Known protected risk can coexist with a complete ExpectedDiff. No Safety PASS/REJECT,
+  approval, Apply, postflight capture, transaction/rollback or production P0 claim is made.
+- TASK-015 remains unstarted; no later task implementation is bundled here.

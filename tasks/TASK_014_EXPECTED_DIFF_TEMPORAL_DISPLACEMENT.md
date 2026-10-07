@@ -1,6 +1,6 @@
 # TASK-014 — Expected Diff & Temporal Displacement Foundation
 
-Status: **Authorized after TASK-013 approval/merge; implementation in progress**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_014_COMPLETION.md**
 
 Basis:
 - ADR-010 ProtectedRange HARD_LOCK
