@@ -374,3 +374,31 @@ skip. Ruff PASS; strict mypy PASS (19 source files). Python 3.11 CI PASS: [run 3
 
 Additional: Safety non-PASS blocking, authorization currentness, contract versions, forged result
 rejection, status precedence and complete diagnostic retention. Native integration remains unverified.
+
+## TASK-018 — Probe evidence qualification
+
+`tests/test_probe_evidence.py`: 110 new tests; full regression 1259 passed / 1 intentional naive-demo
+skip. Ruff PASS; strict mypy PASS (20 source files). Python 3.11 CI PASS: [run 37575858937](https://github.com/KIM0296/edit-program/actions/runs/37575858937). PR #40; final-head evidence in PR body.
+
+| Prepared requirements | Tests / evidence |
+| --- | --- |
+| 1–2 | immutable_copy_append_and_deterministic_result; axis_enums_are_independent_and_typed |
+| 3–5 | invalid_fixture_nonqualifying; authoritative_working_fixture_cannot_qualify; clean_independent_fixture_required |
+| 6–7 | exact_profile_stale; mixed_profile_evidence_is_stale; independent_evidence_wrong_profile_cannot_be_promoted |
+| 8–11 | axis_enums_are_independent_and_typed; incomplete_scope_blocks_even_with_extra_passes; missing_observed_subject_and_category_incomplete |
+| 12–16 | exact_budget; not_a_pass_rate; coverage_not_just_total_count; policy_explicit_cannot_weaken; one_missing_positive_with_all_challenges_never_qualifies; challenges_cannot_substitute_for_positive_budget |
+| 17–22 | exact_budget; conflict_preserved_no_majority_recency_or_filtering; verified_effects_only_when_all_inside_runs_agree |
+| 23–24 | observed_collateral_changes_never_filtered (all 9 subject kinds); observed_addition_and_deletion_not_lost; conflict_preserved_no_majority_recency_or_filtering |
+| 25–26 | zero_tolerance; out_of_scope_observation_retained_and_fails_containment; api_success_alone_insufficient_and_availability |
+| 27–30 | missing_provenance_rejected; exact_profile_stale; mixed_profile_evidence_is_stale |
+| 31–35 | exact_budget; policy_explicit_cannot_weaken; api_success_alone_insufficient_and_availability; forged_derived_result_rejected |
+| 36–39 | post_read_independent; reconciliation_axis; axis_enums_are_independent_and_typed |
+| 40–43 | weak_identity_not_execution_grade; uuid_not_persistent_proof_and_session_staleness; wrong_identity_subject_and_unverified_correspondence |
+| 44–46 | fragment_status_independent; fragment_heuristics_not_proof; fragment_required_but_missing |
+| 47–48 | clean_independent_fixture_required; duplicate_capture_cannot_inflate_repetitions; immutable_copy_append_and_deterministic_result; conflict_preserved_when_later_profile_stales |
+| 49–54 | no_runtime_or_upstream_calls; import allowlist; no executable native surface or production conversion |
+| 55 | full TASK-001..017 pytest regression |
+
+Additional: outside-domain unsupported isolation; anti-narrowing binding; explicit bounded invocation;
+all failure statuses; extra inconclusive run with full positive budget; status/contract typing; all
+finding retention. Fixtures and complete observations are synthetic, not runtime proof or native coverage.

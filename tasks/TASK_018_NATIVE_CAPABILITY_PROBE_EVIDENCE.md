@@ -1,6 +1,6 @@
 # TASK-018 — Native Capability Probe Evidence Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-017 IS APPROVED/MERGED**
+Status: **IMPLEMENTED ? Chat Gate pending; TASK-017 approval/merge confirmed by user**
 
 Basis:
 - ADR-006 LLM Emits IR Only
@@ -278,3 +278,21 @@ capability-probe steps.
 Represent future native probe evidence so that destructive capability can become verified only from
 isolated, repeatable, complete, conflict-free, exact-profile evidence, without running Resolve or
 inventing verification thresholds.
+
+## TASK-018 implementation notes (before code)
+
+- New probe-evidence types do not silently convert TASK-017 EffectModelStatus into reconciliation
+  or fragment status. ReconciliationStatus and FragmentEvidenceStatus are independent enums.
+  No bridge to production lowering/executor is introduced.
+- ADR-030 v1 policy fixes positive classes and counts. All five challenge applicability declarations
+  are explicit in the immutable domain; each in-domain challenge needs three additional runs.
+  Outside-domain runs remain recorded and unsupported, never positive-budget substitutes.
+- A run stores its full declared domain and profile. Aggregation of differently declared domains
+  fails closed, preventing rebucketing an existing failure by silently narrowing its domain.
+- Raw canonical/pre/post subject observations use explicit typed fields and opaque structure refs.
+  Pure observed changes retain every before/after difference, separately from the hypothesis.
+  Exact equality uses complete supplied values; no cross-fixture role/identity normalization is inferred.
+- Independent run/fixture-instance refs are supplied facts. Duplicate IDs are rejected. The immutable
+  corpus appends new runs and retains failures; persistence/tamper-proof provenance is not implemented.
+- Runtime profile excludes session so effect evidence can be reused; session-bound identity is
+  independently checked against caller-supplied current session. There is no per-edit probe requirement.

@@ -411,3 +411,18 @@ unsafe → reject
 - Native evidence production remains OPEN-017; production identity remains OPEN-001. TASK-018 and
   later probe contracts are not implemented. Actual Resolve/Undo/post-read/reconciliation are absent.
 - Rollback capability is retained as a separate axis; semantic READY does not grant Auto-Apply.
+
+## TASK-018 — Supplied probe evidence, not native proof acquisition
+
+- Qualification is pure and consumes caller-supplied observations, fixture registration, clean-state
+  and correspondence evidence. It does not authenticate a registry or execute/reconstruct a fixture.
+- Exact concrete before/after semantic equality is required. No cross-fixture identity/role mapping
+  is inferred; heterogeneous native states may remain unverified/conflicting until an explicit
+  correspondence contract and producer exist (OPEN-017).
+- Duplicate run/instance/evidence/capture refs are rejected, but this in-memory immutable corpus does
+  not prove historical completeness, independent physical reconstruction or tamper-proof provenance.
+- Separate ReconciliationStatus / FragmentEvidenceStatus are implemented in the probe domain.
+  No automatic conversion into TASK-017 lowering evidence or production capability enablement exists.
+- Session-local identity invalidates on session change separately from runtime effect profile.
+  Broader effect evidence can be reused; ordinary editors have zero manual probe work and no per-edit suite.
+- Actual Resolve probes/read capture/mutation/Undo/retry/release enforcement remain outside scope.
