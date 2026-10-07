@@ -293,3 +293,22 @@ native timeline frame zero.
 
 TASK-020 may not silently simplify a fixture. If the installed RuntimeProfile cannot read a required
 field, record UNSUPPORTED/UNKNOWN and follow the completion-gate review path.
+
+
+## Runtime execution binding
+
+ADR-038 / `docs/TASK_020_RUNTIME_EXECUTION_EVIDENCE_RUNBOOK.md` defines how this matrix is executed
+and evidenced.
+
+Key operational interpretations:
+
+- F0/F1/F2/F3/F4-A/F4-B each receive their own 10-pair S1 sequence.
+- A pair is two complete back-to-back Tier A captures, not two reads of one field.
+- Failed pairs remain in the same validation run and prevent SUPPORTED_STABLE for affected scope.
+- S1 human interaction with Resolve state is prohibited.
+- F4 S2 is 3 explicit A→B→A round trips after S1.
+- raw adapter returns and semantic normalized snapshots are stored separately.
+- capability support status is distinct from fixture MATCH/MISMATCH.
+- the final runtime evidence bundle must retain all pair/round-trip findings and be checksummed.
+
+This binding does not change RV-001..044 acceptance semantics; it fixes their execution protocol.
