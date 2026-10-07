@@ -408,3 +408,23 @@ Real footage:
 
 > A canonical probe asset should be visually obvious to a human, boring to a decoder, immutable to
 > the harness, and identifiable by exact bytes rather than by a convenient filename.
+
+
+## Generator contract binding
+
+ADR-037 / `docs/CANONICAL_ASSET_GENERATOR_CONTRACT.md` is authoritative for producing the actual
+six canonical binaries.
+
+Key requirements:
+
+- integer-defined video and PCM source algorithms
+- pinned Python/NumPy/FFmpeg/ffprobe toolchain
+- software DNxHR LB encoding only
+- bitexact mode + metadata normalization
+- structural probe and full decode validation
+- exact PCM decode equality
+- two independent fresh generation runs with byte-for-byte package equality
+- no fallback codec/profile/raster/fps
+- immutable sealed package publication
+
+The package contract still treats exact approved shipped bytes as canonical identity.
