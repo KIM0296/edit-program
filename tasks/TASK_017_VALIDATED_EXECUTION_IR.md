@@ -1,6 +1,6 @@
 # TASK-017 — Validated Execution IR Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-016 IS APPROVED/MERGED**
+Status: **IMPLEMENTED ? Chat Gate pending; TASK-016 approval/merge confirmed by user**
 
 Basis:
 - ADR-006 LLM Emits IR Only

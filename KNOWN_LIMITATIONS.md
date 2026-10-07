@@ -399,3 +399,15 @@ unsafe → reject
   TimelineVersion. Only a verified commit has the ADR-009 logical commit meaning.
 - Native mutation/Undo, physical atomicity, persistence/restart, commit-window coordination,
   runtime enforcement and TASK-017 remain outside this foundation.
+
+## TASK-017 — Structural evidence is not native verification
+
+- READY_FOR_EXECUTION is a pure structural verdict for supplied current artifacts; it is not an
+  executed/committed/promoted result or a rollback guarantee.
+- Native primitive names, locators and proof references are opaque caller data. No runtime API
+  existence, identity stability or proof authenticity is established by this module.
+- A decomposition requires an explicit sequence-bound net-effect model and verified fragment
+  evidence. Intermediate state production/correspondence is not inferred or executed.
+- Native evidence production remains OPEN-017; production identity remains OPEN-001. TASK-018 and
+  later probe contracts are not implemented. Actual Resolve/Undo/post-read/reconciliation are absent.
+- Rollback capability is retained as a separate axis; semantic READY does not grant Auto-Apply.
