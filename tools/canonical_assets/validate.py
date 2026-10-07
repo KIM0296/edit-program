@@ -5,6 +5,7 @@ from typing import cast
 
 from .checksums import JSON, parse_json
 from .model import AssetRole, BuildError, FailureStatus, role_check
+from .wav import wav_data
 
 
 @dataclass(frozen=True)
@@ -91,10 +92,19 @@ class DecodedVideoEvidence:
 
 
 def parse_streams(
-    blob: bytes, role: AssetRole, *, decoded_video: DecodedVideoEvidence | None = None
+    blob: bytes,
+    role: AssetRole,
+    *,
+    decoded_video: DecodedVideoEvidence | None = None,
+    canonical_wav: bytes | None = None,
 ) -> StreamFacts:
     role_check(role)
     try:
+        canonical_stereo = False
+        if canonical_wav is not None:
+            if role is not AssetRole.AUDIO_ONLY or len(wav_data(canonical_wav)) != 8640000:
+                raise ValueError("Canonical stereo WAV required")
+            canonical_stereo = True
         data = object_value(parse_json(blob))
         streams = data["streams"]
         if not isinstance(streams, list):
@@ -138,7 +148,11 @@ def parse_streams(
                     int(_string(record["sample_rate"])),
                     _integer(record["channels"]),
                     _integer(record["bits_per_sample"]),
-                    _string(record["channel_layout"]),
+                    _string(record["channel_layout"])
+                    if "channel_layout" in record
+                    else "stereo"
+                    if canonical_stereo
+                    else _string(record["channel_layout"]),
                 )
         return StreamFacts(role, video, audio)
     except (KeyError, ValueError, TypeError) as error:

@@ -147,6 +147,9 @@ def _validate_media(
         _capture(probe_tokens(tool, root, relative), FailureStatus.STRUCTURE_MISMATCH),
         role,
         decoded_video=decoded_video,
+        canonical_wav=(
+            staging_path(root, relative).read_bytes() if role is AssetRole.AUDIO_ONLY else None
+        ),
     )
     if role.has_audio:
         assert source_pcm is not None

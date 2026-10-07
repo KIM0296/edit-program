@@ -348,3 +348,26 @@ def test_decode_uses_explicit_passthrough_frame_mode(tmp_path):
     tokens = decode_tokens(profile(tmp_path), tmp_path, "video.mov", audio=False)
     assert "-vsync" not in tokens
     assert tokens[tokens.index("-fps_mode") + 1] == "passthrough"
+
+
+def test_audio_only_layout_requires_actual_canonical_stereo_wav():
+    from tools.canonical_assets.wav import wav_bytes
+
+    a = audio()
+    a["index"] = 0
+    a.pop("channel_layout")
+    blob = json.dumps({"streams": [a]}).encode()
+    with pytest.raises(BuildError):
+        parse_streams(blob, AssetRole.AUDIO_ONLY)
+    wav = wav_bytes(bytes(8640000))
+    assert (
+        parse_streams(blob, AssetRole.AUDIO_ONLY, canonical_wav=wav).audio.channel_layout
+        == "stereo"
+    )
+    with pytest.raises(BuildError):
+        parse_streams(blob, AssetRole.AUDIO_ONLY, canonical_wav=b"invalid")
+    a["channel_layout"] = "mono"
+    with pytest.raises(BuildError):
+        parse_streams(
+            json.dumps({"streams": [a]}).encode(), AssetRole.AUDIO_ONLY, canonical_wav=wav
+        )
