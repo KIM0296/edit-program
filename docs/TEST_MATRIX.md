@@ -323,5 +323,5 @@ Existing TASK-001..013 source/tests unchanged; native integration/rollback remai
 
 Red-first notes e565d81 and tests 05b12a5 precede source; missing safety_preflight module
 caused one collection error. Local full regression: 936 passed / 0 failed / 1 intentional
-naive-demo skip. Ruff PASS; strict mypy PASS (17 source files). Python 3.11 CI pending PR.
+naive-demo skip. Ruff PASS; strict mypy PASS (17 source files). Python 3.11.16 CI PASS: run 37561231902, 936 passed / 1 skipped; Ruff/mypy PASS.
 Native proof authenticity, actual Resolve integration and rollback remain unverified.

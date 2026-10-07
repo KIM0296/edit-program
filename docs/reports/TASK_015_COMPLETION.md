@@ -2,12 +2,12 @@
 
 TASK: TASK-015 — Safety Preflight Integration Foundation
 
-상태: 구현 및 로컬 검증 완료, Python 3.11 CI/Chat Gate 대기.
+상태: 구현·로컬 및 Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-015-safety-preflight`.
 Base main: `8cec85d2b07d6e2c73fc45309edf8b887927295e`.
 Spec notes: `e565d81`, red tests: `05b12a5`, 구현: `a1966eb`.
 후속 보고 commit을 포함한 최종 제출 head는 PR 본문에 기록합니다.
-PR: 생성 후 기록.
+PR: https://github.com/KIM0296/edit-program/pull/31
 근거: [TASK-015 spec](../../tasks/TASK_015_SAFETY_PREFLIGHT_INTEGRATION.md),
 [ADR-026 상세 계약](../SAFETY_PREFLIGHT_INTEGRATION_CONTRACT.md).
 요청 Gate: **APPROVED** (Codex 요청이며 Chat 판정 아님).
@@ -50,7 +50,7 @@ pure immutable preflight를 구현했습니다. 기존 fake `safety.py`는 변�
 | 46-54: layer isolation | PASS: mapper/evaluator/planner/resolver/diff compiler/relationship/Authority/executor monkeypatch 및 import 검사 |
 | 55: regression | PASS: TASK-001~014 포함 936 passed / 1 skipped |
 | Ruff / strict mypy | PASS: 17 source files |
-| Python 3.11 CI | PR 생성 후 확인 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37561231902 |
 
 Resolve mutation, native observation/proof production, participant selection, ExpectedDiff compilation,
 transaction/rollback, postflight, approval/Authority/promotion 및 TASK-016은 구현하지 않았습니다.
@@ -77,11 +77,11 @@ transaction/rollback, postflight, approval/Authority/promotion 및 TASK-016은 �
  IMPLEMENTATION_STATUS.md                       |  22 +
  KNOWN_LIMITATIONS.md                           |  23 +
  docs/TEST_MATRIX.md                            |  25 +
- docs/reports/TASK_015_COMPLETION.md            | 167 +++++
+ docs/reports/TASK_015_COMPLETION.md            | 169 +++++
  src/davinci_ai_editor/safety_preflight.py      | 854 +++++++++++++++++++++++
  tasks/TASK_015_SAFETY_PREFLIGHT_INTEGRATION.md |  34 +-
  tests/test_safety_preflight.py                 | 921 +++++++++++++++++++++++++
- 8 files changed, 2059 insertions(+), 1 deletion(-)
+ 8 files changed, 2061 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -96,7 +96,9 @@ transaction/rollback, postflight, approval/Authority/promotion 및 TASK-016은 �
 - Red-first: spec notes 이후 source 작성 전 신규 테스트에서
   `ModuleNotFoundError: davinci_ai_editor.safety_preflight`, collection error 1건 확인.
   테스트 commit `05b12a5` 이후 구현으로 green 전환했습니다.
-- Python 3.11 GitHub CI: PR 생성 후 확인.
+- Python 3.11.16 GitHub CI: [run 37561231902](https://github.com/KIM0296/edit-program/actions/runs/37561231902), 936 passed / 1 skipped, Ruff/strict mypy PASS.
+- CI 검증 head: `2698e33014f013969123db2475e1fcd4e9c53f17`. 후속 문서 commit의 CI는 PR 본문에 기록합니다.
+- 작업 중 main에 후속 native capability 계약 문서가 추가됐습니다(`1af24ce`). TASK-015 범위 변경 없이 최신 PR merge 결과 CI가 통과했습니다.
 - 실제 Resolve integration/실행/rollback/native proof 인증은 범위 밖으로 미실행.
 
 ### Safety Gate

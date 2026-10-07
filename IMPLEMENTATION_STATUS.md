@@ -530,7 +530,7 @@ matrix; proofs require exact typed binding, version and outcome, without generat
 No plan repair, participant selection, upstream compiler calls or native execution.
 
 Local Windows CPython 3.14.6: 936 passed / 0 failed / 1 skipped; 126 new TASK-015 tests.
-Ruff PASS; strict mypy PASS (17 source files). Python 3.11 CI pending PR.
+Ruff PASS; strict mypy PASS (17 source files). Python 3.11.16 CI PASS: run 37561231902, 936 passed / 1 skipped; Ruff/mypy PASS.
 TASK-001..014 source/tests unchanged, including earlier fake safety.py. Skip remains intentional.
 OPEN-015 native proof production and OPEN-001/006/008/012 identity/freshness/authenticity remain.
 Report: docs/reports/TASK_015_COMPLETION.md. Chat Gate pending; no merge or TASK-016.
