@@ -1,0 +1,33 @@
+# TASK-021 — Fixture Materializer Prototype
+
+Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-020 IS APPROVED/MERGED**
+
+Basis: ADR-029, ADR-030, ADR-031, ADR-032.
+
+## Purpose
+
+Materialize canonical disposable Resolve probe fixtures using a template-first package, then prove the result through the approved TASK-020 read-only observation path. No destructive capability probe is authorized.
+
+## Mandatory approach
+
+- versioned project template with content hash
+- versioned canonical test assets with content hashes
+- minimal typed materialization recipe
+- independent read-only canonical verification
+- no arbitrary scripts
+
+Filename/path alone is never package or asset identity. Missing or hash-mismatched assets fail; do not substitute similar files.
+
+Initial step vocabulary remains bounded, such as IMPORT_PROJECT_TEMPLATE, BIND_CANONICAL_ASSET and ACTIVATE_FIXTURE_TIMELINE.
+
+Materializer return success is insufficient. Only independent MATCH may produce CLEAN_VERIFIED. MISMATCH/INCOMPLETE/STALE/UNSUPPORTED are non-ready.
+
+A mismatched instance becomes DIRTY/discarded. Do not patch the same instance and count it as the clean qualifying fixture.
+
+## Required tests
+
+Cover immutable package/template/assets, hash mismatches, missing asset, filename substitution prohibition, bounded recipe vocabulary, no arbitrary script, return-code insufficiency, independent verification, MATCH -> CLEAN_VERIFIED, mismatch -> discard, non-ready statuses, semantic expected snapshot without native IDs, ambiguous role binding, unexpected object mismatch, no rounding/range/track normalization, new instance after mismatch, project generation binding, no user working project, and no destructive probe primitive.
+
+## Workflow
+
+Start only after TASK-020 approval. Use actual installed Resolve API only through approved materialization boundaries. End every materialization with independent TASK-020 verification. Full regression, Python 3.11 CI, Ruff and strict mypy. Write completion report and request Chat Gate. Do not start mutation probes automatically.
