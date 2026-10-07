@@ -760,7 +760,53 @@ and does not satisfy F0-F4 canonical fixture identity.
 
 Detailed catalog: docs/PROBE_FIXTURE_CATALOG.md.
 
+
+
+## ADR-035 - Probe Environment Registry & Runtime Control Plane v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. Probe environment registration, environment verification and run arming are separate states.
+2. Project display name/path/folder/sentinel never independently authorize destructive probing.
+3. Every run authorization binds exact environment/project generation, fixture instance, case/domain,
+   RuntimeProfile, pre-snapshot, observation scope, containment envelope, lease and typed invocation.
+4. Authorization is single-use and is consumed/discarded on final pre-invocation failure as well as
+   after invocation submission.
+5. No wall-clock TTL is required in v1; freshness comes from exact generation/profile/snapshot binding.
+6. There is no reusable global destructive-probe enable switch.
+7. Invocation submission consumes authorization even when native outcome becomes OUTCOME_UNKNOWN.
+8. A no-further-mutation BLOCKED gate prevents new calls but does not claim cancellation of an
+   already-submitted native command.
+9. Unexpected fixture-local mutation makes the current project generation REVERIFY_REQUIRED; no
+   further qualifying mutation is allowed until independent project-level re-verification succeeds.
+10. Project-level contamination makes the generation CONTAMINATED and requires rebuild/new generation.
+11. Crash/bridge uncertainty after invocation locks down further mutation until explicit
+    re-establishment/rebuild.
+12. CONTAMINATED cannot transition back to VERIFIED_CLEAN in-place.
+13. Exploratory probes do not bypass registration, one-run arming, containment or no-blind-retry.
+14. Ordinary editing requests never implicitly arm the probe harness or run qualification suites.
+
+Detailed contract: docs/PROBE_RUNTIME_CONTROL_PLANE.md.
+
 # Open Decisions
+
+
+## OPEN-020 - Native Probe Environment Registration Authenticity
+Status: OPEN (created by ADR-035, 2026-10-07)
+
+ADR-035 defines pure registration/currentness/control-plane semantics but does not authenticate that a
+caller-supplied project reference really identifies a disposable non-production Resolve project.
+
+TASK-019 may validate typed bindings only. Actual runtime work must later establish:
+
+- trustworthy native project/library correspondence for a registered environment
+- how project generation is derived across import/rebuild/reopen
+- how the environment fingerprint/currentness token is captured
+- how working/production projects are excluded from registration using native evidence
+- whether a dedicated project library can become a hard isolation requirement
+- persistence/registry storage and tamper/authenticity guarantees
+
+Until then, registration facts remain typed control-plane evidence, not native truth.
+
 ## OPEN-019 - Installed Resolve Read / Materialization Capability Map
 Status: PARTIALLY RESOLVED — DOCUMENTED READ MAP; RUNTIME VALIDATION REQUIRED (2026-10-07)
 
