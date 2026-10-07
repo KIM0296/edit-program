@@ -543,7 +543,66 @@ Core rules:
 
 Detailed contract: docs/SAFETY_PREFLIGHT_INTEGRATION_CONTRACT.md.
 
+
+
+## ADR-027 - Execution Transaction & Postflight Verification Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+Destructive execution is successful only after the exact authorized state transition has been
+postflight-verified against Resolve-observed state.
+
+Core rules:
+1. Product commit point is after postflight MATCH, never after native mutation calls merely return.
+2. Safety PASS is not execution authorization; authorization binds exact ExpectedDiff, Safety result,
+   base snapshot and approval reference.
+3. Precommit currentness is mandatory and human edits win over pending AI execution.
+4. TransactionPhase and TransactionOutcome are separate axes.
+5. VERIFIED_COMMITTED is the only successful destructive outcome.
+6. Partial mutation is never committed success.
+7. ExecutionStepStatus includes OUTCOME_UNKNOWN as a first-class state.
+8. Blind retry after uncertain mutation response is forbidden; fresh state reconciliation comes first.
+9. Executor self-report/native return values are not postflight truth.
+10. Fresh post-apply observation and ExpectedDiff == ActualDiff MATCH are mandatory for commit.
+11. UNVERIFIED/MISMATCH/STALE postflight cannot commit or promote.
+12. Rollback capability is never assumed.
+13. RollbackCapability and RollbackPolicy are separate; auto rollback may be eligible only when
+    capability is SUPPORTED_VERIFIED and policy allows it.
+14. Rollback command success is insufficient; recovery requires fresh-state verification against base.
+15. Failed edit + verified recovery remains a failed edit, not success.
+16. Unrecovered partial/postflight failure triggers destructive AI recovery-required lockdown.
+17. Promotion requires current authorization, current Safety PASS, VERIFIED_COMMITTED, postflight
+    MATCH and no recovery-required state.
+18. Stable targets are resolved against the authorized base; no mid-transaction re-resolution by
+    shifted timeline position.
+19. Destructive commands are not assumed idempotent.
+20. LLM-generated native script/code is never executed directly.
+
+Detailed contract: docs/EXECUTION_TRANSACTION_POSTFLIGHT_CONTRACT.md.
+
 # Open Decisions
+
+
+## OPEN-016 - Resolve Mutation / Rollback Runtime Capability
+Status: OPEN (created by ADR-027, 2026-10-07)
+
+ADR-027 defines product transaction, rollback and postflight semantics without claiming actual
+Resolve mutation/Undo guarantees.
+
+Runtime validation is still required for:
+- exact native lowering for range removal/displacement
+- target identity stability during mutation
+- command acknowledgement vs actual state semantics
+- Undo/rollback availability and reliability
+- whether rollback can be scoped to one AI transaction
+- post-rollback base-state verification
+- bridge timeout/OUTCOME_UNKNOWN reconciliation
+- crash/restart behavior
+- safe commit-window coordination
+- executor capability differences by Resolve version/platform
+
+Until verified, rollback capability must not be upgraded to SUPPORTED_VERIFIED and destructive runtime
+integration must remain fail-closed.
+
 
 
 ## OPEN-015 - Native Preservation Proof Production
