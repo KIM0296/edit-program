@@ -95,7 +95,7 @@ def parse_streams(blob: bytes, role: AssetRole) -> StreamFacts:
         video = None
         audio = None
         for index, record in enumerate(records):
-            if record.get("index") != index:
+            if type(record.get("index")) is not int or record.get("index") != index:
                 raise ValueError("Stream order mismatch")
             if record["codec_type"] == "video":
                 video = VideoFacts(
@@ -110,6 +110,8 @@ def parse_streams(blob: bytes, role: AssetRole) -> StreamFacts:
                     _string(record["sample_aspect_ratio"]),
                 )
             else:
+                if "bits_per_raw_sample" in record and record["bits_per_raw_sample"] != "24":
+                    raise ValueError("Contradictory raw sample depth")
                 audio = AudioFacts(
                     _string(record["codec_name"]),
                     int(_string(record["sample_rate"])),

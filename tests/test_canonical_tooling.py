@@ -306,3 +306,14 @@ def test_new_tools_have_no_network_resolve_or_shell_surface():
                     k.arg == "shell" and isinstance(k.value, ast.Constant) and k.value.value is True
                     for k in node.keywords
                 )
+
+
+def test_contradictory_audio_bit_depth_and_boolean_stream_index_rejected():
+    a = audio()
+    a["bits_per_raw_sample"] = "16"
+    with pytest.raises(BuildError):
+        parse_streams(json.dumps({"streams": [video(), a]}).encode(), AssetRole.ALPHA)
+    a = audio()
+    a["index"] = True
+    with pytest.raises(BuildError):
+        parse_streams(json.dumps({"streams": [video(), a]}).encode(), AssetRole.ALPHA)

@@ -179,3 +179,18 @@ def test_symlink_escape_rejected_when_available(tmp_path):
         pytest.skip("Host does not permit symlink creation")
     with pytest.raises(ValueError):
         staging_path(root, "link/asset.mov")
+
+
+def test_seal_checks_supplied_toolchain_against_authoritative_lock(tmp_path, monkeypatch):
+    from tools.canonical_assets import package
+    from dataclasses import replace
+
+    root = tiny_package(tmp_path / "a")
+    monkeypatch.setattr(package, "verify_toolchain", lambda tool: None)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("media call before exact lock binding")
+
+    monkeypatch.setattr(package, "_validate_media", forbidden)
+    with pytest.raises(BuildError):
+        package._validate_complete(root, replace(profile(tmp_path), ffmpeg_sha256="d" * 64))

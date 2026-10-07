@@ -253,6 +253,17 @@ def _validate_complete(root: Path, tool: ToolchainProfile) -> None:
     """Sealing never accepts merely matching hashes of unvalidated synthetic bytes."""
     verify_toolchain(tool)
     verify_package(root)
+    raw_lock = (root / "generator.lock.json").read_bytes()
+    recorded_lock = object_value(parse_json(raw_lock))
+    source = recorded_lock["generator_source_commit"]
+    if not isinstance(source, str):
+        raise BuildError(FailureStatus.MANIFEST_FAILURE, "Missing source revision")
+    expected_lock = lock_bytes(tool, source, file_hash(Path(__file__).with_name("recipe.v1.json")))
+    if raw_lock != expected_lock:
+        raise BuildError(
+            FailureStatus.TOOLCHAIN_UNSUPPORTED,
+            "Validation toolchain/recipe does not match package lock",
+        )
     manifest = object_value(parse_json((root / "manifest.v1.json").read_bytes()))
     records = manifest["assets"]
     assert isinstance(records, list)

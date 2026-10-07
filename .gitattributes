@@ -1,0 +1,2 @@
+tools/canonical_assets/* text eol=lf
+canonical_assets/*.json text eol=lf
