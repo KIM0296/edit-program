@@ -2,12 +2,12 @@
 
 TASK: TASK-017 — Validated Execution IR Foundation
 
-상태: 구현 및 로컬 검증 완료, Python 3.11 CI/Chat Gate 대기.
+상태: 구현 및 로컬/Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-017-validated-execution-ir`.
 Base main: `6b5a3d8eb075a98deb901018314f28cf5d9d05a5`.
 Spec notes: `f3c0ec8`, red tests: `309516d`, 구현: `e3ae5b7`.
 최종 제출 head 및 최종 CI 근거는 PR 본문에 기록합니다.
-PR: 생성 후 기록.
+PR: [#37](https://github.com/KIM0296/edit-program/pull/37).
 근거: [TASK-017 spec](../../tasks/TASK_017_VALIDATED_EXECUTION_IR.md),
 [ADR-028 상세 계약](../VALIDATED_EXECUTION_IR_CONTRACT.md).
 요청 Gate: **APPROVED** (Codex 요청이며 Chat 판정 아님).
@@ -53,7 +53,7 @@ identity/capability/effect matrix, decomposition, stale, immutability와 금지�
 
 ### git diff --stat
 
-비교 기준: 시작 main `6b5a3d8`.
+비교 기준: 작업 중 추가된 문서까지 반영한 main `d83713a`. 시작 main은 `6b5a3d8`이며, 후속 read-capability 계약 문서만 merge하여 동기화했습니다. 후속 TASK 구현은 없습니다.
 
 ```text
  DECISIONS.md                             |  10 +
@@ -76,13 +76,13 @@ identity/capability/effect matrix, decomposition, stale, immutability와 금지�
 | 전체 pytest | 1149 passed, 0 failed, 1 skipped |
 | Ruff | PASS |
 | strict mypy | PASS, 19 source files |
-| Python 3.11 CI | PR 생성 후 확인 |
+| Python 3.11 CI | 1149 passed / 1 skipped; Ruff / strict mypy PASS |
 
 로컬 환경: Windows, CPython 3.14.6. 테스트 명령은 `.venv/Scripts/python.exe -m pytest -q`,
 `-m ruff check src tests`, `-m mypy`입니다. Skip은 `test_naive_inv001.py`의 opt-in intentional
 red demo 1개이며 정상 INV-001 회귀는 실행됩니다. 기존 TASK-001~016 source/test 변경은 없습니다.
 
-Python 3.11 GitHub CI: PR 생성 후 확인.
+Python 3.11 GitHub CI: [run 37572985389](https://github.com/KIM0296/edit-program/actions/runs/37572985389), head `4f4eef230d40a07839bbb0f6a5c9cb7e66d93902` PASS. 최종 문서 commit의 CI는 PR 본문에 연결합니다.
 실제 Resolve/Undo/probe/post-read/reconciliation은 실행하지 않았으며 이번 scope 밖입니다.
 
 ### Safety Gate

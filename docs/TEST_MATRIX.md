@@ -351,7 +351,7 @@ Actual Resolve atomicity, rollback reliability and native postflight proof remai
 ## TASK-017 — Validated Execution IR
 
 `tests/test_execution_ir.py`: 117 new tests. Full regression: 1149 passed, 1 intentional naive-demo
-skip. Ruff PASS; strict mypy PASS (19 source files). Python 3.11 CI pending PR.
+skip. Ruff PASS; strict mypy PASS (19 source files). Python 3.11 CI PASS: [run 37572985389](https://github.com/KIM0296/edit-program/actions/runs/37572985389). PR #37; final-head evidence in PR body.
 
 | Prepared requirements | Tests / evidence |
 | --- | --- |

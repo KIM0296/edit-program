@@ -565,7 +565,7 @@ reconciliation prerequisites. No participant discovery, fallback, repair or exec
 
 Red-first: `f3c0ec8` specification notes; `309516d` missing-module red tests; `e3ae5b7` implementation.
 Local validation: 117 new tests; full regression 1149 passed / 1 intentional naive-demo skip.
-Ruff PASS; strict mypy PASS (19 source files). Python 3.11 CI pending PR.
+Ruff PASS; strict mypy PASS (19 source files). Python 3.11 CI PASS: [run 37572985389](https://github.com/KIM0296/edit-program/actions/runs/37572985389). PR #37; final-head evidence in PR body.
 OPEN-017 / OPEN-001 / OPEN-016 remain unresolved for real native evidence and execution.
 Report: [TASK_017_COMPLETION.md](docs/reports/TASK_017_COMPLETION.md).
 Chat Gate pending; no merge or TASK-018 implementation.
