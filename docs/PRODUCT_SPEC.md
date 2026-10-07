@@ -350,3 +350,19 @@ destructive AI execution and promotion until a coherent authoritative state is e
 re-established.
 
 Detailed contract: `docs/EXECUTION_TRANSACTION_POSTFLIGHT_CONTRACT.md`.
+
+
+## Validated Execution IR & Resolve Executor Boundary v1
+
+Pause-v1 execution uses only bounded logical REMOVE_RANGE and TRANSLATE_PLACEMENT operations. Every
+ExpectedDiff effect must be realized exactly once, with no participant-expanding ripple opcode or
+native side-effect expansion.
+
+Destructive lowering requires execution-grade target identity, verified runtime capability, a verified
+native effect model, verified post-read, and a verified reconciliation path. SNAPSHOT_LOCAL identity
+is insufficient for destructive v1 targeting. Fragment-producing decompositions require explicit
+verified rebinding.
+
+Rollback capability remains a separate transaction-policy axis under ADR-027.
+
+Detailed contract: `docs/VALIDATED_EXECUTION_IR_CONTRACT.md`.
