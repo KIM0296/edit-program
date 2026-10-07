@@ -518,3 +518,16 @@ FFmpeg/toolchain determinism is defense in depth; exact approved shipped SHA-256
 canonical identity. Generator success does not imply Resolve support.
 
 Detailed contract: `docs/CANONICAL_ASSET_GENERATOR_CONTRACT.md`.
+
+
+## Canonical Package Implementation Gate
+
+The canonical-media architecture becomes executable through TASK-022. The generator/package task
+produces the first real six-asset bundle, hashes and package_digest before full canonical F0–F4
+runtime qualification and real fixture materialization.
+
+Recommended dependency:
+
+`TASK-019 → TASK-022 → TASK-020 full runtime qualification → TASK-021`.
+
+TASK numbering is repository chronology and does not override this dependency graph.
