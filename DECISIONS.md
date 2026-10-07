@@ -946,24 +946,30 @@ multiple processes.
 
 
 ## OPEN-021 - Canonical Fixture Binary Generation / First Package Digest
-Status: PARTIALLY RESOLVED — generator contract fixed by ADR-037; first binary package pending (2026-10-07)
+Status: RESOLVED FOR FIRST PACKAGE GENERATION — TASK-022 Chat Gate APPROVED (2026-10-07)
 
-ADR-036/037 now fix the package/media contract, source signal algorithms, locked-toolchain policy,
-encode/mux semantics, validation gates, two-clean-run byte determinism requirement, canonical JSON,
-SHA-256/package_digest rules and immutable publication behavior.
+ADR-036/037 fix the package/media and generator contracts. TASK-022 has now produced and Chat Gate
+approved the first canonical package generation evidence:
 
-Still open:
+- locked Python 3.11.9 / NumPy 2.3.5 / BtbN FFmpeg n9.0.2-22-g46d8f462ee-20261006 toolchain;
+- six real canonical assets;
+- full structural/decode validation, including exact PCM round-trip evidence;
+- two independent clean full runs with all nine authoritative files byte-for-byte equal;
+- actual manifest / generator.lock / asset SHA-256 values;
+- package_digest `17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de`;
+- repository package-index candidate with real hashes;
+- local sealed package evidence.
 
-- generator code has not yet been implemented
-- exact FFmpeg/ffprobe build has not yet been selected and locked
-- six canonical binary assets do not yet exist
-- manifest.v1.json / generator.lock.json / checksums.sha256 have not yet been produced from real bytes
-- first asset SHA-256 values and package_digest do not yet exist
-- package publication reference does not yet exist
-- Resolve import/read/materialization qualification has not yet occurred
+This resolution is limited to **first package generation**. It does not claim:
 
-Do not invent binary hashes or package_digest in documentation. The first package requires a separate
-implementation/generation/Chat approval step.
+- binary publication/storage availability;
+- cross-build/cross-platform byte reproducibility;
+- Resolve import/read/materialization support;
+- native environment authenticity;
+- production-edit safety.
+
+Resolve qualification remains TASK-020/021 work. Publication/storage is a separate delivery concern.
+Generator/package evidence remains bound to the approved exact toolchain and bytes.
 
 
 ## OPEN-020 - Native Probe Environment Registration Authenticity
@@ -1601,3 +1607,15 @@ Project re-establishment is represented only by independent bound observation ev
 fixtures are discarded. It never repairs project state; CONTAMINATED cannot use that path. A supplied
 new generation can replace an old one while retaining its records, without claiming native rebuild or
 cancellation of pending calls.
+
+### TASK-022 application of OPEN-021 (not resolved)
+
+Actual generation and exact Run A/B comparison completed using the user-specified ZIP, whose SHA-256
+was verified before extraction. The generator itself has no downloader or fallback. The local sealed
+candidate and real hashes are documented in docs/reports/TASK_022_COMPLETION.md. First-package approval
+is still Chat's decision: OPEN-021 is not marked RESOLVED FOR FIRST PACKAGE GENERATION.
+OPEN-020 is unchanged. No new architecture decision was required.
+
+Real FFmpeg integration required explicit decoded-frame progressive proof when stream field_order is
+absent, canonical WAV header proof when channel_layout is absent, and current passthrough decode syntax.
+These retain the required profile and do not infer missing observations as success.

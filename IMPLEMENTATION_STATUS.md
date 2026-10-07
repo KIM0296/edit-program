@@ -599,3 +599,20 @@ Ruff PASS; strict mypy PASS (21 source files). Python 3.11.16 CI PASS: [run 3757
 OPEN-020 remains OPEN: native authenticity, durable consumption and cross-process lease serialization.
 Report: [TASK_019_COMPLETION.md](docs/reports/TASK_019_COMPLETION.md).
 Chat Gate pending. No PR merge or TASK-020 implementation.
+
+## TASK-022 — Canonical Asset Generator & First Package Build
+
+Status: **APPROVED / FIRST PACKAGE SEALED — merge pending**.
+Branch: feat/task-022-canonical-asset-generator; base main 7659aabe7dbb6a18ac4b1b940b809e08c424eef9.
+Integer video/PCM, deterministic WAV, closed typed commands, toolchain preflight,
+strict structural/full-decode validators, canonical manifest/lock/checksums, A/B comparison and sealing.
+Python 3.11.9 / NumPy 2.3.5 / pinned BtbN n9.0.2-22-g46d8f462ee-20261006.
+Two independent clean six-asset builds and all nine authoritative files' byte equality PASS.
+Local full regression: 1417 passed / 2 skipped. Ruff / strict mypy PASS (33 files).
+Python 3.11 CI: [run 37591852493](https://github.com/KIM0296/edit-program/actions/runs/37591852493), 1418 passed / 1 skipped; Ruff / strict mypy PASS. Final head evidence: PR #48.
+Package digest: `17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de`.
+Small real-hash package index: canonical_assets/first-package-candidate-v1/package-index.candidate.json.
+Media sealed locally outside Git; no release/publication. Chat Gate APPROVED on PR #48.
+OPEN-021 is RESOLVED FOR FIRST PACKAGE GENERATION; OPEN-020 unchanged. No Resolve validation.
+Report: docs/reports/TASK_022_COMPLETION.md.
+TASK-020/021 not started.

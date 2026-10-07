@@ -442,3 +442,20 @@ ADR-035 additions:
 | no native authenticity invented | opaque supplied registration evidence only; OPEN-020 documented |
 
 Python 3.11.16 CI PASS: [run 37578746926](https://github.com/KIM0296/edit-program/actions/runs/37578746926); 1347 passed / 1 skipped, Ruff and strict mypy PASS.
+
+## TASK-022 — Canonical generator and first-package candidate
+
+| Spec requirements | Evidence |
+| --- | --- |
+| 1–9 video / frozen recipe / glyphs / pixels / source digest | Literal independent A/7 glyph and selected frame 0/1/23/24/719 pixels, MSB binary order, bar, roles, invalid indices; source digest mismatch rejection |
+| 10–18 PCM / WAV | Literal stereo samples at requested boundaries, signed packing/interleave, exact length, integer deterministic source, strict RIFF fmt/data header |
+| 19–24 serialization / hash / paths / sealing | Canonical byte literals, malformed data, traversal, checksum/digest mismatch, collisions, reservation ownership |
+| 25–30 typed commands / errors / schema | Closed recipes; unsupported capability; encoder/decode failure; manifest/lock schema; no arbitrary flags or shell |
+| 31–39 actual FFmpeg integration | Locked Windows FFmpeg: real DNxHR LB MOV + PCM copy mux; explicit stream/frame/WAV evidence; full video and audio decode |
+| 40–54 full build / real hashes / equality / index | Two fresh six-asset runs; all nine files exact byte equality; complete pre-seal validation; actual hashes and sealed local candidate |
+| 55 no ordinary Git media | Only small metadata/index/comparison evidence added to canonical_assets/first-package-candidate-v1 |
+| 56–59 regression / Python 3.11 / Ruff / mypy | Local Python 3.11.9: 1417 passed / 2 skipped; Ruff PASS; strict mypy 33 files PASS; Python 3.11 CI 1418 passed / 1 skipped; run 37591852493 linked in report |
+
+71 new cases: 70 passed / 1 Windows symlink privilege skip. Existing naive INV-001 opt-in red demo also
+skipped in full regression. Ordinary CI excludes full media generation; the explicit real integration
+command and sealed output are recorded in docs/reports/TASK_022_COMPLETION.md. No Resolve tests ran.
