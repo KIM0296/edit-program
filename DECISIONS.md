@@ -713,11 +713,37 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 Detailed contract: docs/READ_ONLY_PROBE_ADAPTER_FIXTURE_MATERIALIZATION.md.
 # Open Decisions
 ## OPEN-019 - Installed Resolve Read / Materialization Capability Map
-Status: OPEN (created by ADR-032, 2026-10-07)
+Status: PARTIALLY RESOLVED — DOCUMENTED READ MAP; RUNTIME VALIDATION REQUIRED (2026-10-07)
 
-ADR-032 fixes architecture but does not claim the installed Resolve version exposes every required read or materialization primitive. TASK-020/TASK-021 must establish stable project/timeline identity reads, track/placement/media/source/time observability, transition/effect/keyframe/marker/subtitle observability, consistency/freshness evidence, project-template import/allocation behavior, canonical asset binding, role-binding identity evidence and optional project-library isolation support.
+ADR-032 architecture is now paired with a documented Resolve 21.x read-capability map in
+`docs/RESOLVE_READ_CAPABILITY_MAP.md`. This is a candidate adapter surface, not runtime proof.
 
-Unsupported or unavailable fields remain UNKNOWN/UNSUPPORTED rather than being synthesized.
+Documented Tier A candidates for TASK-020 include RuntimeProfile/version, Project/Timeline unique IDs,
+timeline range/settings, track count/name/subtype/enabled/locked state, TimelineItem unique ID and
+track membership, timeline/source ranges, MediaPoolItem identity, linked items, clip-enabled state,
+markers, and subtitle-track/item enumeration.
+
+Tier B remains partial/non-authoritative for Safety proof: simple speed/fades and generic item
+properties, transition presence/span/type surface, Fusion-comp presence and color-node graph presence.
+
+Tier C remains UNKNOWN or insufficient for production Safety proof until direct runtime evidence:
+identity lifetime across session/reload/split, stable native Track identity, full transition
+parameters/alignment, generic Edit/Fairlight effect graph, generic keyframe/interpolation state,
+complete variable-retime curves, and generic preservation-proof production.
+
+Capability discovery order is fixed:
+1. inspect the exact installed `DaVinciResolveScript.pyi` / Developer Scripting reference,
+2. confirm the native object's callable surface,
+3. perform a bounded read call,
+4. validate the typed return value,
+5. repeat unchanged reads to establish stability.
+
+`hasattr()`, method-name presence, README examples, or a non-erroring call alone do not upgrade a
+capability to runtime SUPPORTED/VERIFIED.
+
+Remaining resolution requires TASK-020 on the exact Windows Resolve/adapter RuntimeProfile and
+TASK-021 materialization validation. Unsupported/unavailable fields remain UNKNOWN/UNSUPPORTED rather
+than being synthesized.
 
 
 

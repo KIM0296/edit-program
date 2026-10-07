@@ -93,3 +93,24 @@ After TASK-020 approval, TASK-021 implements the template-first CanonicalFixture
 ## Final principle
 
 > Materialization creates a candidate test state; independent read-only observation is what proves that the state is actually canonical.
+
+## Documented Resolve read tiers
+
+OPEN-019 is partially resolved by `docs/RESOLVE_READ_CAPABILITY_MAP.md`.
+
+TASK-020 uses three conservative tiers:
+
+- Tier A: mandatory first runtime validation candidates for project/timeline/track/placement/media,
+  markers and subtitle enumeration.
+- Tier B: useful partial diagnostics such as simple speed/fades, generic item properties,
+  transition-item surface, Fusion presence and color-node presence.
+- Tier C: unresolved generic proof domains including identity lifetime, persistent Track identity,
+  complete transition/effect/keyframe semantics and complete variable-retime curves.
+
+Tier labels describe implementation priority, not verified runtime support.
+
+For each field, concrete support requires inspection of the exact installed Developer Scripting
+reference / `DaVinciResolveScript.pyi`, bounded typed read execution, return validation and repeated
+read stability. Method-name presence or `hasattr()` alone is never support evidence.
+
+TASK-020 should stabilize Tier A before Tier B/C expansion.
