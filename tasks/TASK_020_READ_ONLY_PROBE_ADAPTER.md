@@ -42,3 +42,80 @@ Fixture materialization, project-template import, asset-binding mutation, destru
 ## Workflow
 
 Start only after TASK-019 approval. Inspect the exact installed Resolve developer API before concrete calls. Record unavailable facts as limitations; do not synthesize them. Full regression, Python 3.11 CI, Ruff and strict mypy. Write completion report and request Chat Gate. Do not start TASK-021 automatically.
+
+## OPEN-019 documented capability tiers
+
+TASK-020 must start from a conservative three-tier map and then replace documentation claims with
+runtime evidence from the exact installed Resolve/adapter profile.
+
+### Tier A — mandatory first runtime validation
+
+Candidate read surfaces:
+
+- Resolve product/version/build fields
+- current Project identity including documented Project.GetUniqueId() where callable
+- current Timeline.GetUniqueId(), start/end/start-timecode/settings required by fixture verification
+- track count/name/subtype/enabled/locked state
+- TimelineItem.GetUniqueId(), track type/index, start/end/duration
+- TimelineItem source start/end frame
+- TimelineItem MediaPoolItem binding
+- MediaPoolItem unique/media IDs and required clip properties
+- linked items
+- clip-enabled state
+- Timeline and TimelineItem markers
+- subtitle track/item enumeration and timing/text where the runtime returns typed values
+
+Tier A documentation is not runtime verification. Each field remains UNKNOWN/UNSUPPORTED until the
+installed profile proves a callable, typed, stable read path.
+
+### Tier B — observe when available, never treat as generic Safety proof
+
+- simple/fixed speed
+- fades
+- generic TimelineItem properties
+- transition item presence/type/span surface
+- Fusion composition presence
+- color node-graph presence
+
+Tier B observations must remain explicitly PARTIAL/UNVERIFIED unless a later producer contract proves
+the exact Safety semantic needed.
+
+### Tier C — explicitly unresolved for generic v1 proof
+
+- persistent identity lifetime across app/project reopen, split/delete and session changes
+- stable native Track identity independent of type/index
+- complete transition alignment/parameter state
+- generic Edit/Fairlight effect graph and editability state
+- generic keyframe/interpolation state
+- complete variable-retime curve
+- generic transition/effect/keyframe PRESERVATION_PROVEN production
+
+Do not infer Tier C values from names, positions, static properties or object-ID shape.
+
+## Installed API discovery procedure
+
+For every concrete adapter field, use this order:
+
+1. inspect the exact installed Developer Scripting reference / `DaVinciResolveScript.pyi`
+2. confirm the method on the actual native object surface
+3. execute only the bounded read call
+4. type/shape validate the returned value
+5. repeat against an unchanged fixture to validate read stability
+
+Do not mark capability supported from `hasattr()`, a method-name string, documentation presence, or
+a non-throwing call alone.
+
+## Runtime gate for TASK-020
+
+TASK-020 may report the documented Tier A surface as candidate support, but completion evidence must
+record for each mandatory field one of:
+
+- SUPPORTED_STABLE
+- SUPPORTED_UNSTABLE
+- UNSUPPORTED
+- UNKNOWN
+
+Only SUPPORTED_STABLE fields may contribute to a qualifying fixture snapshot.
+
+Project/Timeline/TimelineItem `GetUniqueId()` values are observation data only. TASK-020 does not
+upgrade their lifetime to PERSISTENT_VERIFIED without explicit cross-boundary identity tests.
