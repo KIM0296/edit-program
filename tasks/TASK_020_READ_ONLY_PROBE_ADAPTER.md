@@ -232,3 +232,22 @@ leave ADR-039 fail-closed. Do not substitute project names or sentinels.
   conversion. Native coordinate conventions require explicit runtime evidence.
 - OPEN-023 records cross-project reporting/run aggregation ambiguity; no multi-project mega-run or
   splicing implementation. Phase A supports separately bound sessions and F4 A/B within one project.
+
+
+## Cross-project qualification campaign
+
+ADR-040 / `docs/TASK_020_QUALIFICATION_CAMPAIGN.md` resolves OPEN-023.
+
+Full Phase B uses exactly five sealed project-bound runs:
+
+- F0
+- F1
+- F2
+- F3
+- F4 containing F4-A/F4-B and three S2 round trips
+
+The final campaign aggregator is pure evidence processing. It references/verifies member evidence and
+derives campaign RV/fixture summaries; it must never splice raw captures or synthesize a shared project
+generation.
+
+Phase A adapter approval does not imply Phase B completion.
