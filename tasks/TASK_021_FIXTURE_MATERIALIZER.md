@@ -45,3 +45,24 @@ Required packaging behavior:
 - project template/package may share immutable asset bytes, but fixture project lifecycles remain
   independent
 - materialized semantic state must be verified independently through TASK-020 before CLEAN_VERIFIED
+
+
+## Canonical asset package validation
+
+TASK-021 must consume ADR-036 / `docs/CANONICAL_FIXTURE_ASSET_PACKAGE.md`.
+
+Before any materialization step:
+
+1. load manifest.v1.json
+2. validate package/contract version
+3. validate checksums.sha256 format
+4. hash manifest, generator.lock and all six assets
+5. compute package_digest = SHA256(exact checksums.sha256 bytes)
+6. compare against the approved package index
+7. inspect required stream properties
+8. reject missing/extra/hash-mismatched authoritative package files
+9. only then import/bind canonical assets
+
+Do not regenerate canonical media inside TASK-021 or during an ordinary editing request.
+
+The first binary package/digest remains OPEN-021 until separately generated and approved.
