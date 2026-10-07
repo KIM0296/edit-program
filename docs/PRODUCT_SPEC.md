@@ -473,3 +473,20 @@ Real footage remains a separate evaluation asset for Pause/Dialogue quality, rev
 and Net Editing Time Saved.
 
 Detailed catalog: `docs/PROBE_FIXTURE_CATALOG.md`.
+
+
+## Probe Runtime Control Plane v1
+
+Probe qualification has an explicit control plane separate from ordinary editing.
+
+Registration, environment verification and one-run arming are distinct. Every authorization is bound
+to one disposable project generation, one clean fixture, one pre-snapshot and one typed invocation,
+and is consumed after the final pre-invocation gate or invocation attempt.
+
+Unexpected fixture-local mutation blocks additional qualifying probes until project-level
+re-verification. Project-level contamination requires a new generation. Crash/bridge uncertainty
+locks down new probe mutations rather than guessing that the environment remained clean.
+
+No ordinary editing request implicitly arms this system.
+
+Detailed contract: `docs/PROBE_RUNTIME_CONTROL_PLANE.md`.

@@ -7,6 +7,7 @@ Basis:
 - ADR-029 Native Capability Probe Evidence
 - ADR-030 Capability Verification Policy
 - ADR-031 Resolve Probe Harness & Fixture Lifecycle v1
+- ADR-035 Probe Environment Registry & Runtime Control Plane v1
 
 ## Purpose
 
@@ -198,3 +199,44 @@ At minimum prove:
 Represent a probe run so destructive qualification can only be armed inside a registered disposable
 probe project on one fresh CLEAN_VERIFIED fixture, execute at most one bounded invocation attempt,
 seal evidence, and discard/quarantine the test state without touching production projects.
+
+
+## Runtime control-plane additions
+
+TASK-019 must also implement ADR-035 as pure immutable state/control-plane semantics.
+
+Required additional domain:
+
+- RegisteredProbeEnvironment
+- EnvironmentVerification
+- ProjectGenerationStatus
+- ProbeLease
+- NoFurtherMutationGate
+- explicit authorization-consumption state
+- containment classification:
+  - CLEAN
+  - UNEXPECTED_FIXTURE_LOCAL
+  - PROJECT_LEVEL_CONTAMINATION
+  - ENVIRONMENT_UNCERTAIN
+
+Rules:
+
+- registration != environment verification != arming
+- name/path/sentinel alone never authorizes
+- only VERIFIED_CLEAN project generation may arm qualifying work
+- final pre-invocation failure consumes/discards the one-run authorization
+- invocation submission consumes authorization regardless of native acknowledgement
+- no global reusable arm flag
+- UNEXPECTED_FIXTURE_LOCAL -> REVERIFY_REQUIRED
+- project-level re-verification is observation-only and may not repair state
+- successful independent re-verification may return REVERIFY_REQUIRED -> VERIFIED_CLEAN
+- failed/unknown re-verification -> CONTAMINATED
+- PROJECT_LEVEL_CONTAMINATION -> CONTAMINATED directly
+- CONTAMINATED cannot become VERIFIED_CLEAN in-place
+- rebuild creates a new project generation
+- ENVIRONMENT_UNCERTAIN blocks further mutation until explicit re-establishment/rebuild
+- BLOCKED no-further-mutation means no new calls; it does not claim in-flight cancellation
+- exploratory mode cannot bypass these gates
+
+Add tests proving these transitions and that OPEN-020 native registration authenticity is not
+silently invented.
