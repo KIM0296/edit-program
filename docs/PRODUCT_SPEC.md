@@ -490,3 +490,18 @@ locks down new probe mutations rather than guessing that the environment remaine
 No ordinary editing request implicitly arms this system.
 
 Detailed contract: `docs/PROBE_RUNTIME_CONTROL_PLANE.md`.
+
+
+## Canonical Fixture Asset Package v1
+
+Probe fixtures use six deterministic synthetic canonical media assets. The v1 package uses 720p24
+intra-frame DNxHR LB video and 48 kHz / 24-bit stereo Linear PCM where audio is present.
+
+Asset identity is based on exact shipped SHA-256 bytes and semantic asset IDs, never filename.
+Generator/toolchain metadata is provenance only. Ordinary editor workflows do not regenerate or
+download these assets.
+
+The binary bundle is versioned and checksum-locked separately from real editorial footage, which
+remains dedicated to quality/workflow evaluation.
+
+Detailed contract: `docs/CANONICAL_FIXTURE_ASSET_PACKAGE.md`.
