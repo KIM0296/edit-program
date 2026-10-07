@@ -119,3 +119,20 @@ Only SUPPORTED_STABLE fields may contribute to a qualifying fixture snapshot.
 
 Project/Timeline/TimelineItem `GetUniqueId()` values are observation data only. TASK-020 does not
 upgrade their lifetime to PERSISTENT_VERIFIED without explicit cross-boundary identity tests.
+
+
+## Runtime validation matrix
+
+The concrete runtime test plan is defined in:
+
+`docs/TASK_020_RUNTIME_VALIDATION_MATRIX.md`
+
+ADR-033 fixes the matrix as authoritative v1 policy. TASK-020 must implement:
+
+- 10 consecutive double-capture semantic stability pairs per qualifying Tier A fixture
+- 3 timeline switch round-trips for identity candidates
+- 3 project reopen cycles only when project-reopen lifetime is claimed
+- Resolve restart testing only before cross-session persistence claims
+- no PERSISTENT_VERIFIED identity grant from same-session stability alone
+
+Implementation must preserve every failed/unstable observation rather than retrying until green.

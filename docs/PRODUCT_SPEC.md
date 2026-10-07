@@ -442,3 +442,19 @@ The product does not convert documentation presence into runtime trust. Tier A m
 typed reads plus repeated stability before it can contribute to a qualifying ProbeSnapshot.
 
 Detailed map: `docs/RESOLVE_READ_CAPABILITY_MAP.md`.
+
+
+## TASK-020 Read Stability & Runtime Validation Policy v1
+
+The first read-only Resolve integration uses 10 consecutive double-capture semantic stability pairs
+per qualifying Tier A fixture. Any unexplained drift is retained and marks the affected read scope
+SUPPORTED_UNSTABLE rather than being retried away.
+
+Identity candidates require 3 timeline-switch round trips for a same-project switch-stability claim.
+Project reopen requires 3 reopen cycles only when that lifetime is claimed, and Resolve restart is
+required before cross-session PERSISTENT_VERIFIED identity can be claimed.
+
+Basic TASK-020 completion does not require persistent identity across restart. Readable native IDs
+remain observations until their claimed lifetime boundaries are separately proven.
+
+Detailed policy: `docs/TASK_020_RUNTIME_VALIDATION_MATRIX.md`.
