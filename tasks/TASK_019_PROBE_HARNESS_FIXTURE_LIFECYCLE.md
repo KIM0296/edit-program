@@ -1,6 +1,6 @@
 # TASK-019 — Probe Harness & Fixture Lifecycle Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-018 IS APPROVED/MERGED**
+Status: **IMPLEMENTED — local / Python 3.11 CI PASS; PR #45, Chat Gate pending**
 
 Basis:
 - ADR-006 LLM Emits IR Only
@@ -240,3 +240,24 @@ Rules:
 
 Add tests proving these transitions and that OPEN-020 native registration authenticity is not
 silently invented.
+
+## TASK-019 implementation notes (before code)
+
+- Reuse TASK-018 RuntimeProfile, ApplicabilityDomain, typed NativeInvocationSpec, observation scope,
+  fixture class and observed subject values. No capability derivation or native adapter is called.
+- Registration, EnvironmentVerification and per-run arming remain independent artifacts. A leased
+  fixture retains its exact MATCH verification; LEASED_FOR_PROBE is eligible only for that exact lease.
+- The immutable Harness retains fixture/run/auth/lease history, including consumed authorizations and
+  sealed evidence. Pure transitions return a new Harness; the fake shell records no native side effects.
+  No function resets mutated/dirty/quarantined fixtures to clean or clears consumed authorization history.
+- Crossing the final gate consumes authorization before either an abort (zero attempts) or recording
+  the sole boundary submission. Native acknowledgement is a later record, never authority to retry.
+- Pre-submission abort requires explicit re-verification for a new run; post-submission uncertainty
+  quarantines the fixture and blocks further submission. Observation/sealing remain possible as
+  diagnostics. BLOCKED does not cancel an already recorded submission.
+- Independent project re-verification requires discard of affected fixture state. MATCH may re-establish
+  REVERIFY_REQUIRED; failure/unknown contaminates. CONTAMINATED requires a new generation. Rebuild is
+  only a caller-supplied new-generation registration event, never native project creation.
+- OPEN-020: registry authenticity, fingerprint acquisition, durable/atomic single-use authority and
+  concurrent process coordination are not implemented. Pure state values must be threaded through
+  transitions; copying an old in-memory value does not represent a second live native authority.

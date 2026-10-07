@@ -426,3 +426,24 @@ unsafe → reject
 - Session-local identity invalidates on session change separately from runtime effect profile.
   Broader effect evidence can be reused; ordinary editors have zero manual probe work and no per-edit suite.
 - Actual Resolve probes/read capture/mutation/Undo/retry/release enforcement remain outside scope.
+
+## TASK-019 — Pure probe control plane, not native authorization
+
+- Registration/isolation/fingerprint/canonical asset and capture values are caller-supplied typed
+  facts. No Resolve project lookup, native registration authenticity, target lookup, capture,
+  materialization, checksum acquisition, mutation, rebuild, Undo or cancellation is implemented.
+- Immutable successors preserve consumed authorization/lease/run history. Callers must thread the
+  returned state. Persistence, crash-safe atomic consumption and cross-process concurrency remain
+  OPEN-020; replaying an old Python value cannot be treated as a second live native authority.
+- InvocationAttempt is a fake logical boundary record. Native acknowledgement is a separate input;
+  timeout/unknown/crash quarantine without blind retry. BLOCKED only forbids a new logical submission.
+- PostObservation/ContainmentResult are precomputed evidence. This layer does not calculate native
+  diffs, validate native observations or derive TASK-018 capability qualification. A suite's eligible
+  refs are lifecycle candidates only, never VERIFIED capability or satisfied repetition budgets.
+- Asset hash/metadata fields are opaque references for this foundation, not generated canonical
+  package bytes or verified package digests. ADR-036/037 asset generation is not implemented.
+- A fresh materialization generation on the same timeline distinguishes reconstruction from renaming
+  a consumed instance. Its native authenticity is not established here. Re-verification is observation
+  only; a contaminated generation cannot be repaired in place.
+- Production editor manual probe work remains zero. No scheduler, ordinary-edit suite trigger,
+  arbitrary script/callback or native runtime enablement is provided.

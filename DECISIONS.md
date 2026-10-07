@@ -1490,3 +1490,17 @@ not omit historical evidence or falsify fixture reconstruction. Ledger persisten
 and native acquisition belong to separately authorized harness work. No TASK-019 implementation or
 native guarantee is introduced. Existing TASK-017 status fields are not implicitly reused by new
 reconciliation/fragment evidence; production integration remains deferred.
+
+### TASK-019 application of OPEN-020 (remain OPEN)
+
+The fake control plane validates exact typed registrations/generations/fingerprints, but does not
+establish their native truth. Registry persistence, native generation discovery, crash-safe durable
+consumption and cross-process lease atomicity remain unimplemented. The pure transition API consumes
+an immutable authoritative input state and returns its successor; native runtime serialization must
+later ensure old state snapshots cannot be replayed as new authority. No name/path/sentinel or caller
+flag is promoted to a native authenticity guarantee. This PR does not implement TASK-020.
+
+Project re-establishment is represented only by independent bound observation evidence after affected
+fixtures are discarded. It never repairs project state; CONTAMINATED cannot use that path. A supplied
+new generation can replace an old one while retaining its records, without claiming native rebuild or
+cancellation of pending calls.
