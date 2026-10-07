@@ -505,3 +505,16 @@ The binary bundle is versioned and checksum-locked separately from real editoria
 remains dedicated to quality/workflow evaluation.
 
 Detailed contract: `docs/CANONICAL_FIXTURE_ASSET_PACKAGE.md`.
+
+
+## Canonical Asset Generator v1
+
+Canonical probe media is generated from integer-defined synthetic video/audio signals under one
+locked software toolchain. The generator validates stream structure, performs full decode checks,
+generates the package twice from clean staging directories and requires byte-for-byte equality before
+the bundle can be sealed.
+
+FFmpeg/toolchain determinism is defense in depth; exact approved shipped SHA-256 bytes remain the
+canonical identity. Generator success does not imply Resolve support.
+
+Detailed contract: `docs/CANONICAL_ASSET_GENERATOR_CONTRACT.md`.
