@@ -631,3 +631,8 @@ CI and final submission head: PR body. OPEN-023 cross-project aggregate unresolv
 coordinate semantics require evidence. OPEN-020 native authenticity remains unproven.
 Report: docs/reports/TASK_020_COMPLETION.md. Requested Chat Gate: HOLD for runtime qualification;
 Phase A code review requested separately. No merge, TASK-021, fixture repair or Resolve mutation.
+
+TASK-020 PR: https://github.com/KIM0296/edit-program/pull/49 (Draft / HOLD).
+Python 3.11.16 CI PASS: https://github.com/KIM0296/edit-program/actions/runs/37600846871
+1473 passed / 1 skipped; Ruff PASS; strict mypy PASS (44 files), head 163c568.
+Native qualification remains unexecuted; no merge or TASK-021.

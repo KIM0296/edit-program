@@ -1,11 +1,12 @@
-﻿# TASK 완료 보고서
+# TASK 완료 보고서
 
 TASK: TASK-020 — Read-only Probe Adapter + Runtime Qualification
 상태: **Phase A 구현 완료 / Phase B 미완료 / 전체 HOLD 요청**
 브랜치: `feat/task-020-read-only-probe-adapter`
 Base main: `98bffaf204b1ee94636213ea9cd60bf7dfa45b75`
 구현 commit: `4d223ee`; 추가 경계 검증 및 최종 runtime 진단 기준: `858cc48`.
-최종 제출 head / PR 링크 / CI는 PR 본문에 기록합니다.
+PR: [#49](https://github.com/KIM0296/edit-program/pull/49) (Draft / HOLD).
+CI 검증 head: `163c568ac3aec1c4f0e269d2a90cbdd058f8dcaa`; 최종 docs-only head는 PR 본문에 기록합니다.
 근거: ADR-022/029/030/031/032/033/034/038/039 및 TASK-020 authoritative 문서.
 요청 Gate: **HOLD**. Phase A 코드 검토와 Phase B runtime HOLD를 분리 요청합니다.
 이는 Codex의 요청이며 Chat 판정이 아닙니다.
@@ -66,7 +67,9 @@ Windows / external **Python 3.11.9**. Installed Resolve file **21.1.1.10**; runn
 - 신규 unit/mock: **55 passed**.
 - 전체 Python 3.11: **1472 passed, 0 failed, 2 skipped** (15.82 seconds).
 - Ruff: PASS. strict mypy: PASS, 44 source files.
-- Python 3.11 CI: 제출 PR의 workflow 결과로 별도 확인합니다. 아래 native 결과와 혼동하지 않습니다.
+- GitHub Python **3.11.16** CI: **1473 passed / 1 skipped**, Ruff PASS, strict mypy PASS (44 files).
+  [run 37600846871](https://github.com/KIM0296/edit-program/actions/runs/37600846871).
+  Linux에서 symlink 테스트도 실행됐습니다. Native qualification은 별도 미실행입니다.
 - skip: Windows symlink 생성 권한 없음 1개, opt-in naive INV-001 intentional red demo 1개.
   실제 INV-001 회귀는 실행/통과했습니다.
 - red-first: missing-module 실패 및 잘못된 timeline end/F0 links/F3 host/mutable evidence/
