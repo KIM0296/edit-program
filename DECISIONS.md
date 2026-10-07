@@ -1619,3 +1619,19 @@ OPEN-020 is unchanged. No new architecture decision was required.
 Real FFmpeg integration required explicit decoded-frame progressive proof when stream field_order is
 absent, canonical WAV header proof when channel_layout is absent, and current passthrough decode syntax.
 These retain the required profile and do not infer missing observations as success.
+
+## OPEN-023 - TASK-020 cross-project qualification report grouping
+Status: OPEN — TASK-020 implementation discovery, 2026-10-07
+
+ADR-034 defines F0–F3 as distinct projects and F4 as another project; ADR-038 binds one validation_run_id
+to one environment/project generation while presenting all six contexts in one runtime report.
+The cross-project parent campaign/report identity is not defined. Do not weaken per-run binding.
+
+Implementation can capture separate exactly bound sessions, with F4 A/B in one project, and report
+missing/unexecuted contexts as HOLD. A future aggregate must reference independent sealed runs without
+splicing them into one project generation. Chat should confirm the aggregate evidence contract before
+claiming a single all-F0–F4 qualification. No aggregation authority is invented in TASK-020.
+
+Additional runtime questions remain under OPEN-019/011: the installed 21.1.1.10 stub annotates item
+start/end/duration as float even in False mode; source/end native conventions are not empirically known.
+Preserve raw values; do not coerce/shift. Runtime evidence is required before canonical mapping readiness.
