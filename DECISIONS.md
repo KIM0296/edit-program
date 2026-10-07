@@ -1241,3 +1241,13 @@ recovery needs later decisions; this foundation blocks new destructive eligibili
 no automatic retry, recovery or lockdown release. Base-state verification MATCH, not a native return,
 is the recovery evidence, including reconciliation of an uncertain rollback response. No new runtime
 policy is marked accepted. TASK-017 is not started.
+
+### TASK-017 application of OPEN-017 / OPEN-001 / OPEN-016 (remain OPEN)
+
+The pure validator consumes caller-declared verified capability/effect/identity/reconciliation
+records. A sequence-level effect model is the explicit net-effect evidence for a decomposition;
+intermediate fragment correspondence must have separate bound verification evidence. The validator
+cannot establish that a real Resolve primitive, locator or fragment actually satisfies those claims.
+No native recipe, returned-item order, locator lifetime or rollback guarantee is inferred. Evidence
+production/authenticity, intermediate native state acquisition and runtime validation remain deferred
+to their separately approved contracts/tasks. TASK-017 does not implement TASK-018 or later probes.

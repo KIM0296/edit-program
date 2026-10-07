@@ -240,3 +240,19 @@ Represent the exact Pause-v1 semantic mutation as bounded logical IR and prove t
 lowering covers every approved effect exactly once using verified execution identity, verified
 capability/effect semantics, verified post-read and verified reconciliation evidence, without calling
 Resolve or changing the semantic plan.
+
+## TASK-017 implementation notes (before code)
+
+- Reuse exact RangeRemovalEffect / TemporalDisplacement values, NativeSnapshotRef, IdentityScope,
+  SafetyPreflightResult and ExecutionAuthorization. Proposed IR is validated, not selected or repaired.
+- One LoweringRealization owns a disjoint set of logical op refs and an ordered native step sequence.
+  A caller-supplied NativeEffectModel binds that whole sequence and its net semantic effects. This
+  permits structural validation of fusion/decomposition without treating intermediate fragments as
+  new logical opcodes. No intermediate state or binding is inferred.
+- Every step carries bound typed reconciliation evidence and post-read capability. Fragment-producing
+  sequences additionally require verified compound or intermediate-rebinding evidence bound to the
+  same realization, base, profile and steps. These are supplied facts, never native guarantees.
+- Equality uses full effect values (including before state), and multiplicity is retained. Sorting
+  unordered evidence collections never deduplicates effects or chooses a preferred lowering.
+- OPEN-017 evidence production/authenticity and OPEN-001 native identity remain unresolved. This task
+  validates structural evidence only, with no probe, native execution or retry implementation.
