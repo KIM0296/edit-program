@@ -551,7 +551,7 @@ No direct applying-to-commit, blind retry, successful rollback from native retur
 failed-to-success rewrite, or promotion of uncertain/unrecovered outcomes. No native calls.
 
 Local Windows CPython 3.14.6: 1032 passed / 0 failed / 1 skipped; 96 TASK-016 tests.
-Ruff PASS; strict mypy PASS (18 source files). Python 3.11 CI pending PR.
+Ruff PASS; strict mypy PASS (18 source files). Python 3.11.17 CI PASS: [run 37565075683](https://github.com/KIM0296/edit-program/actions/runs/37565075683), 1032 passed / 1 skipped; Ruff and strict mypy PASS (18 source files).
 TASK-001..015 source/tests unchanged. Skip remains the intentional opt-in naive demo.
 OPEN-016 and native identity/freshness OPENs remain; no actual atomicity/Undo claim.
 Report: docs/reports/TASK_016_COMPLETION.md. Chat Gate pending; no merge or TASK-017.

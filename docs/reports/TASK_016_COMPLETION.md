@@ -2,12 +2,12 @@
 
 TASK: TASK-016 — Transaction State & Postflight Verification Foundation
 
-상태: 구현 및 로컬 검증 완료, Python 3.11 CI/Chat Gate 대기.
+상태: 구현 및 로컬/Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-016-transaction-postflight`.
 Base main: `dbd57be0602e6e5e692d2dd3fc2a3e7e0fa0f63f`.
 Spec notes: `e6c8f56`, red tests: `db3dbd1`, 구현: `6d4b2b3`.
 후속 보고 commit을 포함한 최종 제출 head는 PR 본문에 기록합니다.
-PR: 생성 후 기록.
+PR: [#34](https://github.com/KIM0296/edit-program/pull/34).
 근거: [TASK-016 spec](../../tasks/TASK_016_TRANSACTION_POSTFLIGHT.md),
 [ADR-027 상세 계약](../EXECUTION_TRANSACTION_POSTFLIGHT_CONTRACT.md).
 요청 Gate: **APPROVED** (Codex 요청이며 Chat 판정 아님).
@@ -49,7 +49,7 @@ pure immutable lifecycle을 구현했습니다. Transaction의 state는 append-o
 | 41-47: execution isolation | PASS: verifier/compiler/Safety/Authority/FakeTimeline monkeypatch 및 import 검사 |
 | 48: regression | PASS: TASK-001~015 포함 1032 passed / 1 skipped |
 | Ruff / strict mypy | PASS: 18 source files |
-| Python 3.11 CI | PR 생성 후 확인 |
+| Python 3.11 CI | CPython 3.11.17: 1032 passed, 1 skipped; Ruff/strict mypy PASS |
 
 실제 Resolve mutation/Undo, executor/native lowering, ActualDiff 계산, post snapshot capture,
 automatic retry/recovery, crash persistence, TimelineVersion mutation, Authority promotion 및
@@ -77,11 +77,11 @@ TASK-017은 구현하지 않았습니다.
  IMPLEMENTATION_STATUS.md                 |  21 +
  KNOWN_LIMITATIONS.md                     |  23 +
  docs/TEST_MATRIX.md                      |  22 +
- docs/reports/TASK_016_COMPLETION.md      | 166 +++++
+ docs/reports/TASK_016_COMPLETION.md      | 168 ++++++
  src/davinci_ai_editor/transaction.py     | 997 +++++++++++++++++++++++++++++++
  tasks/TASK_016_TRANSACTION_POSTFLIGHT.md |  38 +-
  tests/test_transaction.py                | 804 +++++++++++++++++++++++++
- 8 files changed, 2085 insertions(+), 1 deletion(-)
+ 8 files changed, 2087 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -96,7 +96,7 @@ TASK-017은 구현하지 않았습니다.
 - Red-first: spec notes 이후 source 작성 전 신규 테스트에서
   `ModuleNotFoundError: davinci_ai_editor.transaction`, collection error 1건 확인.
   테스트 commit `db3dbd1` 이후 구현으로 green 전환했습니다.
-- Python 3.11 GitHub CI: PR 생성 후 확인.
+- Python 3.11 GitHub CI: [run 37565075683](https://github.com/KIM0296/edit-program/actions/runs/37565075683), head `b9ffe29904e080d2306bd75bf9f2bd359311633f`, CPython 3.11.17 PASS. 최종 문서 commit의 CI는 PR 본문에 연결합니다.
 - 실제 Resolve/native atomicity/Undo/post capture/rollback reliability는 범위 밖으로 미실행.
 
 ### Safety Gate
@@ -164,3 +164,5 @@ TASK-016 Chat Gate 승인 및 merge 후 준비된 TASK-017 계약을 다음 검�
 - 필수 수정 및 재검증: Chat 판정 후 기록.
 - 승인 기록 링크: 대기.
 - Merge 및 TASK-017 자동 착수 없음.
+
+작업 중 main에 추가된 후속 probe harness 문서는 TASK-016 구현에 포함하지 않았습니다. PR merge-result CI도 통과했습니다.

@@ -345,5 +345,5 @@ Native proof authenticity, actual Resolve integration and rollback remain unveri
 
 Red-first spec notes e6c8f56 and tests db3dbd1 precede source; missing transaction module
 caused one collection error. Local full regression: 1032 passed / 0 failed / 1 intentional
-naive-demo skip. Ruff PASS; strict mypy PASS (18 source files). Python 3.11 CI pending PR.
+naive-demo skip. Ruff PASS; strict mypy PASS (18 source files). Python 3.11.17 CI PASS: [run 37565075683](https://github.com/KIM0296/edit-program/actions/runs/37565075683), 1032 passed / 1 skipped; Ruff and strict mypy PASS (18 source files).
 Actual Resolve atomicity, rollback reliability and native postflight proof remain unverified.
