@@ -847,6 +847,45 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 
 Detailed contract: docs/CANONICAL_ASSET_GENERATOR_CONTRACT.md.
 
+
+
+## ADR-038 - TASK-020 Runtime Execution & Evidence Runbook v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. TASK-020 runtime qualification is executed as an auditable operator/adapter protocol, not as ad-hoc
+   manual inspection.
+2. One validation_run_id binds one exact RuntimeProfile, environment/project generation, canonical
+   package digest, fixture catalog version, adapter revision and observation-policy version.
+3. RuntimeProfile is frozen before qualifying captures. Profile/generation change ends the qualifying
+   session and requires a new validation_run_id.
+4. Full TASK-020 qualification uses the approved TASK-022 canonical asset package. TASK-020 does not
+   materialize or repair F0-F4.
+5. Every qualifying capture stores raw observations separately from semantic normalized observations.
+6. Semantic normalization is limited to approved nonsemantic ordering. Rounding, default filling,
+   repeated-media collapse, missing-ID synthesis and coordinate repair are forbidden.
+7. F0/F1/F2/F3 and both F4 timeline contexts each receive 10 consecutive double-capture S1 pairs.
+8. Any unexplained failed/drifting pair remains evidence and prevents SUPPORTED_STABLE for the
+   affected scope in that validation run. No retry-until-green or pair deletion/renumbering.
+9. F4 additionally requires exactly 3 A→B→A same-project S2 round trips for switch-stability claims.
+10. During S1 no human Resolve-state interaction is allowed except abort/continue controls that do not
+    alter Resolve state. S2 permits only the declared timeline switches.
+11. Capability support and fixture correctness remain separate. A stable typed wrong value can prove
+    a readable capability while making the fixture MISMATCH.
+12. None / empty string / false / empty collection remain distinct observations.
+13. API exceptions and ambiguous bridge behavior default to UNKNOWN unless unsupported behavior is
+    explicitly established.
+14. Evidence is organized by run/fixture/pair/raw-semantic/finding and sealed with an evidence
+    checksum after finalization.
+15. S3 project reopen and S4 Resolve restart are optional for basic TASK-020 completion and are
+    required only for the corresponding longer identity-lifetime claims.
+16. TASK-020 may never promote S1/S2 identity observations to PERSISTENT_VERIFIED.
+17. A mismatch is recorded and qualification stops for the affected scope; TASK-020 never repairs
+    the fixture.
+18. Full runtime report must contain per-field RV matrix results, fixture results, S1/S2 evidence,
+    blockers/UNKNOWNs and explicit non-claims.
+
+Detailed runbook: docs/TASK_020_RUNTIME_EXECUTION_EVIDENCE_RUNBOOK.md.
+
 # Open Decisions
 
 
