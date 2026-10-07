@@ -584,3 +584,18 @@ Ruff PASS; strict mypy PASS (20 source files). Python 3.11 CI PASS: [run 3757585
 OPEN-018 remains resolved by ADR-030; OPEN-017 native correspondence/provenance limitations remain.
 Report: [TASK_018_COMPLETION.md](docs/reports/TASK_018_COMPLETION.md).
 Chat Gate pending; no merge or TASK-019 implementation.
+
+## TASK-019 — Probe Harness & Fixture Lifecycle Foundation
+
+Implemented `probe_harness.py`: pure frozen registry/environment verification, generation status,
+fixture lifecycle, exact one-run lease/authorization, final gate consumption, fake submission records,
+separate acknowledgement/observation, containment, immutable seals and suite references.
+Local failures require independent re-verification; contamination requires a new generation;
+uncertainty blocks new submission without claiming cancellation. No native runtime or TASK-020.
+
+Red-first: `76726d4` spec notes; `1f401a3` missing-module tests; `3727c2f` implementation.
+88 new tests; full regression: 1347 passed / 1 intentional naive-demo skip.
+Ruff PASS; strict mypy PASS (21 source files). Python 3.11 CI: pending PR run.
+OPEN-020 remains OPEN: native authenticity, durable consumption and cross-process lease serialization.
+Report: [TASK_019_COMPLETION.md](docs/reports/TASK_019_COMPLETION.md).
+Chat Gate pending. No PR merge or TASK-020 implementation.

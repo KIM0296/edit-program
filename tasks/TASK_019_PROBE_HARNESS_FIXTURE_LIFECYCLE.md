@@ -1,6 +1,6 @@
 # TASK-019 — Probe Harness & Fixture Lifecycle Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-018 IS APPROVED/MERGED**
+Status: **IMPLEMENTED — local validation complete; Python 3.11 CI and Chat Gate pending**
 
 Basis:
 - ADR-006 LLM Emits IR Only

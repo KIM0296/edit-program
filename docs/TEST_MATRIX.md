@@ -402,3 +402,43 @@ skip. Ruff PASS; strict mypy PASS (20 source files). Python 3.11 CI PASS: [run 3
 Additional: outside-domain unsupported isolation; anti-narrowing binding; explicit bounded invocation;
 all failure statuses; extra inconclusive run with full positive budget; status/contract typing; all
 finding retention. Fixtures and complete observations are synthetic, not runtime proof or native coverage.
+
+## TASK-019 — Probe harness / ADR-035 control plane
+
+All tests below are synthetic pure-domain tests in `tests/test_probe_harness.py`; native Resolve
+behavior is unverified. Parametrization yields 88 new tests. Original specification coverage:
+
+| Spec requirements | Tests / evidence |
+| --- | --- |
+| 1–2 immutable / defensive copies | `test_immutable_defensive_copy_deterministic`, suite copies, frozen seal |
+| 3–6 isolation / exact registration | production/working rejection, name/path/sentinel, environment exact binding |
+| 7–10 lifecycle / clean-only | legal/illegal transitions, MATCH-only fixture verification |
+| 11–15 dirty / fresh instance / no Undo | non-MATCH cases, no repair, materialization identity reuse rejection, no-native import guard |
+| 16–22 one-run exact authorization | 30 mismatch cases across both modes; repeated final gate, used auth, invalidated lease; constructor binding |
+| 23–24 modes | exploratory no qualifying count; exploratory runs through identical gates |
+| 25–27 fixed symmetric observation | scope mismatch, expanded post-scope retention, partial/stale observation blocks |
+| 28–31 containment / generation | four-class matrix; contaminated cannot clean in place; explicit new generation; old proof stale |
+| 32–35 uncertainty / crash | four acknowledgement outcomes, pre-crash new verification/run, post-crash quarantine; no cancellation field |
+| 36–39 discard / seal | mutated pass/fail never reused; evidence survives discard; seal requires bound submission/observation/containment |
+| 40–41 fixture definition / assets | wrong version cannot verify; required asset hash/metadata (no filename inference) |
+| 42–43 domain declaration / no narrowing | final-gate domain mismatch; sealed history cannot change declared domain |
+| 44–45 suite / efficiency | immutable refs include failed evidence; matching primitive/profile, no ordinary-edit purpose; zero editor work |
+| 46–49 prohibited calls | monkeypatched qualification/evaluator/transaction/authority/FakeTimeline; static import guard; no native callback |
+| 50 regression | TASK-001–018 plus TASK-019: 1347 passed, 1 intentional naive-demo skip |
+
+ADR-035 additions:
+
+| Rule | Tests / evidence |
+| --- | --- |
+| registration != verification != arming | `test_registration_verification_arming_are_separate` |
+| exact verification / only clean generation | four non-VERIFIED statuses, registry/generation/catalog/profile mismatch |
+| unique fixture lease / no global arm | second active lease rejected; authorization tied to one run; typed target containment |
+| validation failure consumes | 30 mismatch cases, invalidated lease, BLOCKED gate; all have zero attempts |
+| submission consumes for every native outcome | SUCCEEDED / FAILED / TIMEOUT / OUTCOME_UNKNOWN, duplicate ack/gate rejection |
+| local failure -> reverify / failure -> contamination | independent fresh read after discard; verified/mismatch/incomplete matrix |
+| contamination cannot recover in place | direct verification/reverification rejected; new generation retains old seals |
+| uncertainty -> BLOCKED / no cancellation | pending attempt retained; no retry; no cancellation method |
+| diagnostics retained | multiple final-gate failures, unexpected scope and native failure records retained |
+| no native authenticity invented | opaque supplied registration evidence only; OPEN-020 documented |
+
+Python 3.11 CI: pending PR run. Ruff and strict mypy pass locally.
