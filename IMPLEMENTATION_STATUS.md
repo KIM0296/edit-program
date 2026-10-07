@@ -608,7 +608,7 @@ Source tooling implements integer video/PCM, deterministic WAV, closed command r
 strict structural/decode validators, canonical manifest/lock/checksums, exact A/B comparison and sealing.
 Red-first: b50da5f task notes, 47a8bbf missing-module tests; implementation 5f94f3f / b5870ce.
 Local new tests: 64 passed / 1 host symlink skip; full regression: 1411 passed / 2 skipped.
-Ruff PASS; strict mypy PASS (33 files, including generator tools). Python 3.11 CI pending draft PR.
+Ruff PASS; strict mypy PASS (33 files, including generator tools). Python 3.11.16 CI PASS: [run 37584653152](https://github.com/KIM0296/edit-program/actions/runs/37584653152), 1412 passed / 1 skipped. Draft PR #48; final-head evidence in PR body.
 Full six-asset generation, FFmpeg integration, real hashes, A/B equality and package index are NOT done.
 No canonical media committed/published. OPEN-021 remains unresolved; OPEN-020 unchanged.
 Report: docs/reports/TASK_022_COMPLETION.md (partial/HOLD, not completion approval).

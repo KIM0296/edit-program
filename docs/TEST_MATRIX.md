@@ -455,7 +455,7 @@ Python 3.11.16 CI PASS: [run 37578746926](https://github.com/KIM0296/edit-progra
 | 40–54 full generation / real hashes / A/B equality / package index | NOT EXECUTED; no first-package acceptance claimed |
 | 55 no large Git media | only source/tests/docs/recipe are tracked; no MOV/WAV canonical binary |
 | 56 regression | local 1411 passed / 2 skipped (naive INV-001 demo + Windows symlink privilege); native execution untested |
-| 57 Python 3.11 CI | pending draft PR |
+| 57 Python 3.11 CI | Python 3.11.16 PASS: [run 37584653152](https://github.com/KIM0296/edit-program/actions/runs/37584653152), 1412 passed / 1 skipped |
 | 58–59 Ruff / strict mypy | PASS locally; tools included in strict mypy and CI lint scope |
 
 There are 65 new collected tests: local 64 pass / 1 symlink skip. Normal tests never execute the full

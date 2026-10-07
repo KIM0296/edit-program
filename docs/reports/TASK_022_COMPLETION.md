@@ -6,7 +6,7 @@ TASK: TASK-022 — Canonical Asset Generator & First Package Build
 Base main: `7659aabe7dbb6a18ac4b1b940b809e08c424eef9`.
 Spec notes: `b50da5f`, red-first: `47a8bbf`, 구현: `5f94f3f`, binding 보강: `b5870ce`.
 최종 head / CI 근거는 Draft PR 본문에 기록합니다.
-PR: 생성 예정 (Draft 유지).
+PR: [#48](https://github.com/KIM0296/edit-program/pull/48) — Draft 유지.
 근거: ADR-034/036/037 및 [TASK-022 spec](../../tasks/TASK_022_CANONICAL_ASSET_GENERATOR_FIRST_PACKAGE.md).
 요청 Gate: **HOLD** — 실제 full generation과 Run A/B 검증 전에는 APPROVED를 요청하지 않습니다.
 
@@ -41,7 +41,7 @@ PR: 생성 예정 (Draft 유지).
 
 ### git diff --stat
 
-비교 기준: `7659aab`.
+비교 기준: `40b27c2`. 시작 base는 `7659aab`이며, 이후 추가된 native 환경 계약 문서만 동기화했습니다.
 
 ```text
  .gitattributes                                     |   2 +
@@ -51,7 +51,7 @@ PR: 생성 예정 (Draft 유지).
  IMPLEMENTATION_STATUS.md                           |  14 +
  KNOWN_LIMITATIONS.md                               |  15 +
  docs/TEST_MATRIX.md                                |  19 ++
- docs/reports/TASK_022_COMPLETION.md                | 171 ++++++++++
+ docs/reports/TASK_022_COMPLETION.md                | 172 +++++++++++
  pyproject.toml                                     |   3 +-
  ..._022_CANONICAL_ASSET_GENERATOR_FIRST_PACKAGE.md |  13 +-
  tests/test_canonical_package.py                    | 197 ++++++++++++
@@ -72,7 +72,7 @@ PR: 생성 예정 (Draft 유지).
  tools/canonical_assets/validate.py                 | 158 ++++++++++
  tools/canonical_assets/video_pattern.py            |  65 ++++
  tools/canonical_assets/wav.py                      |  23 ++
- 28 files changed, 2406 insertions(+), 4 deletions(-)
+ 28 files changed, 2407 insertions(+), 4 deletions(-)
 ```
 
 ## 3. 테스트 결과
@@ -81,7 +81,8 @@ PR: 생성 예정 (Draft 유지).
 - 신규: **64 passed / 1 skipped**. 전체: **1411 passed / 2 skipped**.
 - Skip: Windows symlink 생성 권한 1개, 기존 naive INV-001 opt-in red demo 1개.
 - Ruff: PASS. Strict mypy: PASS, **33 files** (generator tooling 포함).
-- Python 3.11 CI: Draft PR 생성 후 확인 예정.
+- Python 3.11.16 CI: [run 37584653152](https://github.com/KIM0296/edit-program/actions/runs/37584653152) **1412 passed / 1 skipped**, Ruff / strict mypy PASS.
+  Linux CI에서는 symlink 테스트도 통과했습니다. 최종 head CI는 PR 본문 참조. 실제 FFmpeg generation은 CI에서도 실행하지 않았습니다.
 - Red-first: module 없음 실패를 먼저 확인했고 이후 metadata contradiction / binding 실패도 추가 재현했습니다.
 
 ### Toolchain / 실제 generation 상태
