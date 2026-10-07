@@ -415,3 +415,13 @@ Full probe suites are development/release/update validation workflows and never 
 editing work.
 
 Detailed contract: `docs/RESOLVE_PROBE_HARNESS_FIXTURE_LIFECYCLE.md`.
+
+## Read-only Probe Adapter & Fixture Materialization v1
+
+The first real Resolve probe integration proves observation and fixture reproducibility before destructive probing. Environment control, materialization, read-only observation and native invocation remain separate boundaries.
+
+v1 uses a template-first canonical fixture package with content-hashed project template and canonical assets. Materialization is not self-certifying: only independent read-only canonical semantic MATCH can produce CLEAN_VERIFIED. Ambiguous role binding, missing evidence and unstable capture fail closed.
+
+Integration order is Read-only Adapter -> Fixture Materializer -> Read Stability -> Native Mutation Probe.
+
+Detailed contract: `docs/READ_ONLY_PROBE_ADAPTER_FIXTURE_MATERIALIZATION.md`.
