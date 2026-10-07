@@ -31,3 +31,17 @@ Cover immutable package/template/assets, hash mismatches, missing asset, filenam
 ## Workflow
 
 Start only after TASK-020 approval. Use actual installed Resolve API only through approved materialization boundaries. End every materialization with independent TASK-020 verification. Full regression, Python 3.11 CI, Ruff and strict mypy. Write completion report and request Chat Gate. Do not start mutation probes automatically.
+
+## Canonical fixture catalog
+
+TASK-021 materializes ADR-034 / `docs/PROBE_FIXTURE_CATALOG.md`.
+
+Required packaging behavior:
+
+- F0–F3 each become an independent disposable project instance
+- F4 becomes one disposable project with exactly the two required timelines
+- canonical synthetic assets are content-hashed by the package
+- filename is not asset identity
+- project template/package may share immutable asset bytes, but fixture project lifecycles remain
+  independent
+- materialized semantic state must be verified independently through TASK-020 before CLEAN_VERIFIED

@@ -733,6 +733,33 @@ TASK-020 read-only runtime validation uses the following fixed v1 policy:
 
 Detailed policy: docs/TASK_020_RUNTIME_VALIDATION_MATRIX.md.
 
+
+
+## ADR-034 - Probe Fixture Catalog v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+TASK-020/TASK-021 use five canonical synthetic fixture classes:
+
+1. F0_BASIC — three linked A/V placements with explicit timeline/source ranges and known gaps.
+2. F1_REPEATED_MEDIA — the same MediaPool item repeated, including two placements with the same
+   source range, to prevent media/filename/source-only identity.
+3. F2_TRACK_STATE — explicit enabled/disabled and locked/unlocked track-state combinations.
+4. F3_MARKER_SUBTITLE — explicit timeline marker, item marker and subtitle timing/text candidates.
+5. F4_IDENTITY_BOUNDARY — two timelines in one disposable project with intentionally identical
+   media/track/timeline/source layouts for same-project switch identity testing.
+
+All timeline geometry is defined as half-open offsets from T0 = Timeline.GetStartFrame(); source
+ranges remain separate source-frame coordinates.
+
+F0-F3 materialize as independent disposable project instances. F4 is one disposable project with two
+timelines. Do not use one shared mega-project as independently isolated destructive fixtures.
+
+Canonical assets are synthetic, dedicated test media and are bound by TASK-021 package content hashes,
+never filename. Real editorial footage is reserved for Pause/Dialogue quality and workflow evaluation
+and does not satisfy F0-F4 canonical fixture identity.
+
+Detailed catalog: docs/PROBE_FIXTURE_CATALOG.md.
+
 # Open Decisions
 ## OPEN-019 - Installed Resolve Read / Materialization Capability Map
 Status: PARTIALLY RESOLVED — DOCUMENTED READ MAP; RUNTIME VALIDATION REQUIRED (2026-10-07)

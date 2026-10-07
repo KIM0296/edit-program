@@ -458,3 +458,18 @@ Basic TASK-020 completion does not require persistent identity across restart. R
 remain observations until their claimed lifetime boundaries are separately proven.
 
 Detailed policy: `docs/TASK_020_RUNTIME_VALIDATION_MATRIX.md`.
+
+
+## Probe Fixture Catalog v1
+
+Read-only/native capability verification uses deterministic synthetic canonical fixtures F0–F4,
+not real editorial footage.
+
+The catalog covers basic placement geometry, repeated-media disambiguation, track-state observation,
+marker/subtitle timing and same-project identity switching. Timeline ranges are defined relative to
+the observed Timeline.GetStartFrame() so the product does not assume native frame zero.
+
+Real footage remains a separate evaluation asset for Pause/Dialogue quality, review/correction cost
+and Net Editing Time Saved.
+
+Detailed catalog: `docs/PROBE_FIXTURE_CATALOG.md`.
