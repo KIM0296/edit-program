@@ -421,3 +421,22 @@ Do not use real editorial footage to satisfy F0–F4 canonical hashes or read-st
 > F0–F4 are deliberately boring, synthetic and exact. Their job is to make Resolve behavior easy to
 > attribute. Real footage is where editorial quality is measured, not where adapter determinism is
 > first proven.
+
+
+## Canonical asset package binding
+
+ADR-036 / `docs/CANONICAL_FIXTURE_ASSET_PACKAGE.md` is authoritative for the actual F0–F4 media
+bytes.
+
+The catalog asset roles map to one immutable package:
+
+- ASSET_ALPHA / BETA / GAMMA / REPEAT: 720p24 MOV + DNxHR LB + 48 kHz/24-bit stereo PCM
+- ASSET_VIDEO_ONLY: same video profile, no audio stream
+- ASSET_AUDIO_ONLY: 48 kHz/24-bit stereo PCM WAV
+
+All assets are 30 seconds / 720 frames where video applies.
+
+ASSET_REPEAT must be reused byte-for-byte across F1/F4 placements.
+
+Fixture verification uses package content hashes and semantic role binding; diagnostic frame counters,
+colors and tones do not become production identity authority.

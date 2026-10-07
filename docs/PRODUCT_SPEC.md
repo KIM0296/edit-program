@@ -490,3 +490,31 @@ locks down new probe mutations rather than guessing that the environment remaine
 No ordinary editing request implicitly arms this system.
 
 Detailed contract: `docs/PROBE_RUNTIME_CONTROL_PLANE.md`.
+
+
+## Canonical Fixture Asset Package v1
+
+Probe fixtures use six deterministic synthetic canonical media assets. The v1 package uses 720p24
+intra-frame DNxHR LB video and 48 kHz / 24-bit stereo Linear PCM where audio is present.
+
+Asset identity is based on exact shipped SHA-256 bytes and semantic asset IDs, never filename.
+Generator/toolchain metadata is provenance only. Ordinary editor workflows do not regenerate or
+download these assets.
+
+The binary bundle is versioned and checksum-locked separately from real editorial footage, which
+remains dedicated to quality/workflow evaluation.
+
+Detailed contract: `docs/CANONICAL_FIXTURE_ASSET_PACKAGE.md`.
+
+
+## Canonical Asset Generator v1
+
+Canonical probe media is generated from integer-defined synthetic video/audio signals under one
+locked software toolchain. The generator validates stream structure, performs full decode checks,
+generates the package twice from clean staging directories and requires byte-for-byte equality before
+the bundle can be sealed.
+
+FFmpeg/toolchain determinism is defense in depth; exact approved shipped SHA-256 bytes remain the
+canonical identity. Generator success does not imply Resolve support.
+
+Detailed contract: `docs/CANONICAL_ASSET_GENERATOR_CONTRACT.md`.
