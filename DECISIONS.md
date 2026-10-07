@@ -1239,6 +1239,26 @@ No native recipe, returned-item order, locator lifetime or rollback guarantee is
 production/authenticity, intermediate native state acquisition and runtime validation remain deferred
 to their separately approved contracts/tasks. TASK-017 does not implement TASK-018 or later probes.
 
+
+
+### TASK-022 execution dependency note
+
+TASK-022 implements ADR-036/037 and is the first real canonical package generation task. Its numeric
+ID does not imply it must execute after TASK-020/021.
+
+Recommended implementation dependency after TASK-019 Chat approval:
+
+```text
+TASK-019
+→ TASK-022 first canonical package
+→ TASK-020 full F0-F4 runtime qualification
+→ TASK-021 materialization
+```
+
+TASK-020 adapter code may be developed with mocks before TASK-022, but canonical runtime acceptance
+must not use ad-hoc substitute media. TASK-021 real package validation requires TASK-022's approved
+package index. This sequencing note changes no Safety invariant and authorizes no task by itself.
+
 # Resolved Decision History
 
 ## OPEN-003 — Split identity and version granularity

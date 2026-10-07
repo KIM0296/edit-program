@@ -75,7 +75,13 @@ TASK-021 consumes a previously sealed package produced under ADR-037 /
 
 TASK-021 must not implement or invoke canonical-media generation.
 
-Before TASK-021 can perform full real package validation, OPEN-021 must have a separately approved
+Before TASK-021 can perform full real package validation, TASK-022 must be Chat APPROVED with a
 first package index containing the actual package_digest and six asset hashes.
 
 Unit tests may continue to use tiny fake package bytes without the full canonical bundle.
+
+
+Dependency reference: `tasks/TASK_022_CANONICAL_ASSET_GENERATOR_FIRST_PACKAGE.md`.
+
+TASK-021 must not substitute another locally generated media set if TASK-022 has not produced the
+approved package index.

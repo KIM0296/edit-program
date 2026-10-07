@@ -151,3 +151,25 @@ Important requirements:
 - use F1 to prove repeated-media placements are not collapsed
 - use F4 for the three ADR-033 timeline-switch round trips
 - do not substitute real editorial footage for canonical fixture assets
+
+
+## Canonical package dependency
+
+TASK-020 code/adapter structure may be developed after TASK-019 using mocks or externally prepared
+test state.
+
+However, **full F0–F4 runtime qualification under ADR-033/034 requires the approved first canonical
+asset package from TASK-022**.
+
+Do not claim TASK-020's real canonical-fixture runtime matrix complete using ad-hoc substitute media.
+
+Recommended dependency:
+
+```text
+TASK-019 approved
+→ TASK-022 first canonical package approved
+→ TASK-020 full runtime validation
+```
+
+If TASK-020 implementation starts before TASK-022 finishes, its Chat completion report must clearly
+separate adapter implementation from deferred real canonical-package runtime qualification.
