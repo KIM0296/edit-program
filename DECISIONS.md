@@ -948,3 +948,19 @@ assessment and matching geometry/action-specific dependency input instead. Recom
 keep this conservative contract until a separately approved orchestration/lowering layer can
 validate real provenance. Actual integration and Safety remain deferred. OPEN-013 v1 contract
 is resolved by ADR-024; this does not authorize TASK-013 implementation in this task.
+
+
+## TASK-013 application of ADR-024 / deferred OPEN-013 topics
+
+ADR-024 resolves OPEN-013 for v1 geometry semantics, not confidence aggregation/calibration,
+ranking or actual producer algorithms. Equal ranges can have different supplied confidence
+labels. Choosing/averaging one would invent a confidence policy; TASK-013 retains typed
+confidence on every support record instead. Recommendation: preserve all metadata and count
+only distinct ranges, as ADR-024 requires. Any future scalar aggregation policy still needs
+separate approval. No new accepted product decision is introduced.
+
+OPEN-001/006/008/012 still govern production correspondence/currentness. Caller supplies the
+already-aligned placement span, current ref and mapping status; resolver cannot verify native
+truth and does not call mapping/evaluator. Native integration, confidence derivation, raw-media
+producers and ranking stay deferred. TASK-014 / ADR-025 preparation does not authorize that
+implementation in TASK-013.
