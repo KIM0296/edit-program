@@ -127,8 +127,7 @@ The concrete runtime test plan is defined in:
 
 `docs/TASK_020_RUNTIME_VALIDATION_MATRIX.md`
 
-Until Chat fixes that proposed matrix, treat its numeric stability counts as design values rather than
-accepted architecture. The matrix currently proposes:
+ADR-033 fixes the matrix as authoritative v1 policy. TASK-020 must implement:
 
 - 10 consecutive double-capture semantic stability pairs per qualifying Tier A fixture
 - 3 timeline switch round-trips for identity candidates
