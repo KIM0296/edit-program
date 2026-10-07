@@ -381,3 +381,20 @@ eligibility rather than being resolved by recency or majority.
 Concrete repetition counts and the final fixture/challenge matrix remain a separate versioned policy.
 
 Detailed contract: `docs/NATIVE_CAPABILITY_PROBE_EVIDENCE_CONTRACT.md`.
+
+
+## Capability Verification Policy & Challenge Matrix v1
+
+Native destructive verification is automated engineering validation, not recurring editor work.
+TRANSLATE_PLACEMENT requires 20 minimum positive runs (4 fixture classes × 5), REMOVE_RANGE requires
+30 (6 × 5), and COMPOUND_RIPPLE requires 50 (10 × 5). Applicable challenge classes receive 3
+additional independent clean runs each.
+
+Qualifying evidence requires COMPLETE observation, zero semantic conflicts, zero unexpected side
+effects, zero containment failures, zero ambiguous targets, VERIFIED post-read/reconciliation and
+execution-grade identity. Capability models are bounded by an explicit ApplicabilityDomain.
+
+Verified profile evidence is reused until stale and full probe suites are never repeated per ordinary
+project/edit. The production editor is not asked to perform manual capability probing.
+
+Detailed policy: `docs/CAPABILITY_VERIFICATION_POLICY.md`.

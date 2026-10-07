@@ -646,28 +646,39 @@ Core rules:
 
 Detailed contract: docs/NATIVE_CAPABILITY_PROBE_EVIDENCE_CONTRACT.md.
 
+
+
+## ADR-030 - Capability Verification Policy & Challenge Matrix v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. TRANSLATE_PLACEMENT requires 4 positive fixture classes × 5 independent clean runs = 20 minimum positive runs.
+2. REMOVE_RANGE requires 6 positive fixture classes × 5 runs = 30 minimum positive runs.
+3. COMPOUND_RIPPLE requires 10 positive fixture classes × 5 runs = 50 minimum positive runs.
+4. Applicable mandatory challenge classes require 3 additional clean runs each.
+5. COMPLETE observation scope is mandatory.
+6. Semantic conflicts, unexpected side effects, containment failures and ambiguous targets each have allowed count 0.
+7. Post-read and reconciliation must be VERIFIED and identity must be execution eligible.
+8. Verification is deterministic contract validation; 19/20 does not qualify.
+9. NativeEffectModel uses an explicit ApplicabilityDomain. Conflict inside the declared domain is CONFLICTING; outside-domain behavior remains UNSUPPORTED until separately verified.
+10. Applicability may not be narrowed after a failing qualifying run merely to hide conflict.
+11. VERIFIED profile evidence is reusable until stale; full probe suites are not repeated per project/edit.
+12. Ordinary production editors perform no manual capability-probe work.
+13. SUPPORTED_VERIFIED proves native semantics only and does not itself authorize auto-apply.
+
+Detailed policy: docs/CAPABILITY_VERIFICATION_POLICY.md.
+
 # Open Decisions
 
 
 ## OPEN-018 - Capability Verification Policy / Challenge Matrix
-Status: OPEN (created by ADR-029, 2026-10-07)
+Status: RESOLVED FOR v1 by ADR-030 (2026-10-07)
 
-ADR-029 requires repeatability, fixture coverage, complete observation and conflict-free evidence but
-does not yet fix the quantitative verification policy.
+ADR-030 fixes 20/30/50 minimum positive runs using 5 clean runs per positive fixture class, 3 clean
+runs per applicable mandatory challenge class, COMPLETE observation scope, zero conflicts/unexpected
+side effects/containment failures/ambiguous targets, and VERIFIED post-read/reconciliation plus
+execution-grade identity.
 
-Future Chat Architecture Review must decide:
-- minimum successful repetition count per primitive/profile
-- required simple fixture classes
-- required safety challenge fixture classes
-- whether policy differs for read-only, identity, translation, removal, compound ripple,
-  reconciliation, fragment rebinding and rollback
-- allowed conflict count (architecture currently requires conflict to block VERIFIED)
-- evidence expiry/revalidation cadence beyond profile/version invalidation
-- cross-platform/profile equivalence rules, if any
-- release-gate requirements before SUPPORTED_VERIFIED can be consumed by production
-
-TASK-018 must accept an explicit versioned policy and must not invent these values.
-
+New primitives or materially different challenge matrices require a new policy version and Chat review.
 
 
 ## OPEN-017 - Native Capability / Effect Model Evidence Production
