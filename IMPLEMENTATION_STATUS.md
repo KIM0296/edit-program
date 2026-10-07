@@ -609,7 +609,7 @@ strict structural/full-decode validators, canonical manifest/lock/checksums, A/B
 Python 3.11.9 / NumPy 2.3.5 / pinned BtbN n9.0.2-22-g46d8f462ee-20261006.
 Two independent clean six-asset builds and all nine authoritative files' byte equality PASS.
 Local full regression: 1417 passed / 2 skipped. Ruff / strict mypy PASS (33 files).
-Python 3.11 CI and final head evidence: PR #48 / completion report.
+Python 3.11 CI: [run 37591852493](https://github.com/KIM0296/edit-program/actions/runs/37591852493), 1418 passed / 1 skipped; Ruff / strict mypy PASS. Final head evidence: PR #48.
 Package digest: `17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de`.
 Small real-hash package index: canonical_assets/first-package-candidate-v1/package-index.candidate.json.
 Media sealed locally outside Git; no release/publication. Chat approval pending.

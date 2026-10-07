@@ -57,7 +57,7 @@ TASK: TASK-022 — Canonical Asset Generator & First Package Build
  .../first-package-candidate-v1/manifest.v1.json    |   1 +
  .../package-index.candidate.json                   |   1 +
  docs/TEST_MATRIX.md                                |  17 +
- docs/reports/TASK_022_COMPLETION.md                | 265 +++++++++++++++
+ docs/reports/TASK_022_COMPLETION.md                | 271 +++++++++++++++
  pyproject.toml                                     |   3 +-
  ..._022_CANONICAL_ASSET_GENERATOR_FIRST_PACKAGE.md |  14 +-
  tests/test_canonical_package.py                    | 256 ++++++++++++++
@@ -78,7 +78,7 @@ TASK: TASK-022 — Canonical Asset Generator & First Package Build
  tools/canonical_assets/validate.py                 | 195 +++++++++++
  tools/canonical_assets/video_pattern.py            |  65 ++++
  tools/canonical_assets/wav.py                      |  23 ++
- 33 files changed, 2700 insertions(+), 11 deletions(-)
+ 33 files changed, 2706 insertions(+), 11 deletions(-)
 ```
 <!-- DIFFSTAT_END -->
 
@@ -88,7 +88,9 @@ TASK: TASK-022 — Canonical Asset Generator & First Package Build
 - 신규: **70 passed / 1 skipped**. 전체: **1417 passed / 2 skipped**.
 - Skip: Windows symlink 생성 권한 1개, 기존 naive INV-001 opt-in intentional red demo 1개.
 - Ruff **PASS**. Strict mypy **PASS**, 33 files.
-- Python 3.11 CI: 최종 head 결과는 PR 본문 및 CI evidence에 연결합니다.
+- Python 3.11 CI: [run 37591852493](https://github.com/KIM0296/edit-program/actions/runs/37591852493) **1418 passed / 1 skipped**, Ruff / strict mypy PASS.
+  검증 head: `993f96bba75fb90d11a2b9aebf50b9bffeb49695`. Linux에서는 symlink 테스트도 통과했습니다.
+  이후 CI 근거만 추가한 최종 문서 head의 검사 상태는 PR 본문에서 확인할 수 있습니다.
 - Red-first: missing module, metadata contradiction, missing field_order의 explicit decoded-frame proof,
   FFmpeg 9 decode syntax, missing WAV channel_layout의 canonical header proof 실패를 재현한 뒤 수정했습니다.
 - Source PCM/RGB digest mismatch, encoder failure/no retry도 별도 테스트했습니다.
