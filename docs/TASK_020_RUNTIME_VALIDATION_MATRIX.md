@@ -271,3 +271,25 @@ Record:
 A field is not supported because Resolve documents it. It is supported for TASK-020 only after the
 installed runtime repeatedly returns a typed, context-bound, semantically stable value on an unchanged
 registered probe fixture.
+
+
+## Canonical fixture catalog binding
+
+F0–F4 are fixed by ADR-034 and `docs/PROBE_FIXTURE_CATALOG.md`.
+
+The runtime matrix must use those exact semantic fixture definitions rather than ad-hoc local test
+timelines.
+
+Key bindings:
+
+- F0_BASIC: core geometry/media/source/link reads and full semantic fence
+- F1_REPEATED_MEDIA: repeated-media placement disambiguation
+- F2_TRACK_STATE: enabled/locked state matrix
+- F3_MARKER_SUBTITLE: timeline/item markers and subtitle reads
+- F4_IDENTITY_BOUNDARY: three same-project timeline-switch round trips
+
+All catalog timeline ranges are half-open offsets from the observed timeline start T0. Do not assume
+native timeline frame zero.
+
+TASK-020 may not silently simplify a fixture. If the installed RuntimeProfile cannot read a required
+field, record UNSUPPORTED/UNKNOWN and follow the completion-gate review path.

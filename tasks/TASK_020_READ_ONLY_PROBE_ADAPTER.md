@@ -136,3 +136,18 @@ ADR-033 fixes the matrix as authoritative v1 policy. TASK-020 must implement:
 - no PERSISTENT_VERIFIED identity grant from same-session stability alone
 
 Implementation must preserve every failed/unstable observation rather than retrying until green.
+
+
+## Canonical fixture inputs
+
+TASK-020 must use ADR-034 / `docs/PROBE_FIXTURE_CATALOG.md` for F0–F4 semantics.
+
+Do not create or mutate these fixtures in TASK-020. They are externally prepared/registered inputs.
+
+Important requirements:
+
+- interpret catalog timeline ranges as offsets from observed T0 = Timeline.GetStartFrame()
+- preserve source ranges as a distinct coordinate domain
+- use F1 to prove repeated-media placements are not collapsed
+- use F4 for the three ADR-033 timeline-switch round trips
+- do not substitute real editorial footage for canonical fixture assets
