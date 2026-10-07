@@ -579,7 +579,66 @@ Core rules:
 
 Detailed contract: docs/EXECUTION_TRANSACTION_POSTFLIGHT_CONTRACT.md.
 
+
+
+## ADR-028 - Validated Execution IR & Resolve Executor Boundary Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+The Resolve Executor is a deterministic actuator, not an editor. It may cause only effects already
+present in the exact authorized ExpectedDiff and validated through bounded logical IR.
+
+Core rules:
+1. Pause v1 logical IR vocabulary is exactly REMOVE_RANGE and TRANSLATE_PLACEMENT.
+2. Generic ripple/participant-expanding opcodes are forbidden.
+3. Every ExpectedDiff effect must be covered exactly once; missing, extra or duplicate effects are invalid.
+4. Native fusion requires SUPPORTED_VERIFIED capability plus a current VERIFIED NativeEffectModel.
+5. Predicted native effects must equal ExpectedDiff effects exactly; do not expand ExpectedDiff to
+   accommodate native side effects.
+6. Execution identity is stronger than observation identity.
+7. PERSISTENT_VERIFIED is execution eligible.
+8. SESSION_LOCAL_VERIFIED is conditional on same-session mutation stability and postflight
+   correspondence proof.
+9. SNAPSHOT_LOCAL is unsupported for destructive v1 target authority; UNKNOWN is incomplete.
+10. Target ambiguity never resolves by first match or name/position/media heuristics.
+11. Domain identity and native locator are separate.
+12. Every destructive native step requires verified post-read and a verified reconciliation path
+    before execution begins.
+13. Fragment-producing decomposition requires verified intermediate fragment rebinding.
+14. Capability UNKNOWN/SUPPORTED_UNVERIFIED never becomes destructive support.
+15. Runtime/profile changes stale capability/effect evidence.
+16. Runtime fallback requires a new lowering plan and revalidation.
+17. Adapter/executor never repairs geometry, participant set, tracks, source ranges or Safety failures.
+18. Rollback capability/policy is separate from semantic lowering readiness.
+19. READY_FOR_EXECUTION means semantic/native readiness only, not apply/commit/promotion.
+20. Executor does not declare commit or rollback verification; ADR-027 remains authoritative.
+
+Detailed contract: docs/VALIDATED_EXECUTION_IR_CONTRACT.md.
+
 # Open Decisions
+
+
+## OPEN-017 - Native Capability / Effect Model Evidence Production
+Status: OPEN (created by ADR-028, 2026-10-07)
+
+ADR-028 consumes verified execution identity, capability profiles, native effect models, post-read
+capability and reconciliation specifications but does not define how real Resolve runtime evidence
+earns VERIFIED status.
+
+A separate Native Capability Probe / Effect Model Evidence contract must define:
+- probe isolation and sacrificial test timeline requirements
+- before/after observation completeness
+- version/platform/adapter/session binding
+- primitive target identity proof
+- predicted side-effect scope evidence
+- repeatability/conflict handling
+- reconciliation probe evidence
+- post-read capability evidence
+- fragment rebinding evidence
+- criteria for SUPPORTED_VERIFIED / VERIFIED vs UNVERIFIED/CONFLICTING/STALE
+- evidence invalidation after Resolve/adapter/platform changes
+
+Until then, actual destructive Resolve lowering remains unverified/fail-closed.
+
 
 
 ## OPEN-016 - Resolve Mutation / Rollback Runtime Capability
