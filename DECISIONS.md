@@ -1299,3 +1299,20 @@ recovery needs later decisions; this foundation blocks new destructive eligibili
 no automatic retry, recovery or lockdown release. Base-state verification MATCH, not a native return,
 is the recovery evidence, including reconciliation of an uncertain rollback response. No new runtime
 policy is marked accepted. TASK-017 is not started.
+
+### TASK-018 application of OPEN-017 (native semantic correspondence remains OPEN)
+
+ADR-030 resolves quantitative v1 policy (OPEN-018 remains resolved). Different concrete fixtures may
+have different placement IDs/ranges while exercising the same operation. No accepted native role or
+cross-fixture normalization contract defines equivalence for those values. TASK-018 therefore compares
+explicit observed semantic values exactly and does not infer equivalence from names/order/positions.
+A future producer must supply explicit, independently justified correspondence under its approved
+contract; normalization algorithm and native proof authenticity remain deferred. This can conservatively
+leave real heterogeneous fixtures UNVERIFIED/CONFLICTING; it cannot create a false VERIFIED model.
+
+Likewise, domain declarations and independent clean-run metadata are immutable supplied facts. The
+pure foundation detects mixed declarations and duplicate identities, but cannot prove a caller did
+not omit historical evidence or falsify fixture reconstruction. Ledger persistence, registry validation,
+and native acquisition belong to separately authorized harness work. No TASK-019 implementation or
+native guarantee is introduced. Existing TASK-017 status fields are not implicitly reused by new
+reconciliation/fragment evidence; production integration remains deferred.
