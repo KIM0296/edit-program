@@ -1,6 +1,6 @@
 # TASK-022 — Canonical Asset Generator & First Package Build
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-019 IS CHAT APPROVED/MERGED**
+Status: **IN PROGRESS ? user authorized after TASK-019 approval/merge**
 
 Execution dependency note:
 
@@ -815,3 +815,14 @@ collapsed into OPEN-021 generator completion.
 
 > TASK-022 does not merely write six media files. It creates one auditable, reproducible, immutable
 > measurement instrument whose exact bytes become part of the native-safety evidence chain.
+
+## Implementation notes before code
+
+- Engineering tooling lives in `tools/canonical_assets`, not the production adapter package.
+- Recipe v1 freezes embedded glyph bitmaps, one-cell inter-glyph spacing, and endpoint-inclusive
+  integer envelope interpolation: ramp denominator 239, attack offset n, release offset n-720.
+  Oscillator floor division occurs only after multiplying the signed numerator by the amplitude.
+- NumPy is pinned to 2.3.5. Actual generation requires Python 3.11.x and explicitly selected local
+  FFmpeg/ffprobe binaries. No tool downloads or profile fallback are part of the generator.
+- Unit tests can run without FFmpeg; full package acceptance remains blocked until the required
+  local toolchain passes preflight. No placeholder package index or hashes will be created.
