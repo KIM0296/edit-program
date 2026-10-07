@@ -546,3 +546,20 @@ correctness.
 TASK-020 never repairs a mismatched fixture or retries until green.
 
 Detailed runbook: `docs/TASK_020_RUNTIME_EXECUTION_EVIDENCE_RUNBOOK.md`.
+
+
+## Native Probe Environment Authenticity v1
+
+The first destructive native probes require a dedicated probe-only Project Library and a fresh
+session-bound attestation. A project name, sentinel or UUID-shaped value cannot authenticate the
+current Resolve project.
+
+Environment authenticity combines external registration, canonical materialization provenance,
+read-stable native Project Library/project/timeline observations, canonical semantic baseline MATCH
+and an independent re-read. Immediately before one-run arming, the exact current target must be
+re-proven.
+
+Persistent cross-restart identity is not required for the first same-session destructive probes; a
+restart/reopen beyond the proven boundary makes the attestation stale.
+
+Detailed contract: `docs/NATIVE_PROBE_ENVIRONMENT_AUTHENTICITY.md`.
