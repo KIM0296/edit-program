@@ -398,3 +398,20 @@ Verified profile evidence is reused until stale and full probe suites are never 
 project/edit. The production editor is not asked to perform manual capability probing.
 
 Detailed policy: `docs/CAPABILITY_VERIFICATION_POLICY.md`.
+
+
+## Resolve Probe Harness & Fixture Lifecycle v1
+
+Qualifying destructive native probes are isolated from production editing in dedicated disposable
+probe projects. Each qualifying repetition starts from one fresh CLEAN_VERIFIED fixture instance,
+permits at most one bounded invocation attempt, observes/seals evidence, and then discards the mutated
+test state.
+
+Dirty or quarantined fixtures are never repaired-and-reused for the same qualifying run. Undo is not
+assumed as reset. Exploratory runs are distinct from qualifying runs, and containment failure or
+project contamination stops further qualifying mutation in that generation.
+
+Full probe suites are development/release/update validation workflows and never implicit ordinary
+editing work.
+
+Detailed contract: `docs/RESOLVE_PROBE_HARNESS_FIXTURE_LIFECYCLE.md`.

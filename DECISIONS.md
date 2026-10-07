@@ -667,6 +667,31 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 
 Detailed policy: docs/CAPABILITY_VERIFICATION_POLICY.md.
 
+
+
+## ADR-031 - Resolve Probe Harness & Fixture Lifecycle Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. Qualifying destructive probes run only in dedicated registered disposable probe projects.
+2. A duplicated timeline inside a user working project is insufficient isolation for v1.
+3. One qualifying run uses one fresh fixture instance and permits at most one invocation attempt.
+4. Fixture reset uses canonical reconstruction, not assumed Undo.
+5. Only CLEAN_VERIFIED fixtures may be armed.
+6. DIRTY or QUARANTINED fixtures are discarded/rebuilt rather than repair-and-continue.
+7. QUALIFYING and EXPLORATORY probe modes are distinct; exploratory success does not directly count
+   toward verification budgets.
+8. Observation scope is fixed before invocation and pre/post observation schemas are symmetric.
+9. Containment failure or project contamination stops further qualifying mutation in that
+   fixture/project generation.
+10. Environment/currentness is revalidated immediately before invocation.
+11. Native timeout/uncertainty does not trigger blind retry in the same run.
+12. Crash during/after invocation quarantines the fixture.
+13. Mutated fixture instances are discarded after evidence sealing regardless of pass/fail.
+14. Probe evidence remains immutable independently of fixture disposal.
+15. Full verification suites never run implicitly in ordinary production editing.
+
+Detailed contract: docs/RESOLVE_PROBE_HARNESS_FIXTURE_LIFECYCLE.md.
+
 # Open Decisions
 
 
