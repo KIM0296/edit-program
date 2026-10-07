@@ -282,3 +282,21 @@ Red first: spec notes dae94b0, test commit 7cc71f8; missing cut_geometry module 
 one collection error before implementation. Local full suite: 732 passed, 0 failed,
 1 intentional naive-demo skip. Ruff and strict mypy (15 source files) PASS.
 Python 3.11.16 CI PASS: run 37426493653, 732 passed / 1 skipped; Ruff/mypy PASS. Earlier TASK-001..012 source/tests unchanged.
+
+
+## TASK-014 Expected Diff and synthetic verification
+
+78 tests in tests/test_expected_diff.py cover immutable typed values, defensive ordering,
+exact primary copy (TIGHTEN/REMOVE), supplied-only/empty participant sets, uniform -D,
+nonuniform/crossing/cross-track/unsupported-retime rejection, gap consequence requirements,
+explicit scope coverage, unchanged object invariance, metadata preservation and J/L boundaries,
+protected-risk versus Safety separation, current/proposal/geometry/base mismatch, no repair,
+exact synthetic comparison, missing/extra changes, one-frame error, before/source/media/track/
+duration/retime/identity failures, incomplete identity/coverage, stale post relation and
+constructor guards. Monkeypatches block mapper/evaluator/planner/resolver/compiler/classifier/
+Safety/Authority/FakeTimeline execution; import whitelist excludes native/media infrastructure.
+
+Red first: notes 46adfff, tests 99bab2e; missing expected_diff module caused one collection
+error before implementation. Local full suite: 810 passed / 0 failed / 1 intentional naive
+skip. Ruff and strict mypy (16 source files) PASS. Python 3.11.16 CI PASS: run 37558489702, 810 passed / 1 skipped; Ruff/mypy PASS.
+Existing TASK-001..013 source/tests unchanged; native integration/rollback remain unverified.

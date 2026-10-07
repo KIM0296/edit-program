@@ -1,6 +1,6 @@
 # TASK-014 — Expected Diff & Temporal Displacement Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-013 IS APPROVED/MERGED**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_014_COMPLETION.md**
 
 Basis:
 - ADR-010 ProtectedRange HARD_LOCK
@@ -264,3 +264,33 @@ Given one explicit PauseEditProposal and a resolved explicit participant set, pr
 ExpectedDiff that fully enumerates the exact primary removal, exact uniform temporal displacements and
 unchanged validation scope, and verify synthetic ActualDiff against it without inferring ripple
 participants, making Safety decisions or executing Resolve mutations.
+
+
+## TASK-014 implementation notes (before source)
+
+- Add expected_diff.py, importing existing immutable FrameRange/identity, NativeSnapshotRef,
+  MappingKind and PauseEditProposal values only. No layer execution calls.
+- DiffBinding explicitly binds proposal, PlanningBinding, geometry ID and primary range.
+  PreservationScope enumerates complete supplied PlacementState values; each participant
+  carries its before state, proposed integer delta and destination track. The compiler
+  validates these against scope rather than discovering participants. A supplied uniform
+  consequence fact is required; gap/participant policy is never inferred.
+- Compiler input includes current base and provenance/version. Known impacted IDs and
+  protected-risk IDs remain descriptive assessment metadata; known impact must be scoped.
+  Failures accumulate with stale > unsupported > review > incomplete precedence.
+- RangeRemovalEffect records the exact primary removal and before placement. No fragment
+  rebinding/source-removal mapping is invented. TemporalDisplacement describes surviving
+  placements with exact before/after metadata and delta. Expected topology changes are empty.
+- Synthetic ActualDiff carries typed primary effects plus explicit before/after observations
+  for all other scoped placements (including unchanged ones). Missing expected changed
+  objects are mismatches; missing unchanged observations cannot establish MATCH.
+- Caller supplies identity-correspondence and base/post relation evidence references; no
+  native proof is generated or authenticated. Verification also requires the caller's
+  current post snapshot to equal the observed post. No numeric version increment is inferred.
+- Verification precedence: stale relation > insufficient identity/relation evidence > known
+  mismatch > incomplete observation coverage > match. All reasons remain machine-readable.
+  Extra changed objects (including reported out-of-scope changes), primary changes, or any
+  reported topology change mismatch. Unobserved space outside scope remains unverified.
+- Primary verification is semantic range-removal equality, not a synthetic native fragment
+  reconstruction. Additional primary modifications must be represented as unexpected changes.
+  Native post capture/correspondence remains deferred under OPEN-001/006/008/012.
