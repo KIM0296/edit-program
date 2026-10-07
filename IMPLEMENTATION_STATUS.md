@@ -507,7 +507,7 @@ before/after metadata and unchanged scoped observations. Missing correspondence/
 cannot MATCH; stale relation, missing/extra changes and one-frame differences fail closed.
 
 Local Windows CPython 3.14.6: 810 passed / 0 failed / 1 skipped; 78 new TASK-014 tests.
-Ruff PASS; strict mypy PASS (16 source files). Python 3.11 CI pending PR.
+Ruff PASS; strict mypy PASS (16 source files). Python 3.11.16 CI PASS: run 37558489702, 810 passed / 1 skipped; Ruff/mypy PASS.
 TASK-001..013 source/tests unchanged; skip is the intentional opt-in naive red demo.
 OPEN-001/006/008/012 native identity/capture/correspondence authenticity remains unresolved.
 No actual native post capture, Safety, execution, Authority or TASK-015 implementation.

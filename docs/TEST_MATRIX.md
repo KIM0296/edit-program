@@ -298,5 +298,5 @@ Safety/Authority/FakeTimeline execution; import whitelist excludes native/media 
 
 Red first: notes 46adfff, tests 99bab2e; missing expected_diff module caused one collection
 error before implementation. Local full suite: 810 passed / 0 failed / 1 intentional naive
-skip. Ruff and strict mypy (16 source files) PASS. Python 3.11 CI pending PR.
+skip. Ruff and strict mypy (16 source files) PASS. Python 3.11.16 CI PASS: run 37558489702, 810 passed / 1 skipped; Ruff/mypy PASS.
 Existing TASK-001..013 source/tests unchanged; native integration/rollback remain unverified.

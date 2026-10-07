@@ -2,12 +2,12 @@
 
 TASK: TASK-014 — Expected Diff & Temporal Displacement Foundation
 
-상태: 구현 및 로컬 검증 완료, Python 3.11 CI/Chat Gate 대기.
+상태: 구현·로컬 및 Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-014-expected-diff`.
 Base main: `b5bdedec90965764b7c2736f7d0e9012e657fe54`.
 Spec notes: `46adfff`, red tests: `99bab2e`, 구현: `bb28291`.
 후속 보고 commit을 포함한 최종 제출 head는 PR 본문에 기록합니다.
-PR: 생성 후 기록.
+PR: https://github.com/KIM0296/edit-program/pull/28
 근거: [TASK-014 spec](../../tasks/TASK_014_EXPECTED_DIFF_TEMPORAL_DISPLACEMENT.md),
 [ADR-025 상세 계약](../EXPECTED_DIFF_TEMPORAL_DISPLACEMENT_CONTRACT.md).
 요청 Gate: **APPROVED** (Codex 요청이며 Chat 판정 아님).
@@ -37,7 +37,7 @@ caller-supplied synthetic ActualDiff를 정확하게 비교하는 verifier를 �
 | Layer isolation | PASS: mapper/evaluator/planner/resolver/compiler/classifier/Safety/Authority/executor 호출 없음 |
 | TASK-001~013 regression | PASS: 기존 source/test 변경 없이 전체 810 passed / 1 skipped |
 | Ruff / strict mypy | PASS: 16 source files |
-| Python 3.11 CI | PR 생성 후 확인 |
+| Python 3.11 CI | PASS: CPython 3.11.16, run 37558489702 |
 
 Participant policy, actual ripple, native post capture, Resolve mutation, protected-range Safety verdict,
 transaction/rollback, authority 및 TASK-015는 구현하지 않았습니다. MATCH는 명시된 scope와
@@ -65,11 +65,11 @@ synthetic semantic evidence의 일치를 뜻하며 production Safety 인증이 �
  IMPLEMENTATION_STATUS.md                           |  24 +
  KNOWN_LIMITATIONS.md                               |  21 +
  docs/TEST_MATRIX.md                                |  18 +
- docs/reports/TASK_014_COMPLETION.md                | 153 +++++
+ docs/reports/TASK_014_COMPLETION.md                | 155 +++++
  src/davinci_ai_editor/expected_diff.py             | 626 +++++++++++++++++++
  ...TASK_014_EXPECTED_DIFF_TEMPORAL_DISPLACEMENT.md |  32 +-
  tests/test_expected_diff.py                        | 682 +++++++++++++++++++++
- 8 files changed, 1570 insertions(+), 1 deletion(-)
+ 8 files changed, 1572 insertions(+), 1 deletion(-)
 ```
 
 ## 3. 테스트 결과
@@ -84,7 +84,9 @@ synthetic semantic evidence의 일치를 뜻하며 production Safety 인증이 �
 - Red-first: spec notes 이후 source 작성 전 `pytest tests/test_expected_diff.py -q`에서
   `ModuleNotFoundError: davinci_ai_editor.expected_diff`, collection error 1건 확인.
   테스트 commit `99bab2e` 이후 구현으로 green 전환했습니다.
-- Python 3.11 GitHub CI: PR 생성 후 확인.
+- Python 3.11.16 GitHub CI: [run 37558489702](https://github.com/KIM0296/edit-program/actions/runs/37558489702), 810 passed / 1 skipped, Ruff/strict mypy PASS.
+- CI 검증 head: `9641f48896b9764df8345cbf61a4b4f324c06ee9`. 후속 문서 commit의 CI는 PR 본문에 기록합니다.
+- 작업 중 main에 후속 execution/transaction 계약 문서가 추가됐습니다(`0d630ad`). TASK-014 범위 변경 없이 최신 PR merge 결과 CI가 통과했습니다.
 - 실제 Resolve/native post capture/실행/rollback 검증: 범위 밖으로 미실행.
 
 ### Safety Gate
