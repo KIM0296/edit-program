@@ -1,6 +1,6 @@
 # TASK-015 — Safety Preflight Integration Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-014 IS APPROVED/MERGED**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_015_COMPLETION.md**
 
 Basis:
 - ADR-010 ProtectedRange HARD_LOCK
@@ -323,3 +323,35 @@ Given one complete ExpectedDiff plus explicit current safety evidence, produce a
 preflight evaluation that never defaults unknown state to safe, preserves all findings, and returns
 PASS only when all 17 mandatory Pause-v1 safety checks are actually evaluated and none require review
 or rejection.
+
+
+## TASK-015 implementation notes (before source)
+
+- Add safety_preflight.py; retain the earlier safety.py fake executor checks unchanged.
+  Import domain values only from existing layers; never invoke any upstream compiler,
+  mapper, evaluator, planner, proof producer or executor.
+- SafetyPreflightInput consumes DiffCompilationResult (including non-ready states for
+  diagnostics), a separately supplied PauseEditProposal, current snapshot, optional
+  snapshot-bound ProtectionContext and CurrentSafetyEvidence, typed proofs and fixed profile.
+- CurrentSafetyEvidence enumerates affected-track locks and exact object/range subjects,
+  retime kind/exact-forward fact, three structure observations, precomputed relationship/
+  dependency status and assessment refs, and known impacted/dependent IDs. Missing is not
+  absent. No confidence fields or native identity bridge are added.
+- Primary subject is the exact removal range; displacement subject is its whole before
+  range. Proofs must match this subject, ExpectedDiff ref, snapshot, kind, v1 contract and
+  PRESERVATION_PROVEN outcome. Invalid/missing proof for known presence yields REVIEW;
+  stale proof snapshot also contributes STALE. All supplied proof bindings remain visible.
+- ProtectedRangeRecord can bind a whole object or a track range (or a range on an object).
+  HARD_LOCK only. Direct removal overlap and displacement affecting protected occupancy
+  are rejected; empty protection is known none only when explicitly complete.
+- Each of exactly 17 SafetyCheckResults contains every individual finding. Findings retain
+  subjects, reasons and evidence refs, plus status and optional evaluated outcome. A check
+  may contain known REJECT findings alongside incomplete evidence without losing either.
+- Result constructors validate exact mandatory coverage and status/verdict aggregation.
+  Global precedence is STALE > UNSUPPORTED > INCOMPLETE > EVALUATED; only evaluated results
+  receive REJECT > REVIEW_REQUIRED > PASS. Profile cannot be edited into fewer checks.
+- Independently recheck supplied consequence integrity/arithmetic without calling the
+  ExpectedDiff compiler. Deliberately corrupted frozen fixtures exercise preservation and
+  scope guards which normal TASK-014 constructors already reject; no alternate plan schema.
+- No proof production/native trust policy is established. OPEN-015 and OPEN-001/006/008/012
+  remain unresolved. PASS is bound to all raw immutable inputs and is not execution authority.

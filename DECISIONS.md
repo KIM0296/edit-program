@@ -1150,3 +1150,17 @@ are not implemented. Actual adapter proof and scope-aware refresh require a late
 Participant discovery and gap interaction policy remain explicitly deferred by ADR-025; the
 compiler accepts a resolved, uniform-consequence assessment only. This is not a Safety verdict.
 No new accepted architecture decision; TASK-015 is not started.
+
+
+## TASK-015 application of OPEN-015 / OPEN-001/006/008/012 (remain OPEN)
+
+ADR-026 accepts typed precomputed preservation proofs but does not specify a trustworthy
+native producer. TASK-015 validates exact subject, snapshot, ExpectedDiff, kind, contract and
+outcome bindings; opaque producer/evidence references are retained, not authenticated.
+Inferring safety from producer name/confidence or generating proof locally would conceal
+missing native guarantees. Recommendation: preserve supplied categorical evidence and fail
+closed on missing/invalid facts, while leaving native proof algorithms, runtime capability,
+identity bridging and freshness authenticity deferred. Real producer implementation requires
+Chat decisions on OPEN-015's native observations and invalidation semantics. No accepted
+policy is added; the existing 17-check profile and precedence are unchanged. TASK-016 is not
+started. Earlier fake safety.py behavior remains separate from this pure integration layer.
