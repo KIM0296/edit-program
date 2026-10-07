@@ -448,17 +448,20 @@ unsafe → reject
 - Production editor manual probe work remains zero. No scheduler, ordinary-edit suite trigger,
   arbitrary script/callback or native runtime enablement is provided.
 
-## TASK-022 — First package build blocked by toolchain availability
+## TASK-022 — Local first-package candidate; native support unverified
 
-- Generator source and pure/unit validation are implemented, but no actual canonical package exists.
-- Local tests use Python 3.14.6 / NumPy 2.3.5. Actual generation requires Python 3.11.x; preflight rejects
-  other versions. No FFmpeg/ffprobe executable has been confirmed in the inspected PATH/common local
-  locations. No automatic download or codec/profile fallback was performed.
-- DNxHR LB encode, PCM MOV mux, actual ffprobe structure, complete decode and full Run A/B equality
-  remain unverified. Command builders and synthetic parser tests are not runtime evidence.
-- No real six-asset hashes, manifest/lock hashes, package_digest, sealed package, package-index candidate
-  or publication/storage URL is present. They must be generated from real validated bytes later.
-- Sealing uses a local cooperative exclusive reservation and rejects existing/pending collisions.
-  It does not claim protection from hostile external filesystem writes or immutable OS storage.
-- OPEN-021 remains pending actual build and Chat approval. Resolve support and OPEN-020 are unchanged.
-- TASK-020/021 were not started. No release/publication has occurred.
+- Actual six-asset generation, full decode and two-run byte equality passed on the locked
+  Python 3.11.9 / NumPy 2.3.5 / Windows BtbN n9.0.2-22-g46d8f462ee-20261006 toolchain.
+  This does not establish cross-build, cross-platform or future FFmpeg reproducibility.
+- This build omits stream field_order for DNxHR. All 720 decoded frames must explicitly report
+  interlaced_frame=0 and 1280x720; missing stream metadata alone never proves progressive.
+- Basic PCM WAV omits ffprobe channel_layout. Only the exact canonical PCM stereo WAV header,
+  exact data length and source PCM byte equality supply the alternative evidence.
+- The sealed package is local only; no binary release/storage publication or download URL exists.
+  Git contains only small canonical metadata and actual hashes. Publication awaits Chat approval.
+- Local cooperative reservation/collision checks prevent tool overwrite; they are not immutable OS
+  storage, tamper-proof ACLs or guarantees against external filesystem modification.
+- Ordinary CI tests pure/unit logic without FFmpeg. Actual full build evidence is separately recorded.
+- OPEN-021 awaits first-package Chat approval. Resolve import/read/materialization remains unverified,
+  and OPEN-020 native authenticity is unchanged. Generator success does not mean Resolve support.
+- TASK-020/021 were not started.

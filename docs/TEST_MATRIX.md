@@ -443,21 +443,19 @@ ADR-035 additions:
 
 Python 3.11.16 CI PASS: [run 37578746926](https://github.com/KIM0296/edit-program/actions/runs/37578746926); 1347 passed / 1 skipped, Ruff and strict mypy PASS.
 
-## TASK-022 — Canonical generator (first-package acceptance pending)
+## TASK-022 — Canonical generator and first-package candidate
 
-| Spec requirements | Current evidence |
+| Spec requirements | Evidence |
 | --- | --- |
-| 1–9 video / frozen recipe / glyphs / pixels / source digest | test_canonical_patterns.py; independently literal A/7 glyphs, selected frame 0/1/23/24/719 pixels, binary order, moving bar, roles and invalid indices |
-| 10–18 PCM / WAV | literal stereo samples at all requested boundaries; exact signed packing/interleave, byte length, determinism, RIFF fmt/data-only header |
-| 19–24 serialization / hash / paths / sealing | test_canonical_tooling.py and test_canonical_package.py; canonical byte literals, malformed data, traversal, mismatch, collision and reservation ownership |
-| 25–30 typed commands / errors / schema | closed recipes, no extra-argument interface or shell=True, mocked preflight capability failure, parser failures, manifest/lock validation |
-| 31–39 actual FFmpeg integration | NOT EXECUTED: required local toolchain unavailable; mock tests are not FFmpeg evidence |
-| 40–54 full generation / real hashes / A/B equality / package index | NOT EXECUTED; no first-package acceptance claimed |
-| 55 no large Git media | only source/tests/docs/recipe are tracked; no MOV/WAV canonical binary |
-| 56 regression | local 1411 passed / 2 skipped (naive INV-001 demo + Windows symlink privilege); native execution untested |
-| 57 Python 3.11 CI | Python 3.11.16 PASS: [run 37584653152](https://github.com/KIM0296/edit-program/actions/runs/37584653152), 1412 passed / 1 skipped |
-| 58–59 Ruff / strict mypy | PASS locally; tools included in strict mypy and CI lint scope |
+| 1–9 video / frozen recipe / glyphs / pixels / source digest | Literal independent A/7 glyph and selected frame 0/1/23/24/719 pixels, MSB binary order, bar, roles, invalid indices; source digest mismatch rejection |
+| 10–18 PCM / WAV | Literal stereo samples at requested boundaries, signed packing/interleave, exact length, integer deterministic source, strict RIFF fmt/data header |
+| 19–24 serialization / hash / paths / sealing | Canonical byte literals, malformed data, traversal, checksum/digest mismatch, collisions, reservation ownership |
+| 25–30 typed commands / errors / schema | Closed recipes; unsupported capability; encoder/decode failure; manifest/lock schema; no arbitrary flags or shell |
+| 31–39 actual FFmpeg integration | Locked Windows FFmpeg: real DNxHR LB MOV + PCM copy mux; explicit stream/frame/WAV evidence; full video and audio decode |
+| 40–54 full build / real hashes / equality / index | Two fresh six-asset runs; all nine files exact byte equality; complete pre-seal validation; actual hashes and sealed local candidate |
+| 55 no ordinary Git media | Only small metadata/index/comparison evidence added to canonical_assets/first-package-candidate-v1 |
+| 56–59 regression / Python 3.11 / Ruff / mypy | Local Python 3.11.9: 1417 passed / 2 skipped; Ruff PASS; strict mypy 33 files PASS; final CI linked in report/PR |
 
-There are 65 new collected tests: local 64 pass / 1 symlink skip. Normal tests never execute the full
-media build. The explicit `verify-reproducible` CLI is the future required actual integration/acceptance
-path, not evidence that it has already run.
+71 new cases: 70 passed / 1 Windows symlink privilege skip. Existing naive INV-001 opt-in red demo also
+skipped in full regression. Ordinary CI excludes full media generation; the explicit real integration
+command and sealed output are recorded in docs/reports/TASK_022_COMPLETION.md. No Resolve tests ran.

@@ -195,3 +195,62 @@ def test_seal_checks_supplied_toolchain_against_authoritative_lock(tmp_path, mon
     monkeypatch.setattr(package, "_validate_media", forbidden)
     with pytest.raises(BuildError):
         package._validate_complete(root, replace(profile(tmp_path), ffmpeg_sha256="d" * 64))
+
+
+@pytest.mark.parametrize("corrupt_source", ["pcm", "rgb"])
+def test_sealing_rejects_source_provenance_mismatch(tmp_path, monkeypatch, corrupt_source):
+    from pathlib import Path
+
+    from tools.canonical_assets import package
+
+    root = tiny_package(tmp_path / "a")
+    tool = profile(root)
+    (root / "generator.lock.json").write_bytes(
+        lock_bytes(tool, "a" * 40, file_hash(Path(package.__file__).with_name("recipe.v1.json")))
+    )
+    (root / "checksums.sha256").write_bytes(
+        checksum_bytes(
+            tuple(
+                (path, file_hash(root / path))
+                for path in package.AUTHORITATIVE_PATHS
+                if path != "checksums.sha256"
+            )
+        )
+    )
+    monkeypatch.setattr(package, "verify_toolchain", lambda tool: None)
+    monkeypatch.setattr(package, "_validate_media", lambda *args: None)
+    monkeypatch.setattr(
+        package, "pcm", lambda role: b"bad" if corrupt_source == "pcm" else role.value.encode()
+    )
+    monkeypatch.setattr(package, "source_digest", lambda frames: "0" * 64)
+    with pytest.raises(BuildError) as caught:
+        package._validate_complete(root, tool)
+    assert caught.value.status == FailureStatus.SOURCE_GENERATION_FAILURE
+    assert ("PCM" if corrupt_source == "pcm" else "RGB") in str(caught.value)
+
+
+def test_encoder_failure_does_not_retry(tmp_path, monkeypatch):
+    import io
+
+    import numpy as np
+
+    from tools.canonical_assets import package
+
+    calls = []
+
+    class FailedEncoder:
+        stdin = io.BytesIO()
+
+        def wait(self, timeout=None):
+            return 1
+
+    def popen(tokens, **kwargs):
+        calls.append((tokens, kwargs))
+        return FailedEncoder()
+
+    monkeypatch.setattr(package.subprocess, "Popen", popen)
+    monkeypatch.setattr(package, "frame", lambda role, index: np.zeros((1,), dtype=np.uint8))
+    with pytest.raises(BuildError) as caught:
+        package._encode(profile(tmp_path), tmp_path, AssetRole.ALPHA, "output.mov")
+    assert caught.value.status == FailureStatus.ENCODE_FAILURE
+    assert len(calls) == 1 and calls[0][1]["shell"] is False

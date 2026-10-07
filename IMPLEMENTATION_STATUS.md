@@ -602,14 +602,17 @@ Chat Gate pending. No PR merge or TASK-020 implementation.
 
 ## TASK-022 — Canonical Asset Generator & First Package Build
 
-Status: **IN PROGRESS / TOOLCHAIN_UNSUPPORTED — first-package acceptance NOT complete**.
+Status: **IMPLEMENTED / FIRST PACKAGE SEALED — Chat Gate pending**.
 Branch: feat/task-022-canonical-asset-generator; base main 7659aabe7dbb6a18ac4b1b940b809e08c424eef9.
-Source tooling implements integer video/PCM, deterministic WAV, closed command recipes, typed preflight,
-strict structural/decode validators, canonical manifest/lock/checksums, exact A/B comparison and sealing.
-Red-first: b50da5f task notes, 47a8bbf missing-module tests; implementation 5f94f3f / b5870ce.
-Local new tests: 64 passed / 1 host symlink skip; full regression: 1411 passed / 2 skipped.
-Ruff PASS; strict mypy PASS (33 files, including generator tools). Python 3.11.16 CI PASS: [run 37584653152](https://github.com/KIM0296/edit-program/actions/runs/37584653152), 1412 passed / 1 skipped. Draft PR #48; final-head evidence in PR body.
-Full six-asset generation, FFmpeg integration, real hashes, A/B equality and package index are NOT done.
-No canonical media committed/published. OPEN-021 remains unresolved; OPEN-020 unchanged.
-Report: docs/reports/TASK_022_COMPLETION.md (partial/HOLD, not completion approval).
+Integer video/PCM, deterministic WAV, closed typed commands, toolchain preflight,
+strict structural/full-decode validators, canonical manifest/lock/checksums, A/B comparison and sealing.
+Python 3.11.9 / NumPy 2.3.5 / pinned BtbN n9.0.2-22-g46d8f462ee-20261006.
+Two independent clean six-asset builds and all nine authoritative files' byte equality PASS.
+Local full regression: 1417 passed / 2 skipped. Ruff / strict mypy PASS (33 files).
+Python 3.11 CI and final head evidence: PR #48 / completion report.
+Package digest: `17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de`.
+Small real-hash package index: canonical_assets/first-package-candidate-v1/package-index.candidate.json.
+Media sealed locally outside Git; no release/publication. Chat approval pending.
+OPEN-021 remains pending Chat Gate; OPEN-020 unchanged. No Resolve validation.
+Report: docs/reports/TASK_022_COMPLETION.md.
 TASK-020/021 not started.

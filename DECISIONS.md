@@ -946,21 +946,25 @@ multiple processes.
 
 
 ## OPEN-021 - Canonical Fixture Binary Generation / First Package Digest
-Status: PARTIALLY RESOLVED — generator contract fixed by ADR-037; first binary package pending (2026-10-07)
+Status: PARTIALLY RESOLVED — generator contract fixed by ADR-037; first binary package candidate generated; Chat approval pending (2026-10-07)
 
 ADR-036/037 now fix the package/media contract, source signal algorithms, locked-toolchain policy,
 encode/mux semantics, validation gates, two-clean-run byte determinism requirement, canonical JSON,
 SHA-256/package_digest rules and immutable publication behavior.
 
+TASK-022 generation evidence (pending Chat Gate):
+
+- Exact locked Python 3.11.9 / NumPy 2.3.5 / BtbN n9.0.2-22-g46d8f462ee-20261006.
+- Six real canonical assets, manifest, generator lock and checksums generated.
+- Two independent clean full runs: all nine authoritative files are byte-for-byte equal.
+- Local sealed package digest: `17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de`.
+- Actual hashes/index: canonical_assets/first-package-candidate-v1/package-index.candidate.json.
+
 Still open:
 
-- TASK-022 branch implements generator/tooling; actual FFmpeg integration and first package build remain unverified
-- exact FFmpeg/ffprobe build has not yet been selected and locked
-- six canonical binary assets do not yet exist
-- manifest.v1.json / generator.lock.json / checksums.sha256 have not yet been produced from real bytes
-- first asset SHA-256 values and package_digest do not yet exist
-- package publication reference does not yet exist
-- Resolve import/read/materialization qualification has not yet occurred
+- Chat Gate approval of the first package and generator implementation.
+- Binary publication/storage reference after approval.
+- Resolve import/read/materialization qualification remains separate and unverified.
 
 Do not invent binary hashes or package_digest in documentation. The first package requires a separate
 implementation/generation/Chat approval step.
@@ -1604,9 +1608,12 @@ cancellation of pending calls.
 
 ### TASK-022 application of OPEN-021 (not resolved)
 
-The generator source/unit foundation is implemented, but the current local execution environment
-lacks a confirmed Python 3.11 + FFmpeg/ffprobe toolchain. Generation preflight returns
-TOOLCHAIN_UNSUPPORTED on the local Python 3.14 environment. No automatic FFmpeg download, profile
-fallback, canonical binary, package digest or package-index candidate is claimed. The user has been
-asked for existing toolchain paths. Full generation, independent Run A/B equality and Chat approval
-remain mandatory. OPEN-020 is unchanged.
+Actual generation and exact Run A/B comparison completed using the user-specified ZIP, whose SHA-256
+was verified before extraction. The generator itself has no downloader or fallback. The local sealed
+candidate and real hashes are documented in docs/reports/TASK_022_COMPLETION.md. First-package approval
+is still Chat's decision: OPEN-021 is not marked RESOLVED FOR FIRST PACKAGE GENERATION.
+OPEN-020 is unchanged. No new architecture decision was required.
+
+Real FFmpeg integration required explicit decoded-frame progressive proof when stream field_order is
+absent, canonical WAV header proof when channel_layout is absent, and current passthrough decode syntax.
+These retain the required profile and do not infer missing observations as success.

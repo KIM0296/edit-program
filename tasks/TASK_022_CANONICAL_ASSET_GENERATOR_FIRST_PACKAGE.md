@@ -1,6 +1,6 @@
 # TASK-022 — Canonical Asset Generator & First Package Build
 
-Status: **IN PROGRESS ? user authorized after TASK-019 approval/merge**
+Status: **IMPLEMENTED / first package candidate sealed — Chat Gate pending**
 
 Execution dependency note:
 
@@ -824,5 +824,6 @@ collapsed into OPEN-021 generator completion.
   Oscillator floor division occurs only after multiplying the signed numerator by the amplitude.
 - NumPy is pinned to 2.3.5. Actual generation requires Python 3.11.x and explicitly selected local
   FFmpeg/ffprobe binaries. No tool downloads or profile fallback are part of the generator.
-- Unit tests can run without FFmpeg; full package acceptance remains blocked until the required
-  local toolchain passes preflight. No placeholder package index or hashes will be created.
+- Unit tests run without FFmpeg. Actual preflight, full six-asset Run A/B generation and exact
+  comparison completed on the locked toolchain; real metadata/index evidence is in
+  canonical_assets/first-package-candidate-v1. Chat Gate approval is still pending.
