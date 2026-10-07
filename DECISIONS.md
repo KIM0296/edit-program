@@ -964,3 +964,18 @@ already-aligned placement span, current ref and mapping status; resolver cannot 
 truth and does not call mapping/evaluator. Native integration, confidence derivation, raw-media
 producers and ranking stay deferred. TASK-014 / ADR-025 preparation does not authorize that
 implementation in TASK-013.
+
+
+## TASK-014 application of OPEN-001/006/008/012 (remain OPEN)
+
+ADR-025 authorizes typed expected effects and synthetic comparison, not a native post-capture
+or fragment identity algorithm. Existing fake lineage IDs may span split fragments, and a
+range removal does not supply concrete native post-fragment correspondence. Inferring that
+correspondence would invent the deferred native policy. Recommendation: compare the explicitly
+supplied semantic RangeRemovalEffect, require caller identity/base-post evidence and complete
+scope observations for other objects, and leave native capture/rebinding/authentication OPEN.
+Alternatives such as filename matching or generated fragments would conceal uncertainty and
+are not implemented. Actual adapter proof and scope-aware refresh require a later contract.
+Participant discovery and gap interaction policy remain explicitly deferred by ADR-025; the
+compiler accepts a resolved, uniform-consequence assessment only. This is not a Safety verdict.
+No new accepted architecture decision; TASK-015 is not started.
