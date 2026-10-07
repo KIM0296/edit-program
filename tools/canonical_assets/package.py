@@ -133,18 +133,21 @@ def compare_packages(a: Path, b: Path) -> PackageComparison:
 def _validate_media(
     root: Path, relative: str, role: AssetRole, tool: ToolchainProfile, source_pcm: bytes | None
 ) -> StreamFacts:
-    facts = parse_streams(
-        _capture(probe_tokens(tool, root, relative), FailureStatus.STRUCTURE_MISMATCH), role
-    )
+    decoded_video = None
     if role.has_video:
         _capture(
             decode_tokens(tool, root, relative, audio=False), FailureStatus.FRAME_COUNT_MISMATCH
         )
-        validate_frame_records(
+        decoded_video = validate_frame_records(
             _capture(
                 probe_tokens(tool, root, relative, frames=True), FailureStatus.FRAME_COUNT_MISMATCH
             )
         )
+    facts = parse_streams(
+        _capture(probe_tokens(tool, root, relative), FailureStatus.STRUCTURE_MISMATCH),
+        role,
+        decoded_video=decoded_video,
+    )
     if role.has_audio:
         assert source_pcm is not None
         decoded = (

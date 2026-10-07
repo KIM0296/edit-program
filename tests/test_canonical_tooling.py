@@ -317,3 +317,26 @@ def test_contradictory_audio_bit_depth_and_boolean_stream_index_rejected():
     a["index"] = True
     with pytest.raises(BuildError):
         parse_streams(json.dumps({"streams": [video(), a]}).encode(), AssetRole.ALPHA)
+
+
+def test_missing_stream_scan_requires_complete_decoded_frame_proof():
+    from tools.canonical_assets.validate import validate_frame_records
+
+    v = video()
+    v.pop("field_order")
+    blob = json.dumps({"streams": [v, audio()]}).encode()
+    with pytest.raises(BuildError):
+        parse_streams(blob, AssetRole.ALPHA)
+    proof = validate_frame_records(
+        json.dumps(
+            {
+                "frames": [
+                    {"media_type": "video", "width": 1280, "height": 720, "interlaced_frame": 0}
+                    for _ in range(720)
+                ]
+            }
+        ).encode()
+    )
+    assert (
+        parse_streams(blob, AssetRole.ALPHA, decoded_video=proof).video.field_order == "progressive"
+    )

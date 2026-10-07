@@ -75,7 +75,24 @@ def _string(value: JSON) -> str:
     return value
 
 
-def parse_streams(blob: bytes, role: AssetRole) -> StreamFacts:
+@dataclass(frozen=True)
+class DecodedVideoEvidence:
+    frame_count: int
+    width: int
+    height: int
+    interlaced_frame: int
+
+    def __post_init__(self) -> None:
+        values = (self.frame_count, self.width, self.height, self.interlaced_frame)
+        if any(type(v) is not int for v in values) or values != (720, 1280, 720, 0):
+            raise BuildError(
+                FailureStatus.STRUCTURE_MISMATCH, "Complete progressive decode required"
+            )
+
+
+def parse_streams(
+    blob: bytes, role: AssetRole, *, decoded_video: DecodedVideoEvidence | None = None
+) -> StreamFacts:
     role_check(role)
     try:
         data = object_value(parse_json(blob))
@@ -106,7 +123,11 @@ def parse_streams(blob: bytes, role: AssetRole) -> StreamFacts:
                     _string(record["pix_fmt"]),
                     _string(record["r_frame_rate"]),
                     _string(record["avg_frame_rate"]),
-                    _string(record["field_order"]),
+                    _string(record["field_order"])
+                    if "field_order" in record
+                    else "progressive"
+                    if isinstance(decoded_video, DecodedVideoEvidence)
+                    else _string(record["field_order"]),
                     _string(record["sample_aspect_ratio"]),
                 )
             else:
@@ -124,7 +145,7 @@ def parse_streams(blob: bytes, role: AssetRole) -> StreamFacts:
         raise BuildError(FailureStatus.STRUCTURE_MISMATCH, str(error)) from error
 
 
-def validate_frame_records(blob: bytes) -> None:
+def validate_frame_records(blob: bytes) -> DecodedVideoEvidence:
     try:
         data = object_value(parse_json(blob))
         frames = data["frames"]
@@ -136,9 +157,9 @@ def validate_frame_records(blob: bytes) -> None:
             f = object_value(value)
             if (
                 f.get("media_type"),
-                f.get("width"),
-                f.get("height"),
-                f.get("interlaced_frame"),
+                _integer(f.get("width")),
+                _integer(f.get("height")),
+                _integer(f.get("interlaced_frame")),
             ) != ("video", 1280, 720, 0):
                 raise BuildError(
                     FailureStatus.STRUCTURE_MISMATCH, "Decoded frame raster/interlace mismatch"
@@ -147,6 +168,8 @@ def validate_frame_records(blob: bytes) -> None:
         if isinstance(error, BuildError):
             raise
         raise BuildError(FailureStatus.FRAME_COUNT_MISMATCH, str(error)) from error
+
+    return DecodedVideoEvidence(720, 1280, 720, 0)
 
 
 def validate_audio(source: bytes, decoded: bytes) -> None:
