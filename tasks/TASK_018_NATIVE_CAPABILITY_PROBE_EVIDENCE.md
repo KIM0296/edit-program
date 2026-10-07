@@ -31,7 +31,7 @@ No Resolve probe is actually executed.
 11. Post-read/reconciliation/identity evidence are independent required evidence classes.
 12. Fragment correspondence uses explicit evidence only.
 13. Evidence is immutable.
-14. Concrete repetition counts/fixture matrices remain caller-supplied policy until OPEN-018 is resolved.
+14. ADR-030 is authoritative for v1 repetition budgets, fixture/challenge coverage and hard qualification values.
 
 ## Required domain
 
@@ -104,7 +104,15 @@ It may include:
 - profile-binding rules
 - policy version
 
-TASK-018 does not invent numeric thresholds.
+ADR-030 supplies the mandatory v1 policy values:
+- TRANSLATE_PLACEMENT: 20 minimum positive runs (4 classes × 5)
+- REMOVE_RANGE: 30 (6 × 5)
+- COMPOUND_RIPPLE: 50 (10 × 5)
+- each applicable mandatory challenge class: 3 additional clean runs
+- conflicts/unexpected side effects/containment failures/ambiguous targets: 0 allowed
+- scope COMPLETE, post-read VERIFIED, reconciliation VERIFIED, execution-grade identity required.
+
+TASK-018 must not weaken these values.
 
 ## Effect evidence
 
@@ -238,17 +246,26 @@ At minimum prove:
 - rollback/Undo
 - retry/recovery orchestration
 - release gate policy
-- concrete minimum repetition count
-- final fixture/challenge matrix
 - production executor enablement
+
+## ApplicabilityDomain
+
+Model explicit applicability conditions. Conflict inside the declared domain is CONFLICTING.
+Outside-domain behavior remains UNSUPPORTED until separately verified. Do not silently narrow the
+domain after a failing qualifying run.
+
+## Efficiency policy
+
+Full probe suites are development/release/update validation, not ordinary editor runtime work.
+Verified profile evidence is reusable until stale, and TASK-018 must not add manual production-editor
+capability-probe steps.
 
 ## Workflow
 
 1. Do not start until TASK-017 is Chat APPROVED and merged unless Chat explicitly reorders work.
 2. Start from then-current main.
-3. Treat ADR-029 and this spec as authoritative.
-4. Keep OPEN-018 quantitative/coverage policy unresolved unless Chat separately approves it.
-5. Red-first tests.
+3. Treat ADR-029, ADR-030 and this spec as authoritative.
+4. Red-first tests.
 6. Implement pure immutable evidence/derivation foundation.
 7. Full regression.
 8. Python 3.11 CI / Ruff / strict mypy.
