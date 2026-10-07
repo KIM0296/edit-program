@@ -1,6 +1,6 @@
 # TASK-020 Runtime Validation Matrix v1
 
-Status: **PROPOSED — Chat review required before becoming authoritative**
+Status: **ACCEPTED — ADR-033 authoritative v1 runtime validation policy**
 
 Purpose: convert OPEN-019's documented read candidates into an executable runtime validation plan for
 the exact installed Windows Resolve + adapter RuntimeProfile.
