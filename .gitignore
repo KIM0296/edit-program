@@ -12,3 +12,9 @@ build/
 .env
 .vscode/
 .idea/
+
+# Canonical media is generated outside Git; small package-index candidates are allowed.
+canonical_assets/**/*.mov
+canonical_assets/**/*.wav
+.canonical-staging/
+.canonical-sealed/
