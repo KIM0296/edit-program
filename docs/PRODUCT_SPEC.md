@@ -425,3 +425,20 @@ v1 uses a template-first canonical fixture package with content-hashed project t
 Integration order is Read-only Adapter -> Fixture Materializer -> Read Stability -> Native Mutation Probe.
 
 Detailed contract: `docs/READ_ONLY_PROBE_ADAPTER_FIXTURE_MATERIALIZATION.md`.
+
+## Documented Resolve Read Capability Tiers
+
+OPEN-019 now has a documented candidate map for TASK-020, while exact runtime support remains
+unverified until the installed Resolve/adapter profile is probed.
+
+- Tier A: runtime/project/timeline, track topology/state, placement/media/source geometry,
+  linked/enabled state, markers and subtitle enumeration.
+- Tier B: partial diagnostics such as simple speed/fades, generic item properties, transition
+  item surface, Fusion presence and color-node presence.
+- Tier C: identity lifetime, stable Track identity, full transition/effect/keyframe semantics,
+  full variable-retime curves and generic preservation-proof production.
+
+The product does not convert documentation presence into runtime trust. Tier A must pass bounded
+typed reads plus repeated stability before it can contribute to a qualifying ProbeSnapshot.
+
+Detailed map: `docs/RESOLVE_READ_CAPABILITY_MAP.md`.
