@@ -1,6 +1,6 @@
 # TASK-022 — Canonical Asset Generator & First Package Build
 
-Status: **IMPLEMENTED / first package candidate sealed — Chat Gate pending**
+Status: **CHAT APPROVED / first package candidate sealed — merge pending**
 
 Execution dependency note:
 
@@ -826,4 +826,4 @@ collapsed into OPEN-021 generator completion.
   FFmpeg/ffprobe binaries. No tool downloads or profile fallback are part of the generator.
 - Unit tests run without FFmpeg. Actual preflight, full six-asset Run A/B generation and exact
   comparison completed on the locked toolchain; real metadata/index evidence is in
-  canonical_assets/first-package-candidate-v1. Chat Gate approval is still pending.
+  canonical_assets/first-package-candidate-v1. Chat Gate APPROVED on PR #48 (2026-10-07).
