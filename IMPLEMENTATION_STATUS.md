@@ -569,3 +569,18 @@ Ruff PASS; strict mypy PASS (19 source files). Python 3.11 CI PASS: [run 3757298
 OPEN-017 / OPEN-001 / OPEN-016 remain unresolved for real native evidence and execution.
 Report: [TASK_017_COMPLETION.md](docs/reports/TASK_017_COMPLETION.md).
 Chat Gate pending; no merge or TASK-018 implementation.
+
+## TASK-018 — Native Capability Probe Evidence Foundation
+
+Implemented `probe_evidence.py`: frozen raw probe/fixture/profile/observation records, separate
+post-read/reconciliation/identity/fragment evidence axes, exact ADR-030 policy and pure qualification.
+Observed changes derive from supplied before/after records and retain collateral differences.
+Repetition counts cannot deduplicate or hide failures/conflicts. Domain and profile bindings are
+explicit; outside-domain contexts remain unsupported. No probes, capture or native execution.
+
+Red-first: `9f1f30b` specification notes; `9c7e2ec` missing-module red tests; `6aa8290` implementation.
+Local validation: 110 new tests; full regression 1259 passed / 1 intentional naive-demo skip.
+Ruff PASS; strict mypy PASS (20 source files). Python 3.11 CI pending PR.
+OPEN-018 remains resolved by ADR-030; OPEN-017 native correspondence/provenance limitations remain.
+Report: [TASK_018_COMPLETION.md](docs/reports/TASK_018_COMPLETION.md).
+Chat Gate pending; no merge or TASK-019 implementation.

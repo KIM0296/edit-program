@@ -1,6 +1,6 @@
 # TASK-018 — Native Capability Probe Evidence Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-017 IS APPROVED/MERGED**
+Status: **IMPLEMENTED ? Chat Gate pending; TASK-017 approval/merge confirmed by user**
 
 Basis:
 - ADR-006 LLM Emits IR Only
