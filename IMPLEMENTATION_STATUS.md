@@ -599,3 +599,17 @@ Ruff PASS; strict mypy PASS (21 source files). Python 3.11.16 CI PASS: [run 3757
 OPEN-020 remains OPEN: native authenticity, durable consumption and cross-process lease serialization.
 Report: [TASK_019_COMPLETION.md](docs/reports/TASK_019_COMPLETION.md).
 Chat Gate pending. No PR merge or TASK-020 implementation.
+
+## TASK-022 — Canonical Asset Generator & First Package Build
+
+Status: **IN PROGRESS / TOOLCHAIN_UNSUPPORTED — first-package acceptance NOT complete**.
+Branch: feat/task-022-canonical-asset-generator; base main 7659aabe7dbb6a18ac4b1b940b809e08c424eef9.
+Source tooling implements integer video/PCM, deterministic WAV, closed command recipes, typed preflight,
+strict structural/decode validators, canonical manifest/lock/checksums, exact A/B comparison and sealing.
+Red-first: b50da5f task notes, 47a8bbf missing-module tests; implementation 5f94f3f / b5870ce.
+Local new tests: 64 passed / 1 host symlink skip; full regression: 1411 passed / 2 skipped.
+Ruff PASS; strict mypy PASS (33 files, including generator tools). Python 3.11 CI pending draft PR.
+Full six-asset generation, FFmpeg integration, real hashes, A/B equality and package index are NOT done.
+No canonical media committed/published. OPEN-021 remains unresolved; OPEN-020 unchanged.
+Report: docs/reports/TASK_022_COMPLETION.md (partial/HOLD, not completion approval).
+TASK-020/021 not started.

@@ -859,7 +859,7 @@ SHA-256/package_digest rules and immutable publication behavior.
 
 Still open:
 
-- generator code has not yet been implemented
+- TASK-022 branch implements generator/tooling; actual FFmpeg integration and first package build remain unverified
 - exact FFmpeg/ffprobe build has not yet been selected and locked
 - six canonical binary assets do not yet exist
 - manifest.v1.json / generator.lock.json / checksums.sha256 have not yet been produced from real bytes
@@ -1504,3 +1504,12 @@ Project re-establishment is represented only by independent bound observation ev
 fixtures are discarded. It never repairs project state; CONTAMINATED cannot use that path. A supplied
 new generation can replace an old one while retaining its records, without claiming native rebuild or
 cancellation of pending calls.
+
+### TASK-022 application of OPEN-021 (not resolved)
+
+The generator source/unit foundation is implemented, but the current local execution environment
+lacks a confirmed Python 3.11 + FFmpeg/ffprobe toolchain. Generation preflight returns
+TOOLCHAIN_UNSUPPORTED on the local Python 3.14 environment. No automatic FFmpeg download, profile
+fallback, canonical binary, package digest or package-index candidate is claimed. The user has been
+asked for existing toolchain paths. Full generation, independent Run A/B equality and Chat approval
+remain mandatory. OPEN-020 is unchanged.

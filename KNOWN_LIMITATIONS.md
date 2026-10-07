@@ -447,3 +447,18 @@ unsafe → reject
   only; a contaminated generation cannot be repaired in place.
 - Production editor manual probe work remains zero. No scheduler, ordinary-edit suite trigger,
   arbitrary script/callback or native runtime enablement is provided.
+
+## TASK-022 — First package build blocked by toolchain availability
+
+- Generator source and pure/unit validation are implemented, but no actual canonical package exists.
+- Local tests use Python 3.14.6 / NumPy 2.3.5. Actual generation requires Python 3.11.x; preflight rejects
+  other versions. No FFmpeg/ffprobe executable has been confirmed in the inspected PATH/common local
+  locations. No automatic download or codec/profile fallback was performed.
+- DNxHR LB encode, PCM MOV mux, actual ffprobe structure, complete decode and full Run A/B equality
+  remain unverified. Command builders and synthetic parser tests are not runtime evidence.
+- No real six-asset hashes, manifest/lock hashes, package_digest, sealed package, package-index candidate
+  or publication/storage URL is present. They must be generated from real validated bytes later.
+- Sealing uses a local cooperative exclusive reservation and rejects existing/pending collisions.
+  It does not claim protection from hostile external filesystem writes or immutable OS storage.
+- OPEN-021 remains pending actual build and Chat approval. Resolve support and OPEN-020 are unchanged.
+- TASK-020/021 were not started. No release/publication has occurred.

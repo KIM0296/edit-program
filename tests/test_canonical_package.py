@@ -182,8 +182,9 @@ def test_symlink_escape_rejected_when_available(tmp_path):
 
 
 def test_seal_checks_supplied_toolchain_against_authoritative_lock(tmp_path, monkeypatch):
-    from tools.canonical_assets import package
     from dataclasses import replace
+
+    from tools.canonical_assets import package
 
     root = tiny_package(tmp_path / "a")
     monkeypatch.setattr(package, "verify_toolchain", lambda tool: None)

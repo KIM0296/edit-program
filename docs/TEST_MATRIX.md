@@ -442,3 +442,22 @@ ADR-035 additions:
 | no native authenticity invented | opaque supplied registration evidence only; OPEN-020 documented |
 
 Python 3.11.16 CI PASS: [run 37578746926](https://github.com/KIM0296/edit-program/actions/runs/37578746926); 1347 passed / 1 skipped, Ruff and strict mypy PASS.
+
+## TASK-022 — Canonical generator (first-package acceptance pending)
+
+| Spec requirements | Current evidence |
+| --- | --- |
+| 1–9 video / frozen recipe / glyphs / pixels / source digest | test_canonical_patterns.py; independently literal A/7 glyphs, selected frame 0/1/23/24/719 pixels, binary order, moving bar, roles and invalid indices |
+| 10–18 PCM / WAV | literal stereo samples at all requested boundaries; exact signed packing/interleave, byte length, determinism, RIFF fmt/data-only header |
+| 19–24 serialization / hash / paths / sealing | test_canonical_tooling.py and test_canonical_package.py; canonical byte literals, malformed data, traversal, mismatch, collision and reservation ownership |
+| 25–30 typed commands / errors / schema | closed recipes, no extra-argument interface or shell=True, mocked preflight capability failure, parser failures, manifest/lock validation |
+| 31–39 actual FFmpeg integration | NOT EXECUTED: required local toolchain unavailable; mock tests are not FFmpeg evidence |
+| 40–54 full generation / real hashes / A/B equality / package index | NOT EXECUTED; no first-package acceptance claimed |
+| 55 no large Git media | only source/tests/docs/recipe are tracked; no MOV/WAV canonical binary |
+| 56 regression | local 1411 passed / 2 skipped (naive INV-001 demo + Windows symlink privilege); native execution untested |
+| 57 Python 3.11 CI | pending draft PR |
+| 58–59 Ruff / strict mypy | PASS locally; tools included in strict mypy and CI lint scope |
+
+There are 65 new collected tests: local 64 pass / 1 symlink skip. Normal tests never execute the full
+media build. The explicit `verify-reproducible` CLI is the future required actual integration/acceptance
+path, not evidence that it has already run.
