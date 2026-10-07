@@ -692,7 +692,33 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 
 Detailed contract: docs/RESOLVE_PROBE_HARNESS_FIXTURE_LIFECYCLE.md.
 
+
+## ADR-032 - Read-only Probe Adapter & Fixture Materialization Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. Probe Environment Controller, Fixture Materializer, Read-only Probe Adapter and Native Probe Invoker are separate responsibilities.
+2. Read-only Adapter has no generic native execute/eval/script surface and never repairs fixture state.
+3. v1 materialization is template-first using a versioned content-hashed project template plus content-hashed canonical test assets.
+4. Materializer return success never proves fixture correctness; independent read-only canonical MATCH is required for CLEAN_VERIFIED.
+5. Verification mismatch is discarded/rebuilt rather than repaired-and-qualified in place.
+6. Canonical fixture identity is semantic and separate from generated native object identity.
+7. FixtureRoleBinding is explicit and ambiguous binding fails closed.
+8. Filename alone is never asset/object identity.
+9. Required read observations are explicit and fixture-class dependent; missing is INCOMPLETE and known wrong state is MISMATCH.
+10. Capture consistency is explicitly fenced; unstable capture is non-qualifying.
+11. Read stability is qualified before destructive mutation probing.
+12. Integration order is Read-only Adapter -> Fixture Materializer -> Read Stability -> Native Mutation Probe.
+13. Actual Resolve API support is discovered for the exact installed RuntimeProfile, not assumed.
+
+Detailed contract: docs/READ_ONLY_PROBE_ADAPTER_FIXTURE_MATERIALIZATION.md.
 # Open Decisions
+## OPEN-019 - Installed Resolve Read / Materialization Capability Map
+Status: OPEN (created by ADR-032, 2026-10-07)
+
+ADR-032 fixes architecture but does not claim the installed Resolve version exposes every required read or materialization primitive. TASK-020/TASK-021 must establish stable project/timeline identity reads, track/placement/media/source/time observability, transition/effect/keyframe/marker/subtitle observability, consistency/freshness evidence, project-template import/allocation behavior, canonical asset binding, role-binding identity evidence and optional project-library isolation support.
+
+Unsupported or unavailable fields remain UNKNOWN/UNSUPPORTED rather than being synthesized.
+
 
 
 ## OPEN-018 - Capability Verification Policy / Challenge Matrix
