@@ -389,3 +389,24 @@ It must not implement:
 > Registration tells us which disposable world is allowed to be tested; currentness proves we are
 > still in that exact world; one-run arming permits one bounded experiment; contamination ends that
 > authority until the world is independently proven clean or rebuilt.
+
+
+## Native environment authenticity binding
+
+ADR-039 / `docs/NATIVE_PROBE_ENVIRONMENT_AUTHENTICITY.md` defines how a caller-supplied registered
+environment becomes eligible for real native destructive probing.
+
+The pure TASK-019 control plane does not authenticate native truth.
+
+Before actual destructive probe arming, later runtime integration must require:
+
+- dedicated probe-only Project Library policy;
+- external immutable registration;
+- TASK-021 MaterializationReceipt;
+- TASK-020 read-stable native Project Library/project/timeline observations;
+- canonical semantic baseline MATCH;
+- independent native re-read;
+- SESSION_BOUND_VERIFIED (or stronger) environment attestation;
+- fresh NativeTargetCurrentnessProof.
+
+OPEN-022 separately governs durable/atomic cross-process authorization consumption.

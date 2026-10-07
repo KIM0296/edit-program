@@ -195,3 +195,24 @@ Implementation must support the runbook's evidence model:
 - evidence checksum/final runtime report
 
 TASK-020 must not silently weaken the runbook to reduce manual/runtime validation work.
+
+
+## Native authenticity evidence inputs
+
+ADR-039 / `docs/NATIVE_PROBE_ENVIRONMENT_AUTHENTICITY.md` consumes TASK-020 runtime reads to produce
+future native environment attestation.
+
+TASK-020 should therefore preserve, where the exact installed runtime supports them:
+
+- current Project Library/database descriptor;
+- fresh current Project re-acquisition;
+- same-session project identity observation;
+- current Timeline identity observation;
+- RuntimeProfile binding;
+- canonical fixture/project semantic baseline;
+- raw + semantic evidence needed for an independent root-path re-read.
+
+TASK-020 does **not** derive destructive authorization or claim SESSION_BOUND_VERIFIED by itself.
+
+If a mandatory authenticity candidate is unsupported/ambiguous, preserve UNSUPPORTED/UNKNOWN and
+leave ADR-039 fail-closed. Do not substitute project names or sentinels.
