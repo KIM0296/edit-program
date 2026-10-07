@@ -711,6 +711,28 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 13. Actual Resolve API support is discovered for the exact installed RuntimeProfile, not assumed.
 
 Detailed contract: docs/READ_ONLY_PROBE_ADAPTER_FIXTURE_MATERIALIZATION.md.
+
+
+## ADR-033 - TASK-020 Read Stability & Runtime Validation Policy v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+TASK-020 read-only runtime validation uses the following fixed v1 policy:
+
+1. Every qualifying Tier A fixture uses 10 consecutive double-capture semantic stability pairs.
+2. Each pair is a complete Tier A capture A followed immediately by the same capture B.
+3. A and B must be semantically equal after only explicitly approved non-semantic ordering normalization.
+4. All 10 accepted pairs for a fixture must yield the same semantic snapshot.
+5. Any unexplained drift is retained as evidence and yields SUPPORTED_UNSTABLE for the affected read scope; do not retry until green and erase the failure.
+6. Project/Timeline/TimelineItem identity candidates require 3 timeline-switch round trips before any same-project switch-stability claim.
+7. Project reopen stability requires 3 reopen cycles only if that lifetime is claimed.
+8. Resolve application restart testing is required before any cross-session PERSISTENT_VERIFIED claim, but is not required for basic TASK-020 completion.
+9. Readable GetUniqueId values are observation data only and do not by themselves grant PERSISTENT_VERIFIED identity.
+10. TASK-020 first-milestone completion requires stable RuntimeProfile, registered Project/Timeline context, stable core Timeline/Track/TimelineItem geometry and media/source reads, unique role binding, qualifying fixture-class requirements, 10/10 full-snapshot pair equality, and a read-only adapter surface with no mutation/generic execute/eval/repair path.
+11. Project reopen/restart/split/delete identity claims remain outside the basic completion gate unless explicitly tested.
+12. Tier B remains diagnostic only and Tier C remains fail-closed.
+
+Detailed policy: docs/TASK_020_RUNTIME_VALIDATION_MATRIX.md.
+
 # Open Decisions
 ## OPEN-019 - Installed Resolve Read / Materialization Capability Map
 Status: PARTIALLY RESOLVED — DOCUMENTED READ MAP; RUNTIME VALIDATION REQUIRED (2026-10-07)
