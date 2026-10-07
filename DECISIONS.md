@@ -787,7 +787,57 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 
 Detailed contract: docs/PROBE_RUNTIME_CONTROL_PLANE.md.
 
+
+
+## ADR-036 - Canonical Fixture Asset Package v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. Canonical probe media uses deterministic synthetic assets, not real editorial footage.
+2. Video-bearing assets use 1280×720, 24/1 fps progressive, 720-frame duration, QuickTime MOV and
+   DNxHR LB as the v1 candidate codec profile.
+3. Audio-bearing assets use 48 kHz, 24-bit Linear PCM, stereo 2.0, 30-second duration.
+4. ASSET_AUDIO_ONLY uses WAV; ASSET_VIDEO_ONLY contains no audio stream.
+5. ASSET_ALPHA/BETA/GAMMA/REPEAT use deterministic visual frame counters/patterns and distinct
+   deterministic stereo tone patterns; no system fonts are required.
+6. ASSET_REPEAT is one exact binary reused wherever repeated-media behavior is required.
+7. Filename is never identity. Asset semantic IDs and exact SHA-256 file bytes are authoritative.
+8. The shipped binary bytes are canonical; the generator recipe/toolchain is provenance only.
+9. A locally regenerated file is not assumed identical. Byte changes require a new asset revision or
+   package version and new qualification evidence.
+10. The authoritative bundle contains manifest.v1.json, generator.lock.json, checksums.sha256 and the
+    six asset binaries.
+11. checksums.sha256 hashes manifest, generator lock and all assets; package_digest is SHA-256 of the
+    exact checksums.sha256 bytes.
+12. Large canonical media is not stored as ordinary Git blobs. TASK-021 consumes an explicitly
+    installed local, checksum-verified package.
+13. Ordinary editing requests never download or regenerate probe assets.
+14. Full canonical media is not required for normal unit CI; actual Resolve qualification uses the
+    full package.
+
+Detailed contract: docs/CANONICAL_FIXTURE_ASSET_PACKAGE.md.
+
 # Open Decisions
+
+
+## OPEN-021 - Canonical Fixture Binary Generation / First Package Digest
+Status: OPEN (created by ADR-036, 2026-10-07)
+
+ADR-036 fixes the media/package contract but the actual six canonical binaries have not yet been
+generated and approved.
+
+A later authorized asset-generation step must:
+
+- implement the deterministic visual/audio recipe
+- record generator/FFmpeg provenance
+- generate the six exact binaries
+- create manifest.v1.json / generator.lock.json / checksums.sha256
+- compute the first package_digest
+- inspect actual stream properties
+- validate import/read behavior on the exact Resolve RuntimeProfile
+- publish/store the immutable binary bundle without overwriting it later
+
+Until then, no package_digest or file SHA-256 values should be invented in documentation.
+
 
 
 ## OPEN-020 - Native Probe Environment Registration Authenticity
