@@ -1075,6 +1075,16 @@ Original OPEN descriptions are retained as historical context, not competing pol
 TASK-002 is authorized only for INV-002/003; work on feat/task-002-inv002-inv003,
 submit a PR, and request Chat Gate. Do not merge or proceed to further tasks automatically.
 
+### TASK-017 application of OPEN-017 / OPEN-001 / OPEN-016 (remain OPEN)
+
+The pure validator consumes caller-declared verified capability/effect/identity/reconciliation
+records. A sequence-level effect model is the explicit net-effect evidence for a decomposition;
+intermediate fragment correspondence must have separate bound verification evidence. The validator
+cannot establish that a real Resolve primitive, locator or fragment actually satisfies those claims.
+No native recipe, returned-item order, locator lifetime or rollback guarantee is inferred. Evidence
+production/authenticity, intermediate native state acquisition and runtime validation remain deferred
+to their separately approved contracts/tasks. TASK-017 does not implement TASK-018 or later probes.
+
 # Resolved Decision History
 
 ## OPEN-003 — Split identity and version granularity

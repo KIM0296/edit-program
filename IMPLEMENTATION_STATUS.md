@@ -555,3 +555,17 @@ Ruff PASS; strict mypy PASS (18 source files). Python 3.11.17 CI PASS: [run 3756
 TASK-001..015 source/tests unchanged. Skip remains the intentional opt-in naive demo.
 OPEN-016 and native identity/freshness OPENs remain; no actual atomicity/Undo claim.
 Report: docs/reports/TASK_016_COMPLETION.md. Chat Gate pending; no merge or TASK-017.
+
+## TASK-017 — Validated Execution IR Foundation
+
+Implemented `execution_ir.py`: immutable bounded REMOVE_RANGE/TRANSLATE_PLACEMENT values,
+exact logical/native effect multiplicity, disjoint realization coverage, identity lifetime and
+resolution validation, runtime-bound capabilities/models, fragment evidence, post-read and
+reconciliation prerequisites. No participant discovery, fallback, repair or execution.
+
+Red-first: `f3c0ec8` specification notes; `309516d` missing-module red tests; `e3ae5b7` implementation.
+Local validation: 117 new tests; full regression 1149 passed / 1 intentional naive-demo skip.
+Ruff PASS; strict mypy PASS (19 source files). Python 3.11 CI PASS: [run 37572985389](https://github.com/KIM0296/edit-program/actions/runs/37572985389). PR #37; final-head evidence in PR body.
+OPEN-017 / OPEN-001 / OPEN-016 remain unresolved for real native evidence and execution.
+Report: [TASK_017_COMPLETION.md](docs/reports/TASK_017_COMPLETION.md).
+Chat Gate pending; no merge or TASK-018 implementation.

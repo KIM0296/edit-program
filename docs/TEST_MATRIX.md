@@ -347,3 +347,30 @@ Red-first spec notes e6c8f56 and tests db3dbd1 precede source; missing transacti
 caused one collection error. Local full regression: 1032 passed / 0 failed / 1 intentional
 naive-demo skip. Ruff PASS; strict mypy PASS (18 source files). Python 3.11.17 CI PASS: [run 37565075683](https://github.com/KIM0296/edit-program/actions/runs/37565075683), 1032 passed / 1 skipped; Ruff and strict mypy PASS (18 source files).
 Actual Resolve atomicity, rollback reliability and native postflight proof remain unverified.
+
+## TASK-017 — Validated Execution IR
+
+`tests/test_execution_ir.py`: 117 new tests. Full regression: 1149 passed, 1 intentional naive-demo
+skip. Ruff PASS; strict mypy PASS (19 source files). Python 3.11 CI PASS: [run 37572985389](https://github.com/KIM0296/edit-program/actions/runs/37572985389). PR #37; final-head evidence in PR body.
+
+| Prepared requirements | Tests / evidence |
+| --- | --- |
+| 1 | immutable_defensive_copy_determinism; all_nested_records_frozen_and_source_unchanged |
+| 2–5 | vocabulary_exact_and_ready_effects; ir_exact_semantics |
+| 6–9 | ir_exact_semantics; duplicate_realization_is_invalid; two_independent_realizations_each_once |
+| 10–12 | vocabulary_exact_and_ready_effects; native_exact_effect_multiplicity; effect_model_matrix |
+| 13–17 | identity_matrix; session_requires_all_proofs; session_change_is_stale_and_locator_not_identity |
+| 18–22 | target_resolution; structural_binding_gaps_fail_closed; session_change_is_stale_and_locator_not_identity |
+| 23–24 | fragment_decomposition_requires_bound_verified_evidence; compound_fragment_path |
+| 25–28 | capability_matrix (four states across primitive/identity/post-read/reconciliation) |
+| 29–34 | effect_model_matrix; model_evidence_required; native_exact_effect_multiplicity |
+| 35 | scope_expansion_not_repaired; structural_binding_gaps_fail_closed |
+| 36–37 | each_step_postread_and_reconciliation_required; reconciliation_evidence_required |
+| 38 | rollback_separate (all four states) |
+| 39–40 | runtime_profile_currentness; bound_evidence_cannot_be_transplanted; missing_primitive_no_runtime_fallback |
+| 41–42 | ir_exact_semantics; scope_expansion_not_repaired; structural_binding_gaps_fail_closed |
+| 43–47 | no_upstream_or_execution_calls; import allowlist; pure value-only module |
+| 48 | full TASK-001..016 pytest regression |
+
+Additional: Safety non-PASS blocking, authorization currentness, contract versions, forged result
+rejection, status precedence and complete diagnostic retention. Native integration remains unverified.
