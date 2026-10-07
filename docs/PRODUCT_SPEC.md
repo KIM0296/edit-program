@@ -366,3 +366,18 @@ verified rebinding.
 Rollback capability remains a separate transaction-policy axis under ADR-027.
 
 Detailed contract: `docs/VALIDATED_EXECUTION_IR_CONTRACT.md`.
+
+
+## Native Capability Probe & Effect Model Evidence v1
+
+Resolve-native destructive semantics become trusted only through isolated disposable probes with
+verified fixture preconditions, independently observed before/after state, complete side-effect
+scope, repeatability, and conflict-free exact-profile evidence.
+
+A single successful call cannot create VERIFIED capability. Partial/unknown observation scope cannot
+create VERIFIED. Conflicting qualifying evidence remains CONFLICTING and blocks destructive
+eligibility rather than being resolved by recency or majority.
+
+Concrete repetition counts and the final fixture/challenge matrix remain a separate versioned policy.
+
+Detailed contract: `docs/NATIVE_CAPABILITY_PROBE_EVIDENCE_CONTRACT.md`.
