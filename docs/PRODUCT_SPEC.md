@@ -531,3 +531,18 @@ Recommended dependency:
 `TASK-019 → TASK-022 → TASK-020 full runtime qualification → TASK-021`.
 
 TASK numbering is repository chronology and does not override this dependency graph.
+
+
+## TASK-020 Runtime Execution & Evidence Runbook
+
+Read-only Resolve qualification is executed through a fixed evidence protocol rather than manual
+spot-checking. One run binds one exact RuntimeProfile/project generation/canonical package.
+
+Each qualifying fixture context is captured in 10 consecutive A/B full-snapshot pairs, failed pairs
+remain evidence, and F4 adds three A→B→A timeline-switch round trips. Raw returns and semantic
+normalized observations are retained separately, and capability support remains distinct from fixture
+correctness.
+
+TASK-020 never repairs a mismatched fixture or retries until green.
+
+Detailed runbook: `docs/TASK_020_RUNTIME_EXECUTION_EVIDENCE_RUNBOOK.md`.
