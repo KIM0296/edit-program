@@ -271,4 +271,16 @@ def decode_tokens(
             "s24le",
             "pipe:1",
         )
-    return (*_base(tool), "-i", str(path), "-map", "0:v:0", "-an", "-vsync", "0", "-f", "null", "-")
+    return (
+        *_base(tool),
+        "-i",
+        str(path),
+        "-map",
+        "0:v:0",
+        "-an",
+        "-fps_mode",
+        "passthrough",
+        "-f",
+        "null",
+        "-",
+    )

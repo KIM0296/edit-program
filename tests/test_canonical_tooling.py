@@ -340,3 +340,11 @@ def test_missing_stream_scan_requires_complete_decoded_frame_proof():
     assert (
         parse_streams(blob, AssetRole.ALPHA, decoded_video=proof).video.field_order == "progressive"
     )
+
+
+def test_decode_uses_explicit_passthrough_frame_mode(tmp_path):
+    from tools.canonical_assets.ffmpeg import decode_tokens
+
+    tokens = decode_tokens(profile(tmp_path), tmp_path, "video.mov", audio=False)
+    assert "-vsync" not in tokens
+    assert tokens[tokens.index("-fps_mode") + 1] == "passthrough"
