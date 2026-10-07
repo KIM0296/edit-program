@@ -1200,3 +1200,18 @@ identity bridging and freshness authenticity deferred. Real producer implementat
 Chat decisions on OPEN-015's native observations and invalidation semantics. No accepted
 policy is added; the existing 17-check profile and precedence are unchanged. TASK-016 is not
 started. Earlier fake safety.py behavior remains separate from this pure integration layer.
+
+
+## TASK-016 application of OPEN-016 / OPEN-001/006/008/012 (remain OPEN)
+
+ADR-027 authorizes pure lifecycle semantics, not native atomicity, Undo reliability, commit-window
+coordination or crash/restart proof. Caller-supplied step, reconciliation, postflight and base-state
+verification records are binding-checked but not authenticated. Inferring applied/failed state from
+timeout or assuming an Undo capability would violate the contract. Recommendation: retain unknown
+reports and failed/recovered history; require fresh bound evidence before any success classification.
+Native evidence production, target correspondence and runtime guarantees remain OPEN-016 and the
+existing identity/freshness OPENs. Exact runtime handling/release of UNVERIFIED_APPLY or unresolved
+recovery needs later decisions; this foundation blocks new destructive eligibility and implements
+no automatic retry, recovery or lockdown release. Base-state verification MATCH, not a native return,
+is the recovery evidence, including reconciliation of an uncertain rollback response. No new runtime
+policy is marked accepted. TASK-017 is not started.
