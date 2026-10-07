@@ -378,7 +378,7 @@ rejection, status precedence and complete diagnostic retention. Native integrati
 ## TASK-018 — Probe evidence qualification
 
 `tests/test_probe_evidence.py`: 110 new tests; full regression 1259 passed / 1 intentional naive-demo
-skip. Ruff PASS; strict mypy PASS (20 source files). Python 3.11 CI pending PR.
+skip. Ruff PASS; strict mypy PASS (20 source files). Python 3.11 CI PASS: [run 37575858937](https://github.com/KIM0296/edit-program/actions/runs/37575858937). PR #40; final-head evidence in PR body.
 
 | Prepared requirements | Tests / evidence |
 | --- | --- |

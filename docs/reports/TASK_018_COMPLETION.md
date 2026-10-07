@@ -2,12 +2,12 @@
 
 TASK: TASK-018 — Native Capability Probe Evidence Foundation
 
-상태: 구현 및 로컬 검증 완료, Python 3.11 CI/Chat Gate 대기.
+상태: 구현 및 로컬/Python 3.11 CI 검증 완료, Chat Gate 대기.
 브랜치: `feat/task-018-native-probe-evidence`.
 Base main: `0c84a081cbfd25a124215885c553ec27af1e81d3`.
 Spec notes: `9f1f30b`, red tests: `9c7e2ec`, 구현: `6aa8290`.
 최종 제출 head 및 최종 CI 근거는 PR 본문에 기록합니다.
-PR: 생성 후 기록.
+PR: [#40](https://github.com/KIM0296/edit-program/pull/40).
 근거: [TASK-018 spec](../../tasks/TASK_018_NATIVE_CAPABILITY_PROBE_EVIDENCE.md),
 [ADR-029 상세 계약](../NATIVE_CAPABILITY_PROBE_EVIDENCE_CONTRACT.md),
 [ADR-030 정책](../CAPABILITY_VERIFICATION_POLICY.md).
@@ -59,7 +59,7 @@ TASK-018 표에 있습니다. 테스트는 synthetic evidence의 구조적 quali
 
 ### git diff --stat
 
-비교 기준: 시작 main `0c84a08`.
+비교 기준: 작업 중 추가된 문서까지 동기화한 main `3c0015b`. 시작 main은 `0c84a08`이며, 후속 fixture catalog/runtime 계약 문서만 merge했습니다. 후속 TASK 구현은 없습니다.
 
 ```text
  DECISIONS.md                                       |   17 +
@@ -83,14 +83,14 @@ TASK-018 표에 있습니다. 테스트는 synthetic evidence의 구조적 quali
 | 전체 pytest | 1259 passed, 0 failed, 1 skipped |
 | Ruff | PASS |
 | strict mypy | PASS, 20 source files |
-| Python 3.11 CI | PR 생성 후 확인 |
+| Python 3.11 CI | 1259 passed / 1 skipped; Ruff / strict mypy PASS |
 
 로컬 환경: Windows / CPython 3.14.6. 명령: `.venv/Scripts/python.exe -m pytest -q`,
 `-m ruff check src tests`, `-m mypy`.
 Skip은 `test_naive_inv001.py`의 opt-in intentional red demo 1개입니다. 정상 INV-001 회귀는 실행됩니다.
 기존 TASK-001~017 source/test는 수정하지 않았습니다.
 
-Python 3.11 GitHub CI: PR 생성 후 확인.
+Python 3.11 GitHub CI: [run 37575858937](https://github.com/KIM0296/edit-program/actions/runs/37575858937), head `f3e9cafdf9c84c8df88577b62304514c32456859` PASS. 최종 문서 commit의 CI는 PR 본문에 연결합니다.
 Resolve native fixture/probe/observation/Undo는 실행하지 않았습니다.
 
 ### Safety Gate

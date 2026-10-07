@@ -580,7 +580,7 @@ explicit; outside-domain contexts remain unsupported. No probes, capture or nati
 
 Red-first: `9f1f30b` specification notes; `9c7e2ec` missing-module red tests; `6aa8290` implementation.
 Local validation: 110 new tests; full regression 1259 passed / 1 intentional naive-demo skip.
-Ruff PASS; strict mypy PASS (20 source files). Python 3.11 CI pending PR.
+Ruff PASS; strict mypy PASS (20 source files). Python 3.11 CI PASS: [run 37575858937](https://github.com/KIM0296/edit-program/actions/runs/37575858937). PR #40; final-head evidence in PR body.
 OPEN-018 remains resolved by ADR-030; OPEN-017 native correspondence/provenance limitations remain.
 Report: [TASK_018_COMPLETION.md](docs/reports/TASK_018_COMPLETION.md).
 Chat Gate pending; no merge or TASK-019 implementation.
