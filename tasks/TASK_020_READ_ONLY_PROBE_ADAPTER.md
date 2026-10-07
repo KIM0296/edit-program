@@ -1,6 +1,6 @@
 # TASK-020 — Read-only Probe Adapter Foundation
 
-Status: **IN PROGRESS ? explicitly AUTHORIZED after TASK-019/022 approval and merge**
+Status: **Phase A implemented; Phase B HOLD (not qualified); Chat Gate requested**
 
 Basis: ADR-022, ADR-029, ADR-030, ADR-031, ADR-032, ADR-033, ADR-034, ADR-038.
 

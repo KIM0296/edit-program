@@ -1,4 +1,4 @@
-﻿# TASK-020 read-only adapter operation
+# TASK-020 read-only adapter operation
 
 Implementation and runtime qualification are separate gates. No native support has been qualified.
 Installed documentation is candidate evidence only. Use a fresh evidence directory for each attempt;
@@ -28,8 +28,8 @@ Discovery creates no qualifying RuntimeProfile when the required typed observati
 - library (exact typed current database descriptor), operator_session
 - package_digest (approved canonical package digest)
 - registration_evidence_ref, currentness_evidence_ref
-- operator_preflight: seven explicit booleans named registered_disposable, not_production,
-  approved_package_verified, no_concurrent_edit, no_repair, failed_pairs_retained, currentness_supplied
+- operator_preflight: seven explicit booleans named registered_disposable_project, not_production_or_working,
+  approved_package_verified, no_concurrent_edit, no_repair_planned, failed_pairs_retained, currentness_evidence_supplied
 - fixtures: one F0/F1/F2/F3 context, or F4-A and F4-B in the same project/generation
 
 Each fixture supplies context (the Context enum value), timeline_id, fixture_instance, assets,

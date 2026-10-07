@@ -1635,3 +1635,8 @@ claiming a single all-F0–F4 qualification. No aggregation authority is invente
 Additional runtime questions remain under OPEN-019/011: the installed 21.1.1.10 stub annotates item
 start/end/duration as float even in False mode; source/end native conventions are not empirically known.
 Preserve raw values; do not coerce/shift. Runtime evidence is required before canonical mapping readiness.
+
+TASK-020 submission evidence (2026-10-07): actual official external bridge discovery returned no
+Resolve root. Native runtime product/build, endpoint conventions, F3 item-marker HOST correspondence,
+and independent native authenticity remain unproven. The F3 host is an explicit input, not inferred
+from role/member ordering. OPEN-019/011/020 remain applicable; OPEN-023 is not resolved by mock tests.

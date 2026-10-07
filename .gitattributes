@@ -1,3 +1,4 @@
 tools/canonical_assets/* text eol=lf
 canonical_assets/*.json text eol=lf
 canonical_assets/** -text
+docs/evidence/task020-runtime/** -text

@@ -616,3 +616,18 @@ Media sealed locally outside Git; no release/publication. Chat Gate APPROVED on 
 OPEN-021 is RESOLVED FOR FIRST PACKAGE GENERATION; OPEN-020 unchanged. No Resolve validation.
 Report: docs/reports/TASK_022_COMPLETION.md.
 TASK-020/021 not started.
+
+## TASK-020 — read-only implementation / runtime HOLD
+
+TASK-019 and TASK-022 approved and merged per user; current task is TASK-020.
+Base: 98bffaf204b1ee94636213ea9cd60bf7dfa45b75; branch feat/task-020-read-only-probe-adapter.
+Phase A: immutable typed evidence, fixed read-only installed API boundary, explicit role binding,
+S1/S2 runner, exact-type normalization, append-only writer/checksums/report implemented and mock-tested.
+Phase B: HOLD. Actual external Python 3.11 bridge discovery returned no Resolve root. No registered
+F0–F4 fixture input supplied; S1 0/120 captures, S2 0/3. All RV-001..044 UNKNOWN.
+Installed binary file version 21.1.1.10 is not a runtime build observation.
+55 new tests; Python 3.11.9 full regression 1472 passed / 2 skipped; Ruff and strict mypy PASS (44 files).
+CI and final submission head: PR body. OPEN-023 cross-project aggregate unresolved; OPEN-019/011 native
+coordinate semantics require evidence. OPEN-020 native authenticity remains unproven.
+Report: docs/reports/TASK_020_COMPLETION.md. Requested Chat Gate: HOLD for runtime qualification;
+Phase A code review requested separately. No merge, TASK-021, fixture repair or Resolve mutation.
