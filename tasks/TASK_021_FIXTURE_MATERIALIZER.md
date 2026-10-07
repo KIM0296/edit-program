@@ -66,3 +66,16 @@ Before any materialization step:
 Do not regenerate canonical media inside TASK-021 or during an ordinary editing request.
 
 The first binary package/digest remains OPEN-021 until separately generated and approved.
+
+
+## Generator prerequisite
+
+TASK-021 consumes a previously sealed package produced under ADR-037 /
+`docs/CANONICAL_ASSET_GENERATOR_CONTRACT.md`.
+
+TASK-021 must not implement or invoke canonical-media generation.
+
+Before TASK-021 can perform full real package validation, OPEN-021 must have a separately approved
+first package index containing the actual package_digest and six asset hashes.
+
+Unit tests may continue to use tiny fake package bytes without the full canonical bundle.
