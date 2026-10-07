@@ -325,3 +325,25 @@ Red-first notes e565d81 and tests 05b12a5 precede source; missing safety_preflig
 caused one collection error. Local full regression: 936 passed / 0 failed / 1 intentional
 naive-demo skip. Ruff PASS; strict mypy PASS (17 source files). Python 3.11.16 CI PASS: run 37561231902, 936 passed / 1 skipped; Ruff/mypy PASS.
 Native proof authenticity, actual Resolve integration and rollback remain unverified.
+
+
+## TASK-016 Transaction / Postflight foundation
+
+96 tests in tests/test_transaction.py cover all 48 prepared requirements:
+
+| Required IDs | Coverage |
+| --- | --- |
+| 1-5 | Frozen values, defensive lists, separate enum axes, exact terminal prerequisites |
+| 6-10 | Normal phase path, forbidden direct commit, stale/blocked precommit, partial failure |
+| 11-18 | UNKNOWN distinct, no retry, fresh reconciliation, native report insufficient, MATCH-only commit |
+| 19-23 | Exact capability/policy enums, default derivation and full supported policy/request matrix |
+| 24-30 | Command result versus base verification, recovered failures, mismatch/unknown lockdown, no promotion |
+| 31-35 | Strict current promotion facts and authorization/diff/Safety/base bindings |
+| 36-40 | Monotonic journal, append-only failures and recovery, immutable definition binding, determinism |
+| 41-47 | Monkeypatch isolation and import whitelist; no native/Undo/snapshot/compiler/Safety/Authority/executor calls |
+| 48 | TASK-001..015 full regression unchanged |
+
+Red-first spec notes e6c8f56 and tests db3dbd1 precede source; missing transaction module
+caused one collection error. Local full regression: 1032 passed / 0 failed / 1 intentional
+naive-demo skip. Ruff PASS; strict mypy PASS (18 source files). Python 3.11 CI pending PR.
+Actual Resolve atomicity, rollback reliability and native postflight proof remain unverified.

@@ -1,6 +1,6 @@
 # TASK-016 — Transaction State & Postflight Verification Foundation
 
-Status: **Authorized after TASK-015 approval/merge; implementation in progress**
+Status: **Implemented; validation and Chat Gate tracked in docs/reports/TASK_016_COMPLETION.md**
 
 Basis:
 - ADR-006 LLM Emits IR Only
@@ -337,6 +337,8 @@ mistaking uncertain/partial execution for verified success.
 - Add transaction.py with immutable bound authorization, caller facts, ordered opaque step
   refs (not commands/IR), typed event payloads and append-only journal. Only value enums/
   snapshot refs are imported from earlier layers; no evaluator or executor is called.
+- The prepared event binds the complete immutable definition, including authorization/approval,
+  ordered step refs and rollback capability/policy; these cannot be swapped under existing history.
 - Transaction validates its journal through a deterministic pure fold. Its derived state
   cannot be submitted as a replacement history. Constructors reject illegal phase/outcome,
   payload, sequence, artifact and step-order combinations. Sequence gaps are allowed;

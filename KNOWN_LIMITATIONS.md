@@ -376,3 +376,26 @@ unsafe → reject
   It is neither Approval nor Apply permission, native verification, transaction or promotion.
 - Existing fake safety.py remains a separate scoped regression layer. No production P0,
   actual A/V, rollback, runtime proof production, TASK-016 or later execution claim is made.
+
+
+## TASK-016 transaction foundation limits
+
+- Step IDs are ordered opaque references, not native commands or Execution IR. All lifecycle
+  events and currentness/capability/verification facts are caller-supplied synthetic evidence.
+- Typed bindings and journal order are validated; native truth, approval provenance, Safety
+  reference authenticity and runtime capabilities are not authenticated. OPEN-016 remains.
+- STEP_STARTED is explicit progress with one active, unreported step. Pending commands cannot
+  be skipped, classified as failed, retried or terminated as unmutated without a result record.
+- OUTCOME_UNKNOWN step reports require fresh bound reconciliation before continuation or
+  recovery claims. No retry transition is implemented even after reconciliation.
+- Base-state verification MATCH is a supplied semantic equality fact, not equality of native
+  snapshot tokens or a generated capture. It can reconcile an uncertain rollback response;
+  the original command status remains in history and never itself proves recovery.
+- Recovered failure is not commit. Unrecovered outcomes derive recovery lockdown. UNVERIFIED_APPLY
+  blocks promotion and new-destructive eligibility; no automatic recovery or release is provided.
+- new_destructive_execution_eligible is only a lockdown gate, not authorization for another
+  edit. A new transaction still requires its own artifacts and current precommit facts.
+- Promotion eligibility consumes fresh bound facts but never invokes Authority or increments
+  TimelineVersion. Only a verified commit has the ADR-009 logical commit meaning.
+- Native mutation/Undo, physical atomicity, persistence/restart, commit-window coordination,
+  runtime enforcement and TASK-017 remain outside this foundation.

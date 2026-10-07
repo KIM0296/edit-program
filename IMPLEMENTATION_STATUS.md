@@ -534,3 +534,24 @@ Ruff PASS; strict mypy PASS (17 source files). Python 3.11.16 CI PASS: run 37561
 TASK-001..014 source/tests unchanged, including earlier fake safety.py. Skip remains intentional.
 OPEN-015 native proof production and OPEN-001/006/008/012 identity/freshness/authenticity remain.
 Report: docs/reports/TASK_015_COMPLETION.md. Chat Gate pending; no merge or TASK-016.
+
+
+## TASK-016 Transaction State / Postflight - 2026-10-07
+
+TASK-015 APPROVED/merged per user. Latest-main base dbd57be; branch
+feat/task-016-transaction-postflight. ADR-027 and prepared TASK-016 remain authoritative.
+Spec notes e6c8f56 and red tests db3dbd1 precede source. Red proof: missing transaction
+module caused one collection error before implementation.
+
+Implemented immutable exact artifact authorization, precommit facts/results, separate phase/
+outcome and step uncertainty, capability/policy separation, typed append-only journal,
+pure validated transitions, postflight/base verification evidence and promotion eligibility.
+Prepared history binds the full definition; all later state is derived by deterministic fold.
+No direct applying-to-commit, blind retry, successful rollback from native return alone,
+failed-to-success rewrite, or promotion of uncertain/unrecovered outcomes. No native calls.
+
+Local Windows CPython 3.14.6: 1032 passed / 0 failed / 1 skipped; 96 TASK-016 tests.
+Ruff PASS; strict mypy PASS (18 source files). Python 3.11 CI pending PR.
+TASK-001..015 source/tests unchanged. Skip remains the intentional opt-in naive demo.
+OPEN-016 and native identity/freshness OPENs remain; no actual atomicity/Undo claim.
+Report: docs/reports/TASK_016_COMPLETION.md. Chat Gate pending; no merge or TASK-017.
