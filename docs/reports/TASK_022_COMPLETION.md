@@ -1,14 +1,14 @@
 # TASK 완료 보고서
 
 TASK: TASK-022 — Canonical Asset Generator & First Package Build
-상태: **구현 및 실제 first-package candidate 생성 완료 / Chat Gate 대기**
+상태: **구현 및 실제 first-package candidate 생성 완료 / Chat Gate APPROVED / merge pending**
 브랜치: `feat/task-022-canonical-asset-generator`
 시작 base: `7659aabe7dbb6a18ac4b1b940b809e08c424eef9`
 동기화한 documentation main / diff 기준: `40b27c2457b086a9d05b47e30b21e70aff5c346e`
 실제 generator build head: `8f57179ee226c08581ddaf416ed79bafd00b29c3`
 최종 review head / CI: [PR #48](https://github.com/KIM0296/edit-program/pull/48) 본문에 기록.
 근거: ADR-034/036/037, [TASK-022 spec](../../tasks/TASK_022_CANONICAL_ASSET_GENERATOR_FIRST_PACKAGE.md).
-요청 Gate: **APPROVED** — 검토 요청이며 Chat의 승인 선언이 아닙니다.
+Chat Gate: **APPROVED — 2026-10-07, PR #48**.
 
 ## 1. 구현 내용
 
@@ -234,9 +234,9 @@ Architecture 변경은 필요하지 않았습니다. 실제 toolchain의 세 차
 
 ## 5. DECISIONS.md OPEN
 
-- **OPEN-021 유지**: actual generation, hashes, two-run equality와 local seal은 완료.
-  First-package Chat Gate 승인과 이후 binary publication/storage 결정은 남았습니다.
-- RESOLVED FOR FIRST PACKAGE GENERATION으로 변경하지 않았습니다.
+- **OPEN-021: RESOLVED FOR FIRST PACKAGE GENERATION** — actual generation, hashes, two-run equality,
+  local seal과 Chat Gate approval 완료.
+- Binary publication/storage 및 Resolve runtime qualification은 별도 후속 경계입니다.
 - **OPEN-020 변경 없음**. Native registration authenticity를 주장하지 않습니다.
 - 새로운 architecture OPEN은 없습니다. Toolchain 차이는 explicit validation evidence로 처리했습니다.
 
@@ -265,7 +265,8 @@ TASK-020/021은 착수하지 않았습니다. 이 제안은 다음 구현 승인
 
 ## 9. Chat 검토란
 
-- 판정: **Chat 작성 대기**.
-- 요청: TASK-022 generator, exact toolchain, actual binaries/hashes, A/B determinism 및 package index의 Chat Gate Review.
-- 승인 전 OPEN-021 resolution, merge, release/publication 없음.
+- 판정: **APPROVED — 2026-10-07, PR #48**.
+- 독립 확인: build source 이후 generator/tooling 변경 없음, checksums↔package-index 일치,
+  `SHA256(exact checksums.sha256)` = `17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de`.
+- Binary publication/storage 및 Resolve runtime qualification은 승인 범위 밖이며 별도 후속 단계입니다.
 - TASK-020/021 자동 착수 없음.
