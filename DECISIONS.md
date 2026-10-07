@@ -614,7 +614,60 @@ Core rules:
 
 Detailed contract: docs/VALIDATED_EXECUTION_IR_CONTRACT.md.
 
+
+
+## ADR-029 - Native Capability Probe & Effect Model Evidence Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+Execution-grade native capability must be earned from isolated, repeatable and independently observed
+runtime evidence, not from API presence or return codes.
+
+Core rules:
+1. Destructive capability probes never run on the authoritative production/working timeline.
+2. Destructive probes use isolated disposable canonical fixtures whose pre-state is verified.
+3. One successful probe cannot create SUPPORTED_VERIFIED or VERIFIED NativeEffectModel.
+4. Repeatability is mandatory for destructive verification.
+5. Probe observation scope must be COMPLETE to support VERIFIED destructive semantics.
+6. PARTIAL/UNKNOWN observation scope cannot produce VERIFIED.
+7. Actual observed side effects are retained even when they contradict the probe hypothesis.
+8. Conflicting qualifying evidence is CONFLICTING; no latest-wins, majority-vote or hidden ranking.
+9. Any qualifying semantic conflict blocks destructive VERIFIED eligibility.
+10. Evidence/model derivation is bound to exact RuntimeProfile and versioned invocation/observation
+    contracts.
+11. API/method existence and native success booleans are provenance only, not semantic proof.
+12. Post-read, reconciliation, identity and fragment-correspondence capabilities are independently
+    evidenced.
+13. IdentityScope is not upgraded from identifier shape alone.
+14. Fragment correspondence never uses order/name/position heuristics without verified evidence.
+15. Qualifying runs should start from independently clean canonical fixture state.
+16. Probe evidence is immutable; later interpretation creates new derived artifacts.
+17. Relevant Resolve/adapter/platform/contract changes stale evidence/model applicability.
+18. Capability probes verify native behavior, not editorial quality.
+
+Detailed contract: docs/NATIVE_CAPABILITY_PROBE_EVIDENCE_CONTRACT.md.
+
 # Open Decisions
+
+
+## OPEN-018 - Capability Verification Policy / Challenge Matrix
+Status: OPEN (created by ADR-029, 2026-10-07)
+
+ADR-029 requires repeatability, fixture coverage, complete observation and conflict-free evidence but
+does not yet fix the quantitative verification policy.
+
+Future Chat Architecture Review must decide:
+- minimum successful repetition count per primitive/profile
+- required simple fixture classes
+- required safety challenge fixture classes
+- whether policy differs for read-only, identity, translation, removal, compound ripple,
+  reconciliation, fragment rebinding and rollback
+- allowed conflict count (architecture currently requires conflict to block VERIFIED)
+- evidence expiry/revalidation cadence beyond profile/version invalidation
+- cross-platform/profile equivalence rules, if any
+- release-gate requirements before SUPPORTED_VERIFIED can be consumed by production
+
+TASK-018 must accept an explicit versioned policy and must not invent these values.
+
 
 
 ## OPEN-017 - Native Capability / Effect Model Evidence Production
