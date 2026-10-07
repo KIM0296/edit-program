@@ -847,7 +847,102 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 
 Detailed contract: docs/CANONICAL_ASSET_GENERATOR_CONTRACT.md.
 
+
+
+## ADR-038 - TASK-020 Runtime Execution & Evidence Runbook v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. TASK-020 runtime qualification is executed as an auditable operator/adapter protocol, not as ad-hoc
+   manual inspection.
+2. One validation_run_id binds one exact RuntimeProfile, environment/project generation, canonical
+   package digest, fixture catalog version, adapter revision and observation-policy version.
+3. RuntimeProfile is frozen before qualifying captures. Profile/generation change ends the qualifying
+   session and requires a new validation_run_id.
+4. Full TASK-020 qualification uses the approved TASK-022 canonical asset package. TASK-020 does not
+   materialize or repair F0-F4.
+5. Every qualifying capture stores raw observations separately from semantic normalized observations.
+6. Semantic normalization is limited to approved nonsemantic ordering. Rounding, default filling,
+   repeated-media collapse, missing-ID synthesis and coordinate repair are forbidden.
+7. F0/F1/F2/F3 and both F4 timeline contexts each receive 10 consecutive double-capture S1 pairs.
+8. Any unexplained failed/drifting pair remains evidence and prevents SUPPORTED_STABLE for the
+   affected scope in that validation run. No retry-until-green or pair deletion/renumbering.
+9. F4 additionally requires exactly 3 A→B→A same-project S2 round trips for switch-stability claims.
+10. During S1 no human Resolve-state interaction is allowed except abort/continue controls that do not
+    alter Resolve state. S2 permits only the declared timeline switches.
+11. Capability support and fixture correctness remain separate. A stable typed wrong value can prove
+    a readable capability while making the fixture MISMATCH.
+12. None / empty string / false / empty collection remain distinct observations.
+13. API exceptions and ambiguous bridge behavior default to UNKNOWN unless unsupported behavior is
+    explicitly established.
+14. Evidence is organized by run/fixture/pair/raw-semantic/finding and sealed with an evidence
+    checksum after finalization.
+15. S3 project reopen and S4 Resolve restart are optional for basic TASK-020 completion and are
+    required only for the corresponding longer identity-lifetime claims.
+16. TASK-020 may never promote S1/S2 identity observations to PERSISTENT_VERIFIED.
+17. A mismatch is recorded and qualification stops for the affected scope; TASK-020 never repairs
+    the fixture.
+18. Full runtime report must contain per-field RV matrix results, fixture results, S1/S2 evidence,
+    blockers/UNKNOWNs and explicit non-claims.
+
+Detailed runbook: docs/TASK_020_RUNTIME_EXECUTION_EVIDENCE_RUNBOOK.md.
+
+
+
+## ADR-039 - Native Probe Environment Authenticity Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. First qualifying destructive probes require a dedicated probe-only Project Library.
+2. Shared/cloud/network/collaborative libraries are non-qualifying for v1 unless a later approved
+   contract proves equivalent isolation/currentness.
+3. Project name/path/timeline name/sentinel/UUID shape/one successful API call never authenticate a
+   probe environment.
+4. External immutable EnvironmentRegistration, MaterializationReceipt and fresh native observation
+   remain separate evidence classes.
+5. Environment authenticity requires fresh Project Library + current project + current timeline/
+   fixture observation, canonical semantic baseline MATCH and independent root-path re-read.
+6. Same-session stable native project/timeline identity observations may contribute only after
+   TASK-020 runtime read-stability evidence.
+7. SESSION_BOUND_VERIFIED is sufficient for the first same-session destructive probe when the fresh
+   final target-currentness proof and ADR-035 one-run authorization also pass.
+8. Resolve restart/project reopen/native reconnect beyond the proven boundary invalidates the
+   session-bound attestation rather than assuming persistent identity.
+9. Canonical materialization provenance is necessary but never self-authenticates the currently open
+   native project.
+10. A fresh NativeTargetCurrentnessProof is mandatory immediately before destructive arming/submission.
+11. Missing/ambiguous mandatory native identity or Project Library evidence is fail-closed; no
+    name/content/sentinel fallback.
+12. Collaboration/concurrent writers are outside v1 qualifying destructive probe environments.
+13. Attestation conflicts are retained; no majority/latest/retry-until-green behavior.
+14. A project-local generation witness may be supporting evidence only after an approved native field
+    exists; it is never sole authority.
+15. If TASK-020 runtime evidence disproves an assumed read path, return to architecture review instead
+    of silently weakening the authenticity contract.
+16. Durable/atomic cross-process authorization consumption is a separate problem under OPEN-022.
+
+Detailed contract: docs/NATIVE_PROBE_ENVIRONMENT_AUTHENTICITY.md.
+
 # Open Decisions
+
+
+## OPEN-022 - Durable Probe Authority Ledger & Cross-process Lease
+Status: OPEN (split from OPEN-020 by ADR-039, 2026-10-07)
+
+ADR-039 resolves environment-authenticity composition but does not make immutable Python successor
+state a crash-safe or cross-process native authority.
+
+Future decisions/implementation must define:
+
+- persistent external registry/authority ledger;
+- atomic compare-and-consume of one-run authorization;
+- cross-process exclusive probe lease;
+- replay prevention for stale serialized control-plane state;
+- crash/restart reconciliation of pending native invocation;
+- durable transition from UNUSED -> CONSUMED/UNKNOWN;
+- process ownership/lease expiry or recovery semantics without enabling blind retry.
+
+Until then, destructive native execution must not claim durable single-use authority across crashes or
+multiple processes.
+
 
 
 ## OPEN-021 - Canonical Fixture Binary Generation / First Package Digest
@@ -872,21 +967,23 @@ implementation/generation/Chat approval step.
 
 
 ## OPEN-020 - Native Probe Environment Registration Authenticity
-Status: OPEN (created by ADR-035, 2026-10-07)
+Status: PARTIALLY RESOLVED by ADR-039 — runtime evidence/producer implementation pending (2026-10-07)
 
-ADR-035 defines pure registration/currentness/control-plane semantics but does not authenticate that a
-caller-supplied project reference really identifies a disposable non-production Resolve project.
+ADR-039 fixes the architecture for dedicated probe-only Project Library isolation, external
+registration, MaterializationReceipt binding, session-bound native attestation, canonical baseline
+MATCH, independent native re-read, target currentness proof and fail-closed wrong-project behavior.
 
-TASK-019 may validate typed bindings only. Actual runtime work must later establish:
+Still open:
 
-- trustworthy native project/library correspondence for a registered environment
-- how project generation is derived across import/rebuild/reopen
-- how the environment fingerprint/currentness token is captured
-- how working/production projects are excluded from registration using native evidence
-- whether a dedicated project library can become a hard isolation requirement
-- persistence/registry storage and tamper/authenticity guarantees
+- exact installed Resolve read surfaces for Project Library/project identity must be proven by TASK-020;
+- TASK-021 must produce real MaterializationReceipt/native fixture provenance;
+- NativeEnvironmentAttestation producer is not implemented;
+- actual SESSION_BOUND_VERIFIED evidence has not yet been produced on Resolve;
+- optional project-local generation-witness mechanism has no approved native field yet;
+- reopen/cross-session authenticity remains unverified unless S3/S4 evidence is explicitly produced.
 
-Until then, registration facts remain typed control-plane evidence, not native truth.
+Do not treat caller-supplied registration, project names or UUID-shaped values as native truth.
+
 
 ## OPEN-019 - Installed Resolve Read / Materialization Capability Map
 Status: PARTIALLY RESOLVED — DOCUMENTED READ MAP; RUNTIME VALIDATION REQUIRED (2026-10-07)

@@ -2,7 +2,7 @@
 
 Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-019 IS APPROVED/MERGED**
 
-Basis: ADR-022, ADR-029, ADR-030, ADR-031, ADR-032.
+Basis: ADR-022, ADR-029, ADR-030, ADR-031, ADR-032, ADR-033, ADR-034, ADR-038.
 
 ## Purpose
 
@@ -173,3 +173,46 @@ TASK-019 approved
 
 If TASK-020 implementation starts before TASK-022 finishes, its Chat completion report must clearly
 separate adapter implementation from deferred real canonical-package runtime qualification.
+
+
+## Runtime execution runbook
+
+Actual Resolve runtime qualification must follow ADR-038 /
+`docs/TASK_020_RUNTIME_EXECUTION_EVIDENCE_RUNBOOK.md`.
+
+Implementation must support the runbook's evidence model:
+
+- immutable validation_run_id bound to one RuntimeProfile/environment generation/package digest
+- installed API discovery evidence
+- raw and semantic capture separation
+- capture consistency fences
+- 10 consecutive double-capture S1 pairs for F0/F1/F2/F3/F4-A/F4-B
+- 3 F4 A→B→A S2 round trips
+- retained failed/drifting pairs; no retry-until-green
+- per-field runtime statuses separate from fixture correctness
+- operator-interference and runtime-drift findings
+- final RV-001..044 result report
+- evidence checksum/final runtime report
+
+TASK-020 must not silently weaken the runbook to reduce manual/runtime validation work.
+
+
+## Native authenticity evidence inputs
+
+ADR-039 / `docs/NATIVE_PROBE_ENVIRONMENT_AUTHENTICITY.md` consumes TASK-020 runtime reads to produce
+future native environment attestation.
+
+TASK-020 should therefore preserve, where the exact installed runtime supports them:
+
+- current Project Library/database descriptor;
+- fresh current Project re-acquisition;
+- same-session project identity observation;
+- current Timeline identity observation;
+- RuntimeProfile binding;
+- canonical fixture/project semantic baseline;
+- raw + semantic evidence needed for an independent root-path re-read.
+
+TASK-020 does **not** derive destructive authorization or claim SESSION_BOUND_VERIFIED by itself.
+
+If a mandatory authenticity candidate is unsupported/ambiguous, preserve UNSUPPORTED/UNKNOWN and
+leave ADR-039 fail-closed. Do not substitute project names or sentinels.

@@ -85,3 +85,23 @@ Dependency reference: `tasks/TASK_022_CANONICAL_ASSET_GENERATOR_FIRST_PACKAGE.md
 
 TASK-021 must not substitute another locally generated media set if TASK-022 has not produced the
 approved package index.
+
+
+## Native authenticity materialization receipt
+
+TASK-021 must produce enough immutable provenance for ADR-039's future `MaterializationReceipt`.
+
+At minimum bind:
+
+- environment/project generation;
+- project template/content hash;
+- TASK-022 canonical package_digest;
+- fixture definition/version;
+- materialization generation;
+- materializer version/contract;
+- expected canonical semantic baseline ref/digest;
+- expected target timeline/fixture inventory;
+- evidence refs.
+
+The receipt proves materialization provenance only. It must not label the currently open Resolve
+project as authenticated. Fresh TASK-020 native observation + ADR-039 attestation is still required.
