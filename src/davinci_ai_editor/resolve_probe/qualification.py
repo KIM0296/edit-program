@@ -35,6 +35,10 @@ class CapturePair:
     assessment_b: FixtureAssessment
 
     def __post_init__(self) -> None:
+        if not all(isinstance(s, ProbeSnapshot) for s in (self.a, self.b)) or not all(
+            isinstance(a, FixtureAssessment) for a in (self.assessment_a, self.assessment_b)
+        ):
+            raise TypeError("Immutable capture and assessment required")
         if type(self.number) is not int or not 1 <= self.number <= 10:
             raise ValueError("S1 pair number must be 1..10")
         if (
@@ -66,7 +70,15 @@ class S1Series:
     pairs: tuple[CapturePair, ...]
 
     def __post_init__(self) -> None:
+        if (
+            not isinstance(self.fixture, FixtureInput)
+            or not isinstance(self.audit, ProbeSnapshot)
+            or not isinstance(self.audit_result, FixtureAssessment)
+        ):
+            raise TypeError("Typed S1 evidence required")
         object.__setattr__(self, "pairs", tuple(self.pairs))
+        if any(not isinstance(p, CapturePair) for p in self.pairs):
+            raise TypeError("Typed pairs required")
         if tuple(p.number for p in self.pairs) != tuple(range(1, len(self.pairs) + 1)):
             raise ValueError("Cannot drop/renumber/duplicate S1 pairs")
         if len(self.pairs) > 10:

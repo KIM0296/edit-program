@@ -151,3 +151,53 @@ def test_evidence_duplicate_paths_never_overwrite(tmp_path):
         w.write("findings/one.json", {"raw": None})
     with pytest.raises(ValueError):
         w.write("../outside.json", {})
+
+
+def test_s2_cannot_replace_s1_identity_baseline(tmp_path):
+    a, b, f, _, _, project, timeline, tracks = fixture_runtime(Context.F4_A)
+    _, _, g, _, _, _, other, _ = fixture_runtime(Context.F4_B)
+    g = replace(g, timeline_id="B")
+    other.methods["GetUniqueId"] = "B"
+    runner = QualificationRunner(a, b, operator(), EvidenceWriter(tmp_path / "r", b))
+    runner.s1(f, b)
+    project.methods["GetCurrentTimeline"] = other
+    runner.s1(g, b)
+    project.methods["GetCurrentTimeline"] = timeline
+    tracks[("video", 1)][0].methods["GetUniqueId"] = "changed-after-S1"
+    runner.s2_capture(1, "A-before", f, b, "external-return")
+    with pytest.raises(ValueError):
+        runner.s2_capture(1, "B", g, b, "external-switch")
+    assert list((tmp_path / "r").rglob("*.drift.json"))
+
+
+def test_missing_persisted_capture_cannot_be_sealed_as_stable(tmp_path):
+    a, b, f, *_ = fixture_runtime()
+    w = EvidenceWriter(tmp_path / "r", b)
+    runner = QualificationRunner(a, b, operator(), w)
+    runner.s1(f, b)
+    next((tmp_path / "r").rglob("capture-A.raw.json")).unlink()
+    with pytest.raises(ValueError, match="Capture evidence"):
+        w.finalize(runner.series, runner.roundtrips)
+
+
+def test_discovery_unavailable_reports_all_contexts_without_qualification(tmp_path, monkeypatch):
+    import json
+
+    from davinci_ai_editor.resolve_probe import __main__ as cli
+
+    installed = tmp_path / "installed"
+    installed.mkdir()
+    (installed / "DaVinciResolveScript.pyi").write_text(
+        "class Resolve:\n    def GetProductName(self): ...\n    def GetVersion(self): ...\n    def GetVersionString(self): ...\n"
+    )
+    (installed / "README.md").write_text("installed test documentation")
+    monkeypatch.setattr(cli, "INSTALLED_SCRIPTING", installed)
+    monkeypatch.setattr(cli, "connect_installed", lambda: None)
+    root = tmp_path / "diagnostic"
+    assert cli.discovery(root) == 2
+    verify_evidence(root)
+    report = (root / "summary/TASK_020_RUNTIME_REPORT.md").read_text()
+    assert all(f"RV-{i:03d} | UNKNOWN" in report for i in range(1, 45))
+    assert report.count("| NOT_EXECUTED |") == 63
+    assert json.loads((root / "run.json").read_text())["counts_toward_s1"] is False
+    assert json.loads((root / "runtime_profile.json").read_text())["qualifying_profile"] is None

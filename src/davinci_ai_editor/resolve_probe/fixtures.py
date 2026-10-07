@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from ..domain import FrameRange
+from ..native_snapshot import CapabilityKind
 from .model import Context, FixtureResult, ProbeSnapshot, text
 from .values import NativeValue, freeze, semantic
 
@@ -60,8 +61,12 @@ class FixtureInput:
     required_project_settings: tuple[tuple[str, NativeValue], ...]
     include_optional_audio: bool = True
     item_marker_host_id: str | None = None
+    required_risks: tuple[CapabilityKind, ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "required_risks", tuple(self.required_risks))
+        if any(not isinstance(v, CapabilityKind) for v in self.required_risks):
+            raise TypeError("Typed required capability axis")
         if not isinstance(self.context, Context):
             raise TypeError("Catalog context required")
         text(self.timeline_id)
@@ -98,6 +103,9 @@ class FixtureRoleBinding:
     matches: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        text(self.role)
+        for match in self.matches:
+            text(match)
         object.__setattr__(self, "matches", tuple(sorted(self.matches)))
 
     @property
@@ -122,6 +130,8 @@ class FixtureAssessment:
             raise TypeError("Typed fixture result required")
         object.__setattr__(self, "roles", tuple(self.roles))
         object.__setattr__(self, "findings", tuple(self.findings))
+        for finding in self.findings:
+            text(finding)
         if any(not isinstance(r, FixtureRoleBinding) for r in self.roles):
             raise TypeError("Typed role binding required")
 
@@ -196,7 +206,7 @@ def assess_fixture(snapshot: ProbeSnapshot, fixture: FixtureInput) -> FixtureAss
         return FixtureAssessment(FixtureResult.STALE, (), ("CONTEXT_MISMATCH",))
     if any(s.startswith("STALE") for s in snapshot.findings):
         return FixtureAssessment(FixtureResult.STALE, (), snapshot.findings)
-    missing: list[str] = []
+    missing: list[str] = ["UNVERIFIED_REQUIRED_RISK:" + k.value for k in fixture.required_risks]
     wrong: list[str] = []
     if not snapshot.complete:
         missing.append("INCOMPLETE_CAPTURE")

@@ -8,6 +8,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import cast
 
+from ..native_snapshot import CapabilityKind
 from ..probe_evidence import RuntimeProfile
 from .adapter import ReadOnlyProbeAdapter, inspect_stub
 from .connection import INSTALLED_SCRIPTING, connect_installed
@@ -52,6 +53,9 @@ def discovery(root: Path) -> int:
     (root / "run.json").write_bytes(
         canonical(
             {
+                "validation_run_id": root.name,
+                "project_generation": None,
+                "environment_ref": None,
                 "purpose": "PREFLIGHT_DIAGNOSTIC",
                 "counts_toward_s1": False,
                 "runtime_available": available,
@@ -62,16 +66,67 @@ def discovery(root: Path) -> int:
             }
         )
     )
+    (root / "runtime_profile.json").write_bytes(
+        canonical(
+            record(
+                {
+                    "status": "UNKNOWN",
+                    "qualifying_profile": None,
+                    "observations": observations,
+                    "adapter_source_fingerprint": source_fingerprint(),
+                }
+            )
+        )
+    )
+    (root / "environment").mkdir()
+    (root / "environment" / "currentness_preflight.json").write_bytes(
+        canonical(
+            {
+                "status": "NOT_EXECUTED",
+                "reason": "No registered fixture supplied",
+                "native_attestation": False,
+            }
+        )
+    )
+    (root / "findings").mkdir()
+    (root / "findings" / "findings.json").write_bytes(
+        canonical(
+            {
+                "runtime_available": available,
+                "fixture_preflight": "NOT_EXECUTED",
+                "reason": "Diagnostic discovery only; no qualifying run binding",
+            }
+        )
+    )
+    tables = []
+    for context in Context:
+        directory = root / "fixtures" / context.value
+        directory.mkdir(parents=True)
+        (directory / "fixture-summary.json").write_bytes(
+            canonical({"context": context.value, "status": "NOT_EXECUTED", "pair_count": 0})
+        )
+        tables.append("### " + context.value + "\n\n| Pair | Result |\n| --- | --- |")
+        tables.extend(f"| {n:02d} | NOT_EXECUTED |" for n in range(1, 11))
+        tables.append("")
+    tables.extend(["### F4 S2", "", "| Round | Result |", "| --- | --- |"])
+    tables.extend(f"| {n} | NOT_EXECUTED |" for n in range(1, 4))
     rows = "\n".join(f"| RV-{n:03d} | UNKNOWN |" for n in range(1, 45))
     (root / "summary").mkdir()
     report = (
         "# TASK_020_RUNTIME_REPORT\n\n"
         "Completion gate: HOLD\n\n"
+        "Run identity: " + root.name + "\n"
+        "Runtime product/version/build: UNKNOWN (installed file version is separate evidence).\n"
+        "Environment/project generation: missing; no qualifying binding created.\n\n"
         "Installed API discovery only. RuntimeProfile is not qualified.\n"
         "F0/F1/F2/F3/F4-A/F4-B S1: 0/10 pairs each.\n"
         "F4 S2: 0/3 round trips. S3/S4 NOT_EXECUTED.\n"
         "No registered fixture input or operator preflight was supplied.\n"
-        "Native runtime connection available: " + str(available) + "\n\n"
+        "Native runtime connection available: "
+        + str(available)
+        + "\n\n"
+        + "\n".join(tables)
+        + "\n\n"
         "| Case | Runtime status |\n| --- | --- |\n" + rows + "\n\n"
         "All runtime support is UNKNOWN; document presence is not support.\n"
         "No PERSISTENT_VERIFIED, native authenticity, mutation, fixture repair, or destructive support.\n"
@@ -204,6 +259,7 @@ def qualify(config_path: Path, root: Path) -> int:
             "required_project_settings",
             "include_optional_audio",
             "item_marker_host_id",
+            "required_risks",
         }
         if set(row) != expected:
             raise ValueError("Exact fixture input schema required")
@@ -234,6 +290,7 @@ def qualify(config_path: Path, root: Path) -> int:
                 tuple((k, freeze(v)) for k, v in _object(row["required_project_settings"]).items()),
                 variant,
                 _string(host) if host is not None else None,
+                tuple(CapabilityKind(_string(v)) for v in _list(row["required_risks"])),
             )
         )
     contexts = {f.context for f in fixtures}

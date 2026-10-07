@@ -135,6 +135,10 @@ class ReadObservation:
             self.raw is not None and not isinstance(self.raw, NativeValue)
         ):
             raise TypeError("Typed raw evidence required")
+        if self.semantic_value is not None and not isinstance(self.semantic_value, NativeValue):
+            raise TypeError("Immutable typed semantic value required")
+        if self.error is not None:
+            text(self.error)
         if self.valid != (self.semantic_value is not None):
             raise ValueError("Invalid observation cannot contain an authoritative normalized value")
         if self.valid and (self.error is not None or self.documented_absent or self.raw is None):
@@ -170,6 +174,8 @@ class ProbeSnapshot:
                 raise TypeError("Typed observations required")
             object.__setattr__(self, attr, values)
         object.__setattr__(self, "findings", tuple(self.findings))
+        for finding in self.findings:
+            text(finding)
 
     @property
     def semantic_fields(self) -> tuple[tuple[str, str, NativeValue | None], ...]:

@@ -258,3 +258,38 @@ def test_read_only_module_does_not_import_execution_paths():
                         "AppendToTimeline",
                     )
                 )
+
+
+def test_snapshot_without_mandatory_reads_cannot_be_complete():
+    from dataclasses import replace
+
+    a, b, f, *_ = fixture_runtime()
+    s = a.capture(b, f.context, f.timeline_id, 1)
+    assert not replace(s, reads=(s.reads[0],)).complete
+
+
+def test_native_id_suffix_is_not_a_drop_heuristic():
+    a, b, f, _, _, _, _, tracks = fixture_runtime(Context.F1)
+    tracks[("video", 1)][0].methods["GetUniqueId"] = "native-id/linked"
+    s = a.capture(b, f.context, f.timeline_id, 1)
+    result = assess_fixture(s, f)
+    assert result.status == FixtureResult.MATCH
+    assert any(r.matches == ("item/native-id/linked",) for r in result.roles)
+
+
+def test_risk_observations_are_not_inferred_from_absent_read_surface():
+    a, b, f, *_ = fixture_runtime()
+    s = a.capture(b, f.context, f.timeline_id, 1)
+    assert all(r.case_id.startswith("RV-") or r.case_id == "ROOT" for r in s.reads)
+    # A Tier A snapshot does not manufacture preservation proofs or Safety verdicts.
+    assert not hasattr(s, "safety_pass")
+    assert not hasattr(s, "preservation_proof")
+
+
+def test_required_unknown_challenge_field_blocks_fixture_match():
+    from davinci_ai_editor.native_snapshot import CapabilityKind
+
+    a, b, f, *_ = fixture_runtime()
+    s = a.capture(b, f.context, f.timeline_id, 1)
+    strict = replace(f, required_risks=(CapabilityKind.EFFECTS,))
+    assert assess_fixture(s, strict).status == FixtureResult.INCOMPLETE

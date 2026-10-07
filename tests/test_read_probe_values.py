@@ -89,3 +89,19 @@ def test_observation_constructor_preserves_error_and_no_default():
     o = replace(observation(None, False), error="BridgeError: unavailable")
     assert o.raw == freeze(None) and o.semantic_value is None
     assert o.error
+
+
+def test_mutable_semantic_payload_is_rejected():
+    with pytest.raises(TypeError):
+        ReadObservation(
+            "RV-012", "timeline", "GetStartFrame", freeze(()), freeze(1), True, {"mutable": []}
+        )
+
+
+def test_nested_snapshot_findings_must_be_strings():
+    from read_probe_fakes import fixture_runtime
+
+    a, b, f, *_ = fixture_runtime()
+    s = a.capture(b, f.context, f.timeline_id, 1)
+    with pytest.raises((TypeError, ValueError)):
+        replace(s, findings=({"mutable": []},))

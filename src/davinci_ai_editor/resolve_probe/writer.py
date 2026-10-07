@@ -49,6 +49,8 @@ class EvidenceWriter:
         self.root = root
         self.binding = binding
         self._sealed = False
+        self._written: dict[str, str] = {}
+        self._captures: set[ProbeSnapshot] = set()
         self._started = datetime.now(UTC).isoformat()
         root.mkdir(parents=False, exist_ok=False)
         self.write("run-start.json", {"binding": binding, "started_at": self._started})
@@ -67,6 +69,7 @@ class EvidenceWriter:
         )
         with path.open("xb") as stream:
             stream.write(blob)
+        self._written[relative] = sha256(blob).hexdigest()
 
     def capture(self, relative: str, snapshot: ProbeSnapshot) -> None:
         if snapshot.binding != self.binding:
@@ -94,6 +97,8 @@ class EvidenceWriter:
             },
         )
 
+        self._captures.add(snapshot)
+
     def finalize(
         self,
         series: tuple[S1Series, ...],
@@ -104,6 +109,15 @@ class EvidenceWriter:
             t.before.binding != self.binding for t in roundtrips
         ):
             raise ValueError("Mixed evidence runs forbidden")
+        for relative, digest in self._written.items():
+            path = safe_path(self.root, relative)
+            if not path.is_file() or sha256(path.read_bytes()).hexdigest() != digest:
+                raise ValueError("Capture evidence missing or modified before seal")
+        required = [s.audit for s in series]
+        required.extend(c for s in series for p in s.pairs for c in (p.a, p.b))
+        required.extend(c for t in roundtrips for c in (t.before, t.other, t.after))
+        if any(c not in self._captures for c in required):
+            raise ValueError("Capture evidence was not persisted by this writer")
         contexts = {s.fixture.context for s in series}
         if len(contexts) != len(series):
             raise ValueError("Duplicate S1 evidence")
@@ -161,6 +175,17 @@ class EvidenceWriter:
             len(roundtrips) == 3
             and tuple(t.number for t in roundtrips) == (1, 2, 3)
             and all(t.accepted for t in roundtrips)
+            and {Context.F4_A, Context.F4_B}.issubset(contexts)
+            and all(
+                any(
+                    s.fixture.context == c.context
+                    and s.qualified
+                    and s.pairs[0].a.semantic_fields == c.semantic_fields
+                    for s in series
+                )
+                for t in roundtrips
+                for c in (t.before, t.other, t.after)
+            )
             and not has_operator_incident
         )
         self.write(
@@ -175,13 +200,7 @@ class EvidenceWriter:
         )
         self.write("findings/findings.json", findings)
         # OPEN-023: do not invent one generation spanning the independent F0-F4 projects.
-        complete = (
-            contexts == set(Context)
-            and all(s.qualified for s in series)
-            and switch_stable
-            and not findings
-            and not has_operator_incident
-        )
+        complete = False  # Cross-project aggregate approval remains OPEN-023.
         report = [
             "# TASK_020_RUNTIME_REPORT",
             "",
