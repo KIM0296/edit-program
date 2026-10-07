@@ -441,4 +441,4 @@ ADR-035 additions:
 | diagnostics retained | multiple final-gate failures, unexpected scope and native failure records retained |
 | no native authenticity invented | opaque supplied registration evidence only; OPEN-020 documented |
 
-Python 3.11 CI: pending PR run. Ruff and strict mypy pass locally.
+Python 3.11.16 CI PASS: [run 37578746926](https://github.com/KIM0296/edit-program/actions/runs/37578746926); 1347 passed / 1 skipped, Ruff and strict mypy PASS.

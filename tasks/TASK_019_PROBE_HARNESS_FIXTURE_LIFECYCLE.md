@@ -1,6 +1,6 @@
 # TASK-019 — Probe Harness & Fixture Lifecycle Foundation
 
-Status: **IMPLEMENTED — local validation complete; Python 3.11 CI and Chat Gate pending**
+Status: **IMPLEMENTED — local / Python 3.11 CI PASS; PR #45, Chat Gate pending**
 
 Basis:
 - ADR-006 LLM Emits IR Only

@@ -595,7 +595,7 @@ uncertainty blocks new submission without claiming cancellation. No native runti
 
 Red-first: `76726d4` spec notes; `1f401a3` missing-module tests; `3727c2f` implementation.
 88 new tests; full regression: 1347 passed / 1 intentional naive-demo skip.
-Ruff PASS; strict mypy PASS (21 source files). Python 3.11 CI: pending PR run.
+Ruff PASS; strict mypy PASS (21 source files). Python 3.11.16 CI PASS: [run 37578746926](https://github.com/KIM0296/edit-program/actions/runs/37578746926). PR #45; final-head evidence in PR body.
 OPEN-020 remains OPEN: native authenticity, durable consumption and cross-process lease serialization.
 Report: [TASK_019_COMPLETION.md](docs/reports/TASK_019_COMPLETION.md).
 Chat Gate pending. No PR merge or TASK-020 implementation.
