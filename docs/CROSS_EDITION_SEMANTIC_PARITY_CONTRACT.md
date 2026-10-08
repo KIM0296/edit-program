@@ -1,6 +1,6 @@
 ﻿# Cross-Edition Semantic Parity Contract v1
 
-Status: User-directed architecture baseline, 2026-10-08; repository Chat Gate review pending.
+Status: **ACCEPTED — Chat Product/Architecture Review, 2026-10-08.**
 ADR: ADR-042. Extends ADR-041 without changing existing Safety or runtime qualification contracts.
 
 ## Product and boundary
