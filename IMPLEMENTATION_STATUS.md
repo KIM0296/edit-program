@@ -616,3 +616,19 @@ Media sealed locally outside Git; no release/publication. Chat Gate APPROVED on 
 OPEN-021 is RESOLVED FOR FIRST PACKAGE GENERATION; OPEN-020 unchanged. No Resolve validation.
 Report: docs/reports/TASK_022_COMPLETION.md.
 TASK-020/021 not started.
+
+
+## Resolve edition split — 2026-10-08
+
+Studio / Professional track:
+- preserved at `checkpoint/studio-task020-phase-a-v1`
+- TASK-020 Phase A Chat APPROVED
+- Phase B HOLD
+- PR #49 remains Draft/unmerged
+
+Free track:
+- branch `feat/free-in-resolve-bridge-feasibility`
+- ADR-041 accepted
+- TASK-023 Free In-Process Bridge Feasibility authorized
+- first implementation is a read-only Lua canary only
+- no bridge listener, mutation, UI automation or TASK-021 work
