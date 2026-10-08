@@ -50,7 +50,13 @@ be AVAILABLE_TYPED as raw shape only. Coordinates, object handles and collection
 AVAILABLE_AMBIGUOUS. No identity lifetime, frame endpoint convention or intended object role is derived.
 Traversal paths track/type/index/entry-key are capture-local diagnostic addresses, not persistent IDs,
 chronological rank, semantic role or target resolution. Repeated-media placements are all retained.
-Malformed enumeration keys produce diagnostics and block those reads, never a repaired list.
+P3 correction: GetItemListInTrack returned mixed tables in video/audio: string key __flags = 4194304
+and numeric key 1 = opaque TimelineItem. Preserve every nonnumeric key/value as raw COLLECTION_METADATA,
+without interpreting __flags. Separately traverse positive finite integer keys as candidate entries.
+Metadata presence must not block numeric entries or imply failure. Invalid numeric keys get individual
+diagnostics; malformed candidate values fail closed individually without suppressing siblings.
+Sorting is diagnostic determinism only, not chronology, identity or completeness. No collection repair.
+P3 manual observations are not reviewed probe execution. This correction is not runtime-qualified.
 
 ## Capability map and conversational readiness
 

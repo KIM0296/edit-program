@@ -665,7 +665,7 @@ Console evidence, Workspace launcher still INCONCLUSIVE. F1 read-only investigat
 9558c78639f23e97d6c5399cf80eb83faf440d73. Specification: tasks/TASK_023_F1_READ_CAPABILITY_MAP.md.
 No native F1 output yet. No Free edition proof from product name alone. F2/F3/mutation not authorized.
 
-## TASK-023 F1 prepared read-only map — runtime HOLD
+## TASK-023 F1 prepared read-only map — historical status before P3 reconciliation
 
 ADR-043 conversational interface invariant recorded; shared Core unchanged.
 Spec-before-code: 792c265; first F1 probe: tools/free_bridge_probe/resolve_free_f1.lua.
@@ -676,3 +676,38 @@ New static tests 5 passed; Python 3.11 full regression 1424 passed / 2 skipped; 
 strict mypy PASS (33 Python files, not Lua). No existing semantic test modification.
 Report: docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md.
 No mutation, IPC, persistence, UI automation, Core or Studio checkpoint change. F2/F3 not authorized.
+
+## TASK-023 F1 runtime evidence reconciliation — 2026-10-08
+
+Base 240e0aec3cca8380dbf8759a023a2dc236a008cf; PR #50 / Free branch.
+ADR-043 and F1 static spec/probe Chat APPROVED. F1 runtime qualification IN PROGRESS.
+This entry supersedes the historical blanket all-F1-UNKNOWN/no-F1-observations status above.
+
+P3 = operator manual F1 Console observation, separate from P0 F0 and P2 reviewed probe output.
+P3 reports one video and one audio track, one placement in each, distinct placement IDs with the same
+source native ID. Exact names/IDs/ranges/counts/booleans/offsets are recorded in the map and report.
+Raw string/count/boolean shapes are AVAILABLE_TYPED only; coordinates/durations/offsets, handles and
+collection semantics are AVAILABLE_AMBIGUOUS. Unobserved facts remain UNKNOWN; no UNAVAILABLE claim.
+Same source does not establish A/V linking or identity lifetime; zero offsets do not prove source coverage.
+
+Reviewed resolve_free_f1.lua has NOT run. No FREE_F1 output synthesized. Complete P2 BOOT -> OBS -> END
+capture remains pending; one-shot operator plan prepared only, with directly evidenced entry path required.
+Workspace launcher remains INCONCLUSIVE. Source-origin intent PARTIAL; other four intents BLOCKED_UNKNOWN.
+No mutation readiness, persistence, IPC, parity or Studio qualification claimed.
+Initial reconciliation changed three documents; the subsequent authorized mixed-key correction below
+also changes the bounded F1 probe/spec/static tests. No Core/checkpoint changes.
+F2/F3/mutation/parity runner NOT AUTHORIZED. Stop after reconciliation report.
+
+### P3 mixed collection correction (not executed)
+
+Manual video/audio GetItemListInTrack tables contain string __flags=4194304 and numeric 1=TimelineItem.
+Probe now retains metadata and inspects numeric candidates independently; malformed entries fail closed
+individually. __flags is uninterpreted; ordering/completeness unqualified. Spec and static fixture updated.
+Two consecutive video ID/start/end/duration reads matched: same-session immediate reread stability only.
+GetDuration(false)==GetDuration(true)==87 for this fixture only; no subframe semantics conclusion.
+Previous reviewed probe and revised probe both remain NOT EXECUTED. Revised source requires Chat review.
+No F2, mutation, IPC, listener, persistence or parity runner begun.
+
+Correction validation: new red tests 2 failed then F1 static suite 7 passed. Full local Python 3.14.6
+regression 1426 passed / 2 skipped; final narrow correction rechecked with 7 F1 passes. Ruff PASS;
+strict mypy PASS (33 Python files). No new Python 3.11 CI or Lua/runtime execution claim.

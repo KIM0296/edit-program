@@ -1,6 +1,6 @@
 ﻿# Free Conversational Editing Read Capability Map — F1 v1
 
-Status: prepared map / F1 native capture NOT EXECUTED. No execution readiness is asserted.
+Status: F1 runtime qualification IN PROGRESS. P3 manual observations recorded; reviewed P2 probe NOT EXECUTED. No execution readiness is asserted.
 Basis: ADR-041/042/043, TASK_023_F1_READ_CAPABILITY_MAP.md.
 
 ## Evidence provenance and interpretation
@@ -14,10 +14,41 @@ P2 = future one-shot FREE_F1 Console output, absent today. Retain complete BOOT-
 operator session/context, exact probe commit/hash and runtime version with that output. Capture-local
 paths are locators only. No inferred freshness/state token or persistent identity is created.
 
-Every F1 row below currently has capability **UNKNOWN** and semantic mapping **NOT_ESTABLISHED**.
-Expected forms are documented candidates, not observations. AVAILABLE_TYPED will mean one-shot raw
-shape only. AVAILABLE_AMBIGUOUS retains ambiguous objects/coordinates/shape. UNAVAILABLE needs a direct
-missing-method observation. ERROR and NIL are outcomes, not capability synonyms or proof of absence.
+P3 = operator manual F1 Console observation, supplied as a summary in the reconciliation request.
+P3 is separate from P0 and P2. The reviewed resolve_free_f1.lua has NOT run. No FREE_F1|OBS
+transcript is synthesized. Complete Console commands, Lua numeric subtype, capture timestamp and
+complete raw transcript were not supplied. Values below are preserved as reported, not re-measured.
+
+AVAILABLE_TYPED means reported raw shape only, not qualified identity/coordinate semantics.
+AVAILABLE_AMBIGUOUS preserves objects, collections and coordinate ambiguity. Unobserved candidates
+remain UNKNOWN. UNAVAILABLE requires direct evidence; none was supplied. NIL and ERROR remain distinct
+outcomes, not absence inferred from missing observations. Semantic mapping remains NOT_ESTABLISHED.
+
+## P3 manual observation record
+
+| Observation | Video track 1 / placement | Audio track 1 / placement | Classification / limit |
+| --- | --- | --- | --- |
+| GetTrackCount | 1 | 1 | AVAILABLE_TYPED, reported integer counts only |
+| GetItemListInTrack | one item returned | one item returned | AVAILABLE_AMBIGUOUS; no ordering/completeness guarantee beyond this capture |
+| Placement name | 0916.mp4 | 0916.mp4 | AVAILABLE_TYPED, descriptive string only |
+| Placement GetUniqueId | f961cbd6-6703-4df5-a4d3-d30aa439f47d | bb080cbd-8c1f-4bc3-9049-036c64513643 | AVAILABLE_TYPED, raw strings; lifetime unqualified |
+| Placement start | 108000 | 108000 | AVAILABLE_AMBIGUOUS |
+| Placement end | 108087 | 108087 | AVAILABLE_AMBIGUOUS |
+| Placement duration | 87 | 87 | AVAILABLE_AMBIGUOUS |
+| GetMediaPoolItem | succeeded | succeeded | AVAILABLE_AMBIGUOUS native handles |
+| Source GetUniqueId | 0939efdf-05b9-41bc-8091-6b7fd41075d3 | 0939efdf-05b9-41bc-8091-6b7fd41075d3 | AVAILABLE_TYPED, raw strings only |
+| Track name | Video 1 | Audio 1 | AVAILABLE_TYPED, descriptive strings only |
+| Track enabled | true | true | AVAILABLE_TYPED native booleans; not complete Safety evidence |
+| Track locked | false | false | AVAILABLE_TYPED native booleans; not complete Safety evidence |
+| Left offset | 0 | 0 | AVAILABLE_AMBIGUOUS |
+| Right offset | 0 | 0 | AVAILABLE_AMBIGUOUS |
+
+Two distinct placements were observed to reference the same source native ID. This does NOT establish
+an explicit A/V link, J/L-cut relationship, propagation policy or stable identity lifetime. Matching
+names do not establish identity. Zero offsets do NOT establish untrimmed source, full source coverage
+or source coordinate correspondence. No internal FrameRange or temporal mapping is derived.
+Exact manual invocation spellings/arguments for track state, names and offsets were not supplied;
+method candidates below must not be mistaken for the manual command transcript.
 
 ## First probe candidates
 
@@ -32,15 +63,15 @@ missing-method observation. ERROR and NIL are outcomes, not capability synonyms 
 | B timeline identity | Timeline.GetUniqueId | NOT OBSERVED in F1 (string); P0 says call succeeded, value not supplied | P0/P1, P2 missing | No persistent identity claim | NOT_ESTABLISHED | UNKNOWN | Exact timeline binding missing |
 | B timeline name | Timeline.GetName | NOT OBSERVED in F1 (string); P0 reports Timeline 1 | P0/P1, P2 missing | Descriptive only | NOT_ESTABLISHED | UNKNOWN | Name alone cannot resolve target |
 | B timeline extent | Timeline.GetStartFrame / GetEndFrame | NOT OBSERVED in F1 (numbers); P0 reports 108000 / 108087 | P0/P1, P2 missing | Endpoint convention/rate unknown; no offset/rounding | NOT_ESTABLISHED | UNKNOWN | Cannot produce internal FrameRange yet |
-| C track/type existence | Timeline.GetTrackCount(video/audio/subtitle) | NOT OBSERVED (candidate numeric counts) | P1, P2 missing | Type is explicit argument; index not persistent ID | NOT_ESTABLISHED | UNKNOWN | Layer inventory incomplete |
-| D/H placement enumeration/membership | Timeline.GetItemListInTrack(type,index) | NOT OBSERVED (candidate Lua table of item handles) | P1, P2 missing | Collection key not chronological order/identity | NOT_ESTABLISHED | UNKNOWN | Cannot resolve second clip or complete overlap set |
-| E placement identity | TimelineItem.GetUniqueId | NOT OBSERVED (candidate string) | P1, P2 missing | Separate from media ID; lifetime unknown | NOT_ESTABLISHED | UNKNOWN | Repeated-media placement targeting blocked |
-| E placement label | TimelineItem.GetName | NOT OBSERVED (candidate string) | P1, P2 missing | No filename identity or semantic role inference | NOT_ESTABLISHED | UNKNOWN | Descriptive explanation only |
-| E/H placement position/duration | TimelineItem.GetStart(false) / GetEnd(false) / GetDuration(false) | NOT OBSERVED (stub annotates float; Lua shape unproven) | P1, P2 missing | No numeric coercion, endpoint repair or source mapping | NOT_ESTABLISHED | UNKNOWN | Overlap/gap/target arithmetic blocked |
-| F source binding | TimelineItem.GetMediaPoolItem | NOT OBSERVED (candidate handle or nil) | P1, P2 missing | Observed link only, no filename match | NOT_ESTABLISHED | UNKNOWN | Source trace unavailable without bound handle |
-| F source identity | MediaPoolItem.GetUniqueId / GetMediaId | NOT OBSERVED (candidate strings) | P1, P2 missing | Source identity is not placement identity; lifetime unknown | NOT_ESTABLISHED | UNKNOWN | Cannot confirm same-source placement correspondence |
+| C track/type existence | Timeline.GetTrackCount(video/audio/subtitle) | P3 video=1, audio=1; subtitle NOT OBSERVED | P3; P2 missing | Reported integer counts; index not persistent ID | NOT_ESTABLISHED | AVAILABLE_TYPED for video/audio; UNKNOWN for subtitle | Complete layer inventory unqualified |
+| D/H placement enumeration/membership | Timeline.GetItemListInTrack(type,index) | P3 one item in each video/audio track 1 | P3; P2 missing | No collection ordering or completeness guarantee | NOT_ESTABLISHED | AVAILABLE_AMBIGUOUS | Cannot resolve second clip or complete overlap set |
+| E placement identity | TimelineItem.GetUniqueId | P3 two distinct strings, recorded above | P3; P2 missing | Separate from source ID; lifetime unknown | NOT_ESTABLISHED | AVAILABLE_TYPED | Raw shape only; current targeting unproven |
+| E placement label | TimelineItem.GetName | P3 both 0916.mp4 | P3; P2 missing | No filename identity or role inference | NOT_ESTABLISHED | AVAILABLE_TYPED | Descriptive only |
+| E/H placement position/duration | TimelineItem.GetStart / GetEnd / GetDuration; manual arguments not supplied | P3 both 108000 / 108087 / 87 | P3; P2 missing | No coercion, endpoint repair or source mapping | NOT_ESTABLISHED | AVAILABLE_AMBIGUOUS | Overlap/gap arithmetic blocked |
+| F source binding | TimelineItem.GetMediaPoolItem | P3 succeeded for both placements | P3; P2 missing | Native handle, no filename matching | NOT_ESTABLISHED | AVAILABLE_AMBIGUOUS | Only reported capture binding |
+| F source identity | MediaPoolItem.GetUniqueId; GetMediaId separately unobserved | P3 same source GetUniqueId string, recorded above | P3; P2 missing | Source ID is not placement ID; lifetime unknown | NOT_ESTABLISHED | AVAILABLE_TYPED for GetUniqueId; UNKNOWN for GetMediaId | This-clip targeting/currentness unproven |
 
-## Deferred domains (not called by the first probe)
+## Domains outside the reviewed first probe (P3 observations distinguished)
 
 | Domain | Intended fact / native candidate | Raw form / provenance | Basis / semantic mapping | Capability | Absence impact |
 | --- | --- | --- | --- | --- | --- |
@@ -50,9 +81,37 @@ missing-method observation. ERROR and NIL are outcomes, not capability synonyms 
 | G A/V facts | GetLinkedItems candidate; no call in first probe | NOT OBSERVED | A link is not propagation policy; NOT_ESTABLISHED | UNKNOWN | Picture-preserving dialogue changes blocked |
 | H semantic overlap | No direct B-roll role read asserted | NOT OBSERVED | Only proven coordinate facts can later support overlap derivation; NOT_ESTABLISHED | UNKNOWN | Cannot promise to avoid B-roll |
 | I retime/speed | Exact reliable speed/retime read remains an open discovery question | NOT OBSERVED | No unknown-to-1x inference; NOT_ESTABLISHED | UNKNOWN | Exclude-retimed request blocked |
-| J lock/enabled/protection | GetIsTrackLocked / GetIsTrackEnabled / GetClipEnabled candidates, deferred | NOT OBSERVED | Native lock is not complete protection context; NOT_ESTABLISHED | UNKNOWN | Destructive readiness not established |
+| J lock/enabled/protection | GetIsTrackLocked / GetIsTrackEnabled candidates; not in reviewed probe | P3 both tracks enabled=true, locked=false; exact commands not supplied | Native booleans, not complete protection context; NOT_ESTABLISHED | AVAILABLE_TYPED raw shape only; GetClipEnabled UNKNOWN | Destructive readiness not established |
 | K selection | No selected-item API asserted; current timeline only | NOT OBSERVED | Current/selected/authoritative are distinct; NOT_ESTABLISHED | UNKNOWN | The phrase this clip remains ambiguous |
 | L freshness/identity lifetime | No state-token or atomic capture API asserted | NOT OBSERVED | One-shot read is not currentness/stability proof; NOT_ESTABLISHED | UNKNOWN | No ready-for-apply or native identity promotion |
+
+
+### Additional P3 collection and immediate reread findings
+
+Operator manual GetItemListInTrack observations on Resolve 21.1.1 Lua:
+
+| Collection | Key type | Key | Reported value |
+| --- | --- | --- | --- |
+| video track 1 | string | __flags | 4194304 |
+| video track 1 | number | 1 | TimelineItem handle |
+| audio track 1 | string | __flags | 4194304 |
+| audio track 1 | number | 1 | TimelineItem handle |
+
+This is P3 prose evidence, not FREE_F1 output. __flags meaning is UNKNOWN. Numeric keys are not
+chronological ranks, native identities, semantic ordering or completeness evidence. Mixed metadata and
+numeric entries do not themselves establish an unavailable API, runtime error or semantic failure.
+
+The video placement ID/start/end/duration were identical over two consecutive no-edit reads:
+f961cbd6-6703-4df5-a4d3-d30aa439f47d / 108000 / 108087 / 87.
+Claim only: same-session immediate reread stability observed. No cross-session identity stability,
+persistent handle identity, collection completeness or ordering semantics follows.
+GetDuration(false) and GetDuration(true) both returned 87 for this fixture. This is equality for this
+observation only, not proof that subframePrecision is irrelevant or coordinates are qualified.
+
+The previous collection-wide positive-integer-key assumption was contradicted by P3. The correction
+preserves raw nonnumeric metadata, inspects positive finite integer candidate keys independently and
+diagnoses malformed entries individually. It does not interpret __flags or repair collections.
+The revised source remains NOT EXECUTED and awaits Chat review; no runtime qualification claimed.
 
 ## Conversational readiness
 
@@ -61,11 +120,11 @@ All statuses below describe present evidence, not what a future probe might retu
 
 | Intent | Required semantic facts | Reads intended to contribute / current Free evidence | Missing facts | Status |
 | --- | --- | --- | --- | --- |
-| 두 번째 클립 앞의 침묵을 줄여줘 | Explicit track/scope, ordered concrete placements, actual pause evidence, safe geometry, dependency/protection facts | Future item lists/IDs/ranges; currently F0 context only | Second-clip scope, proven coordinates, silence vs gap, pause constraints, safety evidence | BLOCKED_UNKNOWN |
-| B-roll과 겹치는 곳은 건드리지 마 | Explicit B-roll role binding, complete multi-track placements, overlap geometry, protection scope | Future track/item inventory; no B-roll native fact observed | Role assignment, complete inventory, aligned coordinates, protection context | BLOCKED_UNKNOWN |
-| 영상은 그대로 두고 대사 간격만 줄여줘 | Explicit dialogue targets, video preservation set, source ranges, A/V relationships, timing/dependency facts | Future media/item binding; no relationship evidence yet | Dialogue identity, source spans, sync meaning, geometry, picture preservation proof | BLOCKED_UNKNOWN |
+| 두 번째 클립 앞의 침묵을 줄여줘 | Explicit track/scope, ordered concrete placements, actual pause evidence, safe geometry, dependency/protection facts | P3 one video and one audio placement, raw IDs/ranges; no second-clip ordering proof | Second-clip scope, proven coordinates, silence vs gap, pause constraints, safety evidence | BLOCKED_UNKNOWN |
+| B-roll과 겹치는 곳은 건드리지 마 | Explicit B-roll role binding, complete multi-track placements, overlap geometry, protection scope | P3 counts/placements and raw ranges; no B-roll role observed | Role assignment, complete inventory, aligned coordinates, protection context | BLOCKED_UNKNOWN |
+| 영상은 그대로 두고 대사 간격만 줄여줘 | Explicit dialogue targets, video preservation set, source ranges, A/V relationships, timing/dependency facts | P3 distinct placements share a source ID; no relationship evidence | Dialogue identity, source spans, sync meaning, geometry, picture preservation proof | BLOCKED_UNKNOWN |
 | 속도 변경된 클립은 제외해 | Reliable per-placement retime/speed observation and complete target scope | No retime read in first probe | Retime vocabulary/mapping and actual per-item observations | BLOCKED_UNKNOWN |
-| 이 클립이 어느 소스에서 온 건지 확인해 | Unambiguous concrete placement and directly observed media binding/IDs | Future GetMediaPoolItem and source IDs; F0 has no placement evidence | This-clip target, actual MPI link/IDs, lifetime limits | BLOCKED_UNKNOWN |
+| 이 클립이 어느 소스에서 온 건지 확인해 | Unambiguous concrete placement and directly observed media binding/IDs | P3 both GetMediaPoolItem calls succeeded and share source GetUniqueId | This-clip target, currentness and identity lifetime remain unproven | PARTIAL |
 
 Understanding/explaining these requests remains available as shared conversational behavior; the blocked
 state concerns evidence needed to reason concretely. No edition-specific command syntax is introduced.
@@ -76,13 +135,30 @@ requires sufficient verified semantic facts; PARTIAL requires useful observed fa
 
 1. Which proven in-process entry point can execute the reviewed file as one shot? Menu remains
    INCONCLUSIVE. No workaround is implemented; an operator must preserve the execution path as evidence.
-2. What actual Lua types/collection keys/handles do these getters return on this exact runtime?
+2. Which remaining Lua types/handle shapes can be qualified beyond the reported P3 mixed-key table?
 3. What are endpoint, fractional coordinate and source/timeline conventions? No correspondence inferred.
 4. What identity lifetime, completeness and freshness can later evidence establish?
-5. Which direct retime/relationship/lock/selection reads support the deferred intent facts?
+5. Which direct retime/relationship/selection reads and complete protection evidence support deferred intents?
 6. Where will explicit B-roll/dialogue/target bindings come from under shared contracts?
 
-On approved manual execution in the proven context: preserve the entire FREE_F1 BOOT/OBS/END transcript,
-including NIL/ERROR/UNKNOWN, without deleting inconvenient reads or retrying until green. Missing END or
-serialization errors mean incomplete capture. Opaque handle markers are not raw native identities;
-retain their type and separate observed IDs. No automatic normalization, transport or file sink is added.
+## Planned complete P2 capture — NOT EXECUTED
+
+1. Before any execution, obtain Chat review of the mixed-key correction and record its exact commit.
+   Previously approved source was at 240e0aec3cca8380dbf8759a023a2dc236a008cf. Revised source:
+   tools/free_bridge_probe/resolve_free_f1.lua, SHA-256
+   86d4a843fe6ea11dd086feaa99ba035ce6dab0f554dd0c66e549ed3453cf58e3.
+   Record operator, runtime version, project/timeline context and session/time without inventing IDs.
+2. Establish and document a directly evidenced in-process one-shot entry path for that exact source.
+   Console printing/global root evidence alone does not prove execution of the reviewed file.
+   Workspace launcher remains INCONCLUSIVE. If the path cannot be evidenced, HOLD; do not implement
+   a loader, file sink, dynamic execution, UI fallback, listener or transport to bypass this prerequisite.
+3. Operator confirms Console scripting/error visibility and Lua context; preserves pre-execution Console
+   state and records the exact entry action/source identity. No project/timeline state changes for capture.
+4. Execute the reviewed source exactly once via the evidenced path. This reconciliation does not execute
+   it or assert that a path has been qualified. No automatic retry or retry-until-green.
+5. Operator preserves the complete original BOOT -> OBS -> END output, including NIL/UNAVAILABLE/ERROR/
+   UNKNOWN and any unprefixed runtime errors. Do not replace P3 prose with fabricated probe lines.
+6. Missing BOOT, missing END, truncation or serialization error means incomplete evidence. Preserve the
+   failure and path details for Chat review; do not repair or silently rerun. Keep P2 separate from P3.
+7. Reconcile raw forms with semantic limitations only after receipt. No capability lifetime, coordinate
+   correspondence, F2/F3, mutation or parity authorization follows from one completed capture.

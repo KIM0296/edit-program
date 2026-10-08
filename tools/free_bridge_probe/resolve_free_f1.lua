@@ -89,6 +89,8 @@ local function observe(subject, method, parent, lookup, operation, shape)
     local encoded, raw = pcall(function() return raw_value(value) end)
     if not encoded then
         emit(subject, method, "ERROR", type(value), "SERIALIZATION_ERROR" .. ":" .. error_text(raw), "UNKNOWN", "NOT_ESTABLISHED")
+        -- Preserve sibling inspection after an individual raw serialization failure.
+        if shape == "collection" and type(value) == "table" then return value end
         return nil
     end
     if value == nil then
@@ -115,6 +117,49 @@ local function inspect_item(item, path)
     observe(path .. "/media", "GetMediaId", media, function() return media.GetMediaId end, function() return media:GetMediaId() end, "string")
 end
 
+local function inspect_collection(items, track_path)
+    local keys = {}
+    local metadata = {}
+    local diagnostics = {}
+    for key, value in pairs(items) do
+        if type(key) ~= "number" then
+            local ok, raw = pcall(function() return raw_value(key) .. "=" .. raw_value(value) end)
+            if ok then
+                metadata[#metadata + 1] = raw
+            else
+                diagnostics[#diagnostics + 1] = "COLLECTION_METADATA_ERROR" .. ":" .. error_text(raw)
+            end
+        elseif key >= 1 and key < math.huge and key % 1 == 0 then
+            keys[#keys + 1] = key
+        else
+            local ok, raw = pcall(function() return raw_value(key) .. "=" .. raw_value(value) end)
+            diagnostics[#diagnostics + 1] = "INVALID_ENUMERATION_KEY" .. ":" ..
+                (ok and raw or error_text(raw))
+        end
+    end
+    table.sort(metadata)
+    for _, raw in ipairs(metadata) do
+        emit(track_path, "COLLECTION_METADATA", "VALUE", "entry", raw, "AVAILABLE_AMBIGUOUS", "RAW_ONLY")
+    end
+    table.sort(diagnostics)
+    for _, raw in ipairs(diagnostics) do
+        emit(track_path, "ENUMERATION", "UNKNOWN", "entry", raw, "AVAILABLE_AMBIGUOUS", "NOT_ESTABLISHED")
+    end
+    -- Numeric key order is diagnostic only, never chronology or completeness.
+    table.sort(keys)
+    for _, key in ipairs(keys) do
+        local item = items[key]
+        local item_path = track_path .. "/entry/" .. string.format("%.17g", key)
+        if type(item) == "table" or type(item) == "userdata" then
+            inspect_item(item, item_path)
+        else
+            local ok, raw = pcall(function() return raw_value(item) end)
+            emit(item_path, "ENUMERATION", "UNKNOWN", type(item), "INVALID_ITEM_ENTRY" .. ":" ..
+                (ok and raw or error_text(raw)), "AVAILABLE_AMBIGUOUS", "NOT_ESTABLISHED")
+        end
+    end
+end
+
 local function inspect_timeline(timeline)
     observe("timeline", "GetUniqueId", timeline, function() return timeline.GetUniqueId end, function() return timeline:GetUniqueId() end, "string")
     observe("timeline", "GetName", timeline, function() return timeline.GetName end, function() return timeline:GetName() end, "string")
@@ -129,23 +174,7 @@ local function inspect_timeline(timeline)
                 local track_path = path .. "/" .. string.format("%.17g", index)
                 local items = observe(track_path, "GetItemListInTrack", timeline, function() return timeline.GetItemListInTrack end, function() return timeline:GetItemListInTrack(track_type, index) end, "collection")
                 if type(items) == "table" then
-                    local keys = {}
-                    local valid = true
-                    for key in pairs(items) do
-                        if type(key) ~= "number" or key < 1 or key == math.huge or key % 1 ~= 0 then
-                            valid = false
-                        else
-                            keys[#keys + 1] = key
-                        end
-                    end
-                    if valid then
-                        table.sort(keys)
-                        for _, key in ipairs(keys) do
-                            inspect_item(items[key], track_path .. "/entry/" .. string.format("%.17g", key))
-                        end
-                    else
-                        emit(track_path, "ENUMERATION", "UNKNOWN", "table", "INVALID_ENUMERATION_KEYS", "AVAILABLE_AMBIGUOUS", "NOT_ESTABLISHED")
-                    end
+                    inspect_collection(items, track_path)
                 end
             end
         end

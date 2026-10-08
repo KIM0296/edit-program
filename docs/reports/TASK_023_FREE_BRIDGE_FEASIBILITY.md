@@ -3,11 +3,12 @@
 TASK-023 F1 — Free Conversational Editing Read Capability Map
 Branch: feat/free-in-resolve-bridge-feasibility; base 9558c78639f23e97d6c5399cf80eb83faf440d73.
 Spec-before-code commit: 792c265. Submission head is recorded in PR #50.
-Status: probe/map implementation prepared; F1 runtime evidence NOT OBSERVED / HOLD.
+Status: ADR-043 and F1 static spec/probe Chat APPROVED; F1 runtime qualification IN PROGRESS.
+Reconciliation base: 240e0aec3cca8380dbf8759a023a2dc236a008cf. P3 manual observations exist; P2 reviewed probe NOT EXECUTED.
 
 ## ADR-043
 
-- recorded: YES, user-directed product/architecture baseline.
+- recorded: YES, user-directed product/architecture baseline; now Chat APPROVED.
 - files changed: DECISIONS.md; docs/CONVERSATIONAL_EDITING_INTERFACE_INVARIANT.md;
   IMPLEMENTATION_STATUS.md. F1 specification: tasks/TASK_023_F1_READ_CAPABILITY_MAP.md.
 - conflicts with existing ADRs: none identified. ADR-041 transport boundary and ADR-042 semantic parity
@@ -31,17 +32,21 @@ The following is the user's observation summary, not an invented or agent-captur
 ## F1 probe
 
 File: tools/free_bridge_probe/resolve_free_f1.lua.
-Working-file SHA-256 at validation: 90ed7c352d28d45550cca96c6dee87921022df3e1968477897f957c0b093380b.
-No installation or native execution was performed in this task. Existing F0 canary unchanged.
+Previously approved probe SHA-256: 90ed7c352d28d45550cca96c6dee87921022df3e1968477897f957c0b093380b.
+The reviewed probe has NOT run. No installation or native execution was performed by this reconciliation.
+Existing F0 canary unchanged. The F1 probe is corrected for P3 mixed collections but remains NOT EXECUTED.
+P3 manual Console observations below are separate evidence.
 
-- domains tested: static source boundary only. Native F1 domains tested: NONE.
-- prepared first reads: A runtime/context; B timeline ID/name/endpoints; C counts/type arguments;
-  D item enumeration; E placement ID/name/start/end/duration; F source handle/IDs; minimal H/K context.
-- AVAILABLE_TYPED: no native F1 observations yet.
-- AVAILABLE_AMBIGUOUS: no native F1 observations yet.
+- domains tested by reviewed probe: NONE; static source tests only.
+- operator manual domains observed (P3): track counts/enumeration, placements, source binding, track names,
+  enabled/locked state and offsets. This does not qualify entire domains or collection completeness.
+- AVAILABLE_TYPED (P3 raw shape only): counts, placement/source ID strings, names, enabled/locked booleans.
+- AVAILABLE_AMBIGUOUS (P3): coordinates/durations/offsets, native handles and collection semantics.
 - UNAVAILABLE: none demonstrated.
-- UNKNOWN: all F1 candidates, including deferred G relationships, I retime, J protection and L freshness.
-- raw F1 output: NOT OBSERVED. Probe has not run. Static tests do not establish Lua execution success.
+- UNKNOWN: all other unobserved reads, including subtitle count, GetMediaId, source coordinate mapping,
+  relationship/retime facts, clip enabled state and freshness/lifetime evidence.
+- raw P2 output: NOT OBSERVED. Static tests do not establish Lua execution success.
+- P3 full raw Console transcript: NOT SUPPLIED; reported values retained below, no synthesized FREE_F1 output.
 
 The fixed allowlist contains 16 literal method names; every native call is an explicit read closure.
 No object[method] dispatch or external method/argument input. Output distinguishes VALUE/NIL/UNAVAILABLE/
@@ -54,6 +59,69 @@ P1 installed candidate stub SHA-256:
 b91b53b86a946e1902789ea898eedf00cb7dd6107aba6f1276ca77fe508816ea.
 Installed documentation/stub presence alone never establishes Free support.
 
+## Evidence reconciliation provenance
+
+P0 = earlier operator F0 summary. P1 = installed API candidate documentation/stub.
+P2 = complete reviewed one-shot probe output, still absent.
+P3 = operator manual F1 Console observation supplied in the current task; not a probe run.
+No timestamp/session binding, exact invocation transcript or Lua numeric subtype is invented.
+UNKNOWN means unqualified knowledge; NOT OBSERVED identifies missing observations/transcripts;
+INCONCLUSIVE describes the unresolved Workspace launcher experiment.
+
+## P3 manual observation record
+
+| Observation | Video track 1 / placement | Audio track 1 / placement | Classification / limit |
+| --- | --- | --- | --- |
+| GetTrackCount | 1 | 1 | AVAILABLE_TYPED, reported integer counts only |
+| GetItemListInTrack | one item returned | one item returned | AVAILABLE_AMBIGUOUS; no ordering/completeness guarantee beyond this capture |
+| Placement name | 0916.mp4 | 0916.mp4 | AVAILABLE_TYPED, descriptive string only |
+| Placement GetUniqueId | f961cbd6-6703-4df5-a4d3-d30aa439f47d | bb080cbd-8c1f-4bc3-9049-036c64513643 | AVAILABLE_TYPED, raw strings; lifetime unqualified |
+| Placement start | 108000 | 108000 | AVAILABLE_AMBIGUOUS |
+| Placement end | 108087 | 108087 | AVAILABLE_AMBIGUOUS |
+| Placement duration | 87 | 87 | AVAILABLE_AMBIGUOUS |
+| GetMediaPoolItem | succeeded | succeeded | AVAILABLE_AMBIGUOUS native handles |
+| Source GetUniqueId | 0939efdf-05b9-41bc-8091-6b7fd41075d3 | 0939efdf-05b9-41bc-8091-6b7fd41075d3 | AVAILABLE_TYPED, raw strings only |
+| Track name | Video 1 | Audio 1 | AVAILABLE_TYPED, descriptive strings only |
+| Track enabled | true | true | AVAILABLE_TYPED native booleans; not complete Safety evidence |
+| Track locked | false | false | AVAILABLE_TYPED native booleans; not complete Safety evidence |
+| Left offset | 0 | 0 | AVAILABLE_AMBIGUOUS |
+| Right offset | 0 | 0 | AVAILABLE_AMBIGUOUS |
+
+Two distinct placements were observed to reference the same source native ID. This does NOT establish
+an explicit A/V link, J/L-cut relationship, propagation policy or stable identity lifetime. Matching
+names do not establish identity. Zero offsets do NOT establish untrimmed source, full source coverage
+or source coordinate correspondence. No internal FrameRange or temporal mapping is derived.
+Exact manual invocation spellings/arguments for track state, names and offsets were not supplied;
+method candidates below must not be mistaken for the manual command transcript.
+
+
+### Additional P3 collection and immediate reread findings
+
+Operator manual GetItemListInTrack observations on Resolve 21.1.1 Lua:
+
+| Collection | Key type | Key | Reported value |
+| --- | --- | --- | --- |
+| video track 1 | string | __flags | 4194304 |
+| video track 1 | number | 1 | TimelineItem handle |
+| audio track 1 | string | __flags | 4194304 |
+| audio track 1 | number | 1 | TimelineItem handle |
+
+This is P3 prose evidence, not FREE_F1 output. __flags meaning is UNKNOWN. Numeric keys are not
+chronological ranks, native identities, semantic ordering or completeness evidence. Mixed metadata and
+numeric entries do not themselves establish an unavailable API, runtime error or semantic failure.
+
+The video placement ID/start/end/duration were identical over two consecutive no-edit reads:
+f961cbd6-6703-4df5-a4d3-d30aa439f47d / 108000 / 108087 / 87.
+Claim only: same-session immediate reread stability observed. No cross-session identity stability,
+persistent handle identity, collection completeness or ordering semantics follows.
+GetDuration(false) and GetDuration(true) both returned 87 for this fixture. This is equality for this
+observation only, not proof that subframePrecision is irrelevant or coordinates are qualified.
+
+The previous collection-wide positive-integer-key assumption was contradicted by P3. The correction
+preserves raw nonnumeric metadata, inspects positive finite integer candidate keys independently and
+diagnoses malformed entries individually. It does not interpret __flags or repair collections.
+The revised source remains NOT EXECUTED and awaits Chat review; no runtime qualification claimed.
+
 ## Conversational readiness
 
 Full A-L field/provenance/semantic map: docs/FREE_CONVERSATIONAL_READ_CAPABILITY_MAP.md.
@@ -64,7 +132,7 @@ Full A-L field/provenance/semantic map: docs/FREE_CONVERSATIONAL_READ_CAPABILITY
 | B-roll과 겹치는 곳은 건드리지 마 | BLOCKED_UNKNOWN | Explicit B-roll roles, complete multi-track inventory, overlap coordinates/protection |
 | 영상은 그대로 두고 대사 간격만 줄여줘 | BLOCKED_UNKNOWN | Dialogue targets, source ranges, A/V meaning, geometry and picture preservation |
 | 속도 변경된 클립은 제외해 | BLOCKED_UNKNOWN | Reliable retime/speed observations and complete target scope |
-| 이 클립이 어느 소스에서 온 건지 확인해 | BLOCKED_UNKNOWN | Concrete this-clip binding, observed MPI handle/IDs, identity lifetime limits |
+| 이 클립이 어느 소스에서 온 건지 확인해 | PARTIAL | P3 source links/IDs observed; this-clip binding, currentness and identity lifetime unproven |
 
 These statuses concern evidence for concrete reasoning only. Requests retain shared meaning and may
 be explained as blocked. No F0 context is stretched into item-level evidence. No unsupported verdict
@@ -82,7 +150,7 @@ is claimed without a direct observation; no Free-only Chat command language or p
 - stable native identities beyond observed scope: NOT CLAIMED
 - Studio runtime qualification from Free observations: NOT CLAIMED
 
-## Tests
+## Historical implementation tests (approved base)
 
 - Red-first: 4 missing-probe failures, 1 spec test passed before implementation.
 - New static tests: 5 passed. They inspect allowlist and literal native calls, forbidden surfaces,
@@ -91,20 +159,57 @@ is claimed without a direct observation; no Free-only Chat command language or p
 - Skips: Windows symlink privilege unavailable; opt-in intentional naive INV-001 demo.
 - Ruff: PASS (src/tests/tools).
 - strict mypy: PASS (33 existing Python source files). Mypy does NOT validate Lua.
-- Lua interpreter/native F1 execution: NOT EXECUTED. No new interpreter installed.
+- Reviewed Lua probe execution: NOT EXECUTED. P3 manual observations are not this test/probe run.
+- Mixed-key correction validation is recorded separately below; historical results are not new runtime evidence.
 - Existing shared semantic tests unchanged. No src/ files changed.
 
 ## Open questions — not resolved by assumption
 
 1. Which directly evidenced in-process one-shot launch path will execute this reviewed file? Workspace
    menu remains INCONCLUSIVE. No UI/script-launch bypass is implemented.
-2. What are actual Lua return types, collection key shapes and native handle representations?
+2. Which return types and handle representations remain unqualified beyond P3 mixed-key observations?
 3. What endpoint/fractional/source coordinate semantics can be proven for the exact runtime?
 4. What placement/source identity lifetime, completeness and freshness can native evidence support?
-5. What retime/relationship/lock/selection facts are directly readable in a later bounded set?
+5. What retime/relationship/selection and complete protection facts are directly readable in a later bounded set?
 6. How will explicit target/B-roll/dialogue role bindings enter the existing shared contracts?
 
-F1 runtime collection requires the operator's proven context; automating it here would require the
-forbidden UI/transport path. Stop at the prepared probe and evidence map. Preserve complete actual
-FREE_F1 output before classifying reads. Do not infer execution from menu visibility.
-F2 persistence, F3 transport/IPC, mutation and parity runner remain NOT AUTHORIZED. No further work begun.
+## Planned complete P2 capture — NOT EXECUTED
+
+1. Before any execution, obtain Chat review of the mixed-key correction and record its exact commit.
+   Previously approved source was at 240e0aec3cca8380dbf8759a023a2dc236a008cf. Revised source:
+   tools/free_bridge_probe/resolve_free_f1.lua, SHA-256
+   86d4a843fe6ea11dd086feaa99ba035ce6dab0f554dd0c66e549ed3453cf58e3.
+   Record operator, runtime version, project/timeline context and session/time without inventing IDs.
+2. Establish and document a directly evidenced in-process one-shot entry path for that exact source.
+   Console printing/global root evidence alone does not prove execution of the reviewed file.
+   Workspace launcher remains INCONCLUSIVE. If the path cannot be evidenced, HOLD; do not implement
+   a loader, file sink, dynamic execution, UI fallback, listener or transport to bypass this prerequisite.
+3. Operator confirms Console scripting/error visibility and Lua context; preserves pre-execution Console
+   state and records the exact entry action/source identity. No project/timeline state changes for capture.
+4. Execute the reviewed source exactly once via the evidenced path. This reconciliation does not execute
+   it or assert that a path has been qualified. No automatic retry or retry-until-green.
+5. Operator preserves the complete original BOOT -> OBS -> END output, including NIL/UNAVAILABLE/ERROR/
+   UNKNOWN and any unprefixed runtime errors. Do not replace P3 prose with fabricated probe lines.
+6. Missing BOOT, missing END, truncation or serialization error means incomplete evidence. Preserve the
+   failure and path details for Chat review; do not repair or silently rerun. Keep P2 separate from P3.
+7. Reconcile raw forms with semantic limitations only after receipt. No capability lifetime, coordinate
+   correspondence, F2/F3, mutation or parity authorization follows from one completed capture.
+
+## Mixed-key correction validation
+
+- Red-first: 2 new static checks failed against the original probe; 5 existing checks passed.
+- Corrected F1 static suite: 7 passed. Mixed-key Lua fixture is inspected statically, never executed.
+- Full local regression (Python 3.14.6): 1426 passed, 2 skipped, 56.31 seconds.
+- After final collection serialization-failure isolation: targeted F1 suite 7 passed again.
+- Ruff: PASS (src/tests/tools). Strict mypy configured scope: PASS (33 Python files).
+- git diff --check: PASS. Mypy/static tests do not validate native Lua execution.
+- Python 3.11 / remote CI: NOT RERUN in this reconciliation; prior results above are historical.
+- Revised probe SHA-256: 86d4a843fe6ea11dd086feaa99ba035ce6dab0f554dd0c66e549ed3453cf58e3.
+- No Resolve execution, installation or fabricated stdout. Complete P2 capture still pending.
+
+## Reconciliation scope / stop
+
+Changed the three reconciliation documents plus F1 specification, Lua probe, static tests and mixed-key
+fixture. No shared Core, Studio checkpoint, installation or runtime change. No new architecture decision.
+Workspace launcher remains INCONCLUSIVE; reviewed probe output remains NOT OBSERVED.
+F2 persistence, F3 transport/IPC, mutation and parity runner remain NOT AUTHORIZED. STOP after reporting.
