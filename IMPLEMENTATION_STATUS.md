@@ -711,3 +711,19 @@ No F2, mutation, IPC, listener, persistence or parity runner begun.
 Correction validation: new red tests 2 failed then F1 static suite 7 passed. Full local Python 3.14.6
 regression 1426 passed / 2 skipped; final narrow correction rechecked with 7 F1 passes. Ruff PASS;
 strict mypy PASS (33 Python files). No new Python 3.11 CI or Lua/runtime execution claim.
+
+## TASK-023 F1 Semantic Qualification Phase 1 — design prepared
+
+Base 95cd83c5c45efb7a3d6c9b506b9c23f76f9324d7. ADR-041/042/043 and F1 mixed-key correction APPROVED.
+Shared contracts audited without edits: ADR-008/012/015/016/021/022, StableTarget and parity requirements.
+New spec: tasks/TASK_023_F1_SEMANTIC_QUALIFICATION_PHASE_1.md; six deterministic spec-only tests.
+C01-C07 controlled fixture matrix and independent I0-I4 comparison outcomes defined.
+Current coordinate correspondence NOT_ESTABLISHED. P3 I0 evidence limited to video ID/range/duration;
+I1-I4 NOT_OBSERVED. No endpoint inference, FrameRange construction or identity/currentness promotion.
+Proposed true-argument read extension documented for future Chat review only; Lua probe unchanged.
+No runtime/fixture execution, shared Core, Studio checkpoint, F2/F3, mutation, parity or distribution work.
+Await Chat Gate after design report. No broader reads authorized by this design.
+
+Phase 1 validation: six spec tests PASS; local Python 3.14.6 full regression 1432 passed / 2 skipped;
+Ruff PASS; strict mypy PASS (33 files). CI not run for uncommitted design changes. Lua probe hash
+86d4a843fe6ea11dd086feaa99ba035ce6dab0f554dd0c66e549ed3453cf58e3 unchanged.

@@ -162,3 +162,23 @@ requires sufficient verified semantic facts; PARTIAL requires useful observed fa
    failure and path details for Chat review; do not repair or silently rerun. Keep P2 separate from P3.
 7. Reconcile raw forms with semantic limitations only after receipt. No capability lifetime, coordinate
    correspondence, F2/F3, mutation or parity authorization follows from one completed capture.
+
+## Semantic qualification Phase 1 — design only
+
+Chat approves the F1 static probe/mixed-key correction; semantic qualification remains IN PROGRESS.
+Specification and shared-contract audit:
+[tasks/TASK_023_F1_SEMANTIC_QUALIFICATION_PHASE_1.md](../tasks/TASK_023_F1_SEMANTIC_QUALIFICATION_PHASE_1.md).
+
+Additional operator P3 observations: video GetStart(false)=GetStart(true)=108000;
+GetEnd(false)=GetEnd(true)=108087; GetDuration(false)=GetDuration(true)=87. Equality is limited to this
+fixture; endpoint convention, origin, exact rate, source/timeline correspondence and subframe semantics
+remain NOT_ESTABLISHED/UNKNOWN. No half-open FrameRange is constructed from these numbers.
+
+Highest observed lifetime level: partial I0, video placement ID/start/end/duration only. Project/timeline/
+source ID repeat comparisons were not supplied; I1-I4 NOT_OBSERVED. No shared IdentityScope promotion.
+Same-session immediate equality does not establish currentness, atomic capture or a trustworthy token.
+Freshness-required use stays BLOCKED_UNKNOWN; known snapshot/base mismatch stays STALE.
+
+Seven controlled coordinate cases and independent I0-I4 comparisons are specified, not executed.
+No fixture creation/repair, probe extension, new native calls or installer/distribution work.
+All conversational readiness statuses above remain unchanged. Wait for Chat Gate before runtime work.

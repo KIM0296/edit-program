@@ -213,3 +213,67 @@ Changed the three reconciliation documents plus F1 specification, Lua probe, sta
 fixture. No shared Core, Studio checkpoint, installation or runtime change. No new architecture decision.
 Workspace launcher remains INCONCLUSIVE; reviewed probe output remains NOT OBSERVED.
 F2 persistence, F3 transport/IPC, mutation and parity runner remain NOT AUTHORIZED. STOP after reporting.
+
+# F1 SEMANTIC QUALIFICATION PHASE 1 REPORT
+
+Base: 95cd83c5c45efb7a3d6c9b506b9c23f76f9324d7; Free branch / PR #50.
+This section supersedes the previous correction-review-pending status: mixed-key correction APPROVED.
+Semantic qualification design prepared; no native execution or newly verified semantic correspondence.
+
+## Existing contract audit
+
+- FrameRange: ADR-008 integer half-open; ADR-021 explicit exact snapshot-bound correspondence,
+  coordinate domains and rational rate. Native endpoint/basis still unproven.
+- Identity: StableTarget binds timeline/version/track/placement/media/source+timeline spans;
+  ADR-012 fake lineage is not production ID; ADR-022 scopes remain categorical. OPEN-001/006 unchanged.
+- Freshness: mismatch STALE; missing currentness BLOCKED_UNKNOWN; no token synthesis or silent rebase.
+- Human Edit Wins: ADR-015/016; Resolve remains Source of Truth. Equal historical reads cannot override
+  a newer human state or confer authority.
+- Conflicts: no shared-contract changes needed; missing evidence remains blocked, not weakened.
+
+## Coordinate qualification
+
+- Specification created: tasks/TASK_023_F1_SEMANTIC_QUALIFICATION_PHASE_1.md.
+- Fixtures required: C01 known single clip lengths; C02 adjacent clips; C03 one-frame gap;
+  C04 naturally permitted one-frame overlap (conditional); C05 trimmed placement;
+  C06 different timeline start/base; C07 false/true precision including fractional case if available.
+- All require independent oracle, provenance and exact rate evidence; availability not asserted.
+- Unknown: endpoint convention, origin translation, rate, fractional behavior, source correspondence,
+  complete snapshot/currentness binding. Existing 108000/108087/87 equality does not establish parity.
+- Shared semantics changed: NO. No FrameRange/mapping/StableTarget construction in this task.
+
+## Identity/freshness
+
+- Evidence levels defined: I0 immediate, I1 later same-session, I2 switch/return,
+  I3 project reopen, I4 Resolve restart/reopen. Outcomes are per-field and per-level.
+- Highest currently observed level: partial I0 video ID/start/end/duration equality per P3 only.
+- Unverified: other I0 fields and all I1-I4; opaque pointers/handles never qualify identity.
+- No scope promotion, atomicity, freshness token or persistence guarantee inferred.
+
+## Code/document changes (exact scope)
+
+- NEW tasks/TASK_023_F1_SEMANTIC_QUALIFICATION_PHASE_1.md — audit, specification, matrix and proposed reads.
+- NEW tests/test_free_f1_semantic_spec.py — six deterministic static specification checks.
+- docs/FREE_CONVERSATIONAL_READ_CAPABILITY_MAP.md — P3 precision facts and semantic qualification limits.
+- docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md — this design report.
+- IMPLEMENTATION_STATUS.md — current design/gate status.
+- Production code and Lua probe: unchanged. Shared tests: unchanged.
+
+## Tests
+
+- Red-first: six missing-spec failures, then six spec tests PASS.
+- Ruff: PASS. Strict mypy: PASS (33 Python files; not Lua validation).
+- Full pytest (local Python 3.14.6): 1432 passed / 2 skipped, 52.36 seconds.
+  Skips: Windows symlink privilege; opt-in intentional naive invariant failure. No native runtime execution.
+- CI: NOT RUN for these uncommitted design changes; base commit CI was already PASS.
+
+## Safety / unresolved evidence
+
+- mutation: NO; IPC: NO; persistence: NO; shared Core changed: NO.
+- Studio checkpoint changed: NO; distribution work started: NO.
+- Runtime execution, UI automation, fixture creation/repair, parity runner: NO.
+- Open evidence needs: controlled fixture availability/oracles, exact rate and base evidence,
+  endpoint/precision proof, production correspondence and independent currentness evidence.
+- Existing OPEN-001/006/008/012 not resolved. No new accepted architecture policy.
+- Next: Chat Gate review of design/proposed argument extension before runtime qualification.
+STOP. F2/F3/mutation and broader reads are NOT AUTHORIZED.
