@@ -946,7 +946,7 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-08
 Detailed contract: docs/RESOLVE_EDITION_TRANSPORT_SPLIT.md.
 
 ## ADR-042 - Cross-Edition Semantic Parity Contract v1
-Status: USER-DIRECTED ARCHITECTURE BASELINE - 2026-10-08; repository Chat Gate review pending.
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-08.
 
 Studio is the reference runtime and Free is the compatibility runtime of one shared editing product.
 Only transport/capability producers vary. Equal corresponding native facts yield equal typed semantic
