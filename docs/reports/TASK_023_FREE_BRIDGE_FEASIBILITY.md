@@ -277,3 +277,67 @@ Semantic qualification design prepared; no native execution or newly verified se
 - Existing OPEN-001/006/008/012 not resolved. No new accepted architecture policy.
 - Next: Chat Gate review of design/proposed argument extension before runtime qualification.
 STOP. F2/F3/mutation and broader reads are NOT AUTHORIZED.
+
+# F1 RUNTIME QUALIFICATION RUNBOOK REPORT
+
+Base: 75cf16717666c5ed725c92b64ce32695aa21356e. Phase 1 design APPROVED per current user gate.
+This is protocol preparation only; no new runtime facts or semantic qualification results.
+
+## Runbook
+
+- Created: tasks/TASK_023_F1_RUNTIME_QUALIFICATION_RUNBOOK.md.
+- C01 operationalized: YES, full independent source vs native placement comparison protocol.
+- C02 operationalized: YES, independent manual adjacency receipt; endpoint equality is not the oracle.
+- C03-C07: planned skeletons, not operationalized/executed. Every case has required sections directly
+  or via the explicitly shared skeleton fields. Later per-case Chat review required.
+
+## Canonical oracle
+
+- Package/version: canonical-fixture-assets / 1.0.0.
+- Digest: 17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de.
+- C01 source: canonical:ASSET_VIDEO_ONLY:v1 / video_only_v1.mov.
+- SHA-256: 51109edb40573bcf98c1373dae2e049c81da99db44186841779075624d650137.
+- Independent source facts: approved bytes, video-only 1280x720, exact 24/1, 720 source frames / 30 sec.
+- No native imported duration, coordinate basis, endpoint or fixture correctness inferred.
+- No package bytes copied/published or runtime readiness verified in this task.
+
+## Identity protocol
+
+- I0 operationalized: immediate paired field reads, explicit unchanged-context evidence.
+- I1 operationalized: later same-session paired reads, actual elapsed time and activity log; no minimum wait.
+- I2-I4: future/not-authorized; no switch/reopen/restart permission.
+- Cross-level inference: prohibited; same values never prove native handle stability or atomic freshness.
+
+## Evidence schema
+
+- Created: one machine-checkable design/template embedded in the runbook; no runtime writer implemented.
+- Append-only: YES; unique record/sequence IDs, failures retained, explicit correction linkage/new attempts.
+- Pointer/handle identity: prohibited. Native ID fields distinct from source hashes and diagnostic locators.
+- P3 exact commands/complete raw lines; P2 exact commit/hash and BOOT -> OBS -> END, never synthesized.
+- Null fields unfilled, not native nil or zero; currentness/coordinate status remain separate.
+
+## Code/files (exact scope)
+
+- NEW tasks/TASK_023_F1_RUNTIME_QUALIFICATION_RUNBOOK.md.
+- NEW tests/test_free_f1_runbook.py (six static tests only).
+- IMPLEMENTATION_STATUS.md.
+- docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md.
+- Capability map, Lua probe, shared contracts/Core and existing tests unchanged.
+
+## Tests
+
+- Red-first: six missing-runbook failures, then six runbook/schema tests passed.
+- Full pytest (local Python 3.14.6): 1438 passed / 2 skipped, 32.78 seconds.
+  Skips: Windows symlink privilege and opt-in intentional naive invariant failure.
+- Ruff: PASS; strict mypy: PASS (33 Python files). Neither is native runtime qualification.
+- CI: NOT RUN for these uncommitted changes; previous base CI PASS is historical.
+
+## Safety / next gate
+
+- Resolve executed: NO; fixture mutation: NO; Lua probe changed: NO.
+- Shared Core changed: NO; Studio checkpoint changed: NO.
+- F2/IPC/mutation started: NO; persistence: NO; parity runner: NO; distribution started: NO.
+- Workspace launcher remains INCONCLUSIVE; no bypass designed.
+- Controlled fixture availability/preparation correspondence, exact rates/base and runtime evidence remain
+  unverified. No shared OPEN decision resolved and no new semantic assumption introduced.
+STOP for Chat Gate before any operator case; no automatic runtime or preparation action.

@@ -727,3 +727,20 @@ Await Chat Gate after design report. No broader reads authorized by this design.
 Phase 1 validation: six spec tests PASS; local Python 3.14.6 full regression 1432 passed / 2 skipped;
 Ruff PASS; strict mypy PASS (33 files). CI not run for uncommitted design changes. Lua probe hash
 86d4a843fe6ea11dd086feaa99ba035ce6dab0f554dd0c66e549ed3453cf58e3 unchanged.
+
+## TASK-023 F1 Runtime Qualification Runbook — prepared for Chat Gate
+
+Base 75cf16717666c5ed725c92b64ce32695aa21356e. Phase 1 design now Chat APPROVED per user.
+Runbook: tasks/TASK_023_F1_RUNTIME_QUALIFICATION_RUNBOOK.md.
+C01/C02 and I0/I1 operationalized for later reviewed operator cases only; C03-C07 and I2-I4 deferred.
+Independent source oracle, manual preparation receipt, native capture, semantic comparison and gate are
+separate. Approved canonical package digest is referenced; native import/materialization NOT QUALIFIED.
+One append-only evidence format preserves P2/P3, raw type/value/errors, context, oracle and missing facts.
+No runtime result pre-filled, no FrameRange conversion or lifetime promotion, no launcher workaround.
+Six static runbook/schema tests added. No existing tests weakened.
+No Resolve execution, fixtures, Lua changes, Core/checkpoint, F2/F3, IPC, mutation or distribution work.
+Stop for Chat Gate; this document does not itself execute or qualify a runtime case.
+
+Runbook validation: six static tests PASS; local Python 3.14.6 full pytest 1438 passed / 2 skipped;
+Ruff PASS; strict mypy PASS (33 Python files); diff whitespace check PASS. CI not run for uncommitted
+runbook changes. Lua probe SHA-256 and Studio checkpoint remain unchanged.
