@@ -921,6 +921,30 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 
 Detailed contract: docs/NATIVE_PROBE_ENVIRONMENT_AUTHENTICITY.md.
 
+
+
+## ADR-041 - Resolve Edition / Transport Split v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-08
+
+1. The editing product keeps one shared Domain/Safety/IR/Evidence core across Resolve editions.
+2. Resolve Studio / Professional uses the external scripting transport already implemented in TASK-020
+   Phase A. The preserved checkpoint is `checkpoint/studio-task020-phase-a-v1` at
+   `6025e944bae260359635fe41e216a8fc22533cd7`.
+3. Resolve Free uses a separate in-Resolve transport track and does not attempt to make external
+   `scriptapp("Resolve")` behave like Studio.
+4. The first Free 21.1.x feasibility target is an in-process **Lua** read-only canary. Python in-process
+   support is optional and must be proven by the exact runtime before use.
+5. Edition name alone never grants capabilities. Both tracks use RuntimeProfile/capability evidence.
+6. Free support may have a different connection UX while preserving the same Safety requirements.
+7. No UI automation fallback is accepted as the primary core-editing transport.
+8. No arbitrary remote method proxy, generated Lua/Python, eval/exec or unrestricted script surface is
+   allowed.
+9. The Free track starts read-only. Mutation transport design requires a later Chat Gate.
+10. Studio checkpoint evidence is immutable historical work and Free-track changes must not silently
+    rewrite it.
+
+Detailed contract: docs/RESOLVE_EDITION_TRANSPORT_SPLIT.md.
+
 # Open Decisions
 
 
