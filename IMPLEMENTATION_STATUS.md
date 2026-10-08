@@ -647,3 +647,13 @@ Resolve was restarted; physical Escape stopped Computer Use before confirmed Con
 F0 remains HOLD; no ROOT result or filter-state proof exists for this revision.
 ADR-042 records the user-directed shared semantic parity baseline; repository Chat Gate pending.
 No Studio checkpoint change, Free-specific Core, parity implementation, IPC, persistence or mutation.
+
+
+## Cross-edition parity gate — 2026-10-08
+
+- ADR-042 Chat APPROVED.
+- Studio remains the reference runtime; Free remains the compatibility runtime.
+- Shared Domain/Safety/IR/Evidence semantics may not fork by edition.
+- Free capability gaps remain explicit UNKNOWN/UNSUPPORTED and do not remove verified Studio capability.
+- Revised Free canary F0.1 remains runtime HOLD until BOOT/root output is observed.
+- No IPC, listener, mutation bridge or cross-edition parity runner is authorized by ADR-042 approval alone.
