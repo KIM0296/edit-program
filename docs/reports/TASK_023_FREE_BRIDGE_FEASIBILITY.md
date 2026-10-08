@@ -341,3 +341,184 @@ This is protocol preparation only; no new runtime facts or semantic qualificatio
 - Controlled fixture availability/preparation correspondence, exact rates/base and runtime evidence remain
   unverified. No shared OPEN decision resolved and no new semantic assumption introduced.
 STOP for Chat Gate before any operator case; no automatic runtime or preparation action.
+
+# F1 RUNTIME EVIDENCE RECONCILIATION REPORT - C01 / C02 / I0
+
+Recorded 2026-10-09; base e02d1dfb5a466594cabb2e4111288a3adad99088, Free branch, PR #50.
+This appended section is the current evidence/gate summary; earlier sections remain historical.
+No prior failed attempt or observation is deleted, rewritten or normalized.
+
+## Provenance and approval references
+
+P3 = operator manual Console observations, reconciled from the current user-supplied summary and these
+existing Chat Gate comments. They are approved summaries, NOT complete raw capture records.
+
+- [Runbook APPROVED](https://github.com/KIM0296/edit-program/pull/50#issuecomment-6058793971).
+- [C01 bounded PASS](https://github.com/KIM0296/edit-program/pull/50#issuecomment-6062948335).
+- [I0 immediate reread PASS](https://github.com/KIM0296/edit-program/pull/50#issuecomment-6063086255).
+- [C02 attempt 1 INCOMPLETE](https://github.com/KIM0296/edit-program/pull/50#issuecomment-6063288838).
+- [C02 attempt 2 bounded PASS](https://github.com/KIM0296/edit-program/pull/50#issuecomment-6064002073).
+
+P2 reviewed probe: NOT EXECUTED. Synthesized transcript: NO.
+P3 complete raw transcript: NOT SUPPLIED to this reconciliation.
+Original capture timestamps/run IDs/exact commands: NOT SUPPLIED. Do not substitute GitHub comment
+publication times for capture times. Operator identity/session token beyond supplied summaries is not
+invented. Method arguments/raw Lua numeric subtypes not provided here remain unrecorded, not inferred
+from the planned probe. Earlier false/true observations from a different fixture are not reused here.
+
+The existing report is sufficient to retain these append-only summary evidence entries. No dedicated
+capture artifact or new architecture/schema is introduced. In particular, no retroactive run ID,
+sequence number, preparation command transcript or per-read runtime record is fabricated to make these
+summaries look like complete runbook records. Bounded Chat approvals are preserved independently of
+raw transcript availability; missing raw evidence is not upgraded by the approval itself.
+
+## C01 - approved bounded runtime evidence
+
+C01 gate: PASS (bounded case only).
+
+A. Source oracle (operator-reported independent visible source evidence):
+- canonical:ASSET_VIDEO_ONLY:v1 / video_only_v1.mov.
+- SHA-256: 51109edb40573bcf98c1373dae2e049c81da99db44186841779075624d650137.
+- First visible frame 0000, last 0719, 720 source frames.
+- Package canonical-fixture-assets / 1.0.0; approved digest
+  17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de.
+  Source contract is exact 24/1; native UI rate observation below is separately recorded as 24 fps.
+
+B. Operator-prepared state:
+- Project PF_FREE_C01_v1; Timeline 1.
+- Timeline UI rate 24 fps; start timecode 01:00:00:00.
+- One placement on V1; no unexpected placement reported. This is not a claim of zero audio tracks.
+
+C. Native observations supplied in the approved P3 summary:
+
+| Field | Reported value |
+| --- | --- |
+| Product | DaVinci Resolve |
+| Version | 21.1.1.10 |
+| Project ID | 8023de71-f9c7-41fc-8fbf-fa1baebf613a |
+| Timeline ID | c3ebf612-d464-4734-9fd1-0dfe815edee9 |
+| Timeline start / end | 86400 / 87120 |
+| Video / audio / subtitle track count | 1 / 1 / 0 |
+| Video collection | __flags = 4194304; numeric key 1 -> userdata candidate |
+| Placement ID | 85211282-1005-4112-9719-cd237febd1df |
+| Placement name | video_only_v1.mov |
+| Placement start / end / duration | 86400 / 87120 / 720 |
+| Source handle type | userdata |
+| Source native ID | ad23d34e-1ef3-4d51-b835-b7f6674af9f2 |
+
+D/E. Approved bounded comparison: timeline span delta=720, placement span delta=720, reported duration=720
+and independent visible source count=720 agree for C01. Arithmetic differences describe the observations;
+they are not a new FrameRange or endpoint conversion. Coordinate status: CORRESPONDENCE_CANDIDATE.
+Endpoint convention: NOT_ESTABLISHED. FrameRange construction: NOT AUTHORIZED.
+
+No GetEnd-exclusive/global half-open proof, source/timeline coordinate identity, stable identity lifetime,
+currentness or mutation readiness follows. Product string alone is not native proof of the Free label.
+
+## I0 - approved immediate same-context lifetime evidence
+
+I0 gate: PASS (same-context immediate reread only).
+Operator reports two consecutive no-edit reads of the C01 fixture. Set B repeated every supplied field.
+The repeated values below transcribe that summary; this table is not raw Console output.
+
+| Field | Set A | Set B | Per-field outcome |
+| --- | --- | --- | --- |
+| project ID | 8023de71-f9c7-41fc-8fbf-fa1baebf613a | 8023de71-f9c7-41fc-8fbf-fa1baebf613a | STABLE_OBSERVED_AT_LEVEL |
+| timeline ID | c3ebf612-d464-4734-9fd1-0dfe815edee9 | c3ebf612-d464-4734-9fd1-0dfe815edee9 | STABLE_OBSERVED_AT_LEVEL |
+| placement ID | 85211282-1005-4112-9719-cd237febd1df | 85211282-1005-4112-9719-cd237febd1df | STABLE_OBSERVED_AT_LEVEL |
+| source ID | ad23d34e-1ef3-4d51-b835-b7f6674af9f2 | ad23d34e-1ef3-4d51-b835-b7f6674af9f2 | STABLE_OBSERVED_AT_LEVEL |
+| start | 86400 | 86400 | STABLE_OBSERVED_AT_LEVEL |
+| end | 87120 | 87120 | STABLE_OBSERVED_AT_LEVEL |
+| duration | 720 | 720 | STABLE_OBSERVED_AT_LEVEL |
+
+Highest observed/reviewed level is I0 only, scoped to these fields and same context.
+I1/I2/I3/I4: NOT OBSERVED. No SESSION_LOCAL_VERIFIED or PERSISTENT_VERIFIED promotion.
+No atomic snapshot/currentness, trustworthy state token or handle/pointer stability is established.
+I0 PASS does not authorize a next lifetime level; I1 is neither executed nor further designed here.
+
+## C02 attempt 1 - historical failure preserved
+
+C02 attempt 1: INCOMPLETE / fixture deviation preserved.
+During manual preparation, ALPHA produced an unexpected A1 audio placement.
+Operator stopped. No deletion, repair, trimming or retry-until-green was reported.
+This attempt remains append-only historical evidence; it is not replaced by attempt 2.
+No endpoint/adjacency result follows. Original attempt-1 timeline ID, placement IDs, exact command/raw
+transcript and capture time were not supplied and remain NOT SUPPLIED. Do not assign attempt-2 IDs to it.
+
+## C02 attempt 2 - separate approved bounded evidence
+
+C02 attempt 2 gate: PASS (bounded case only).
+
+A/B. Independent source/preparation evidence:
+- Project PF_FREE_C01_v1; timeline C02_ADJACENT_24_ATTEMPT2.
+- UI rate 24 fps; start timecode 01:00:00:00.
+- A: canonical:ASSET_VIDEO_ONLY:v1 / video_only_v1.mov;
+  SHA-256 51109edb40573bcf98c1373dae2e049c81da99db44186841779075624d650137;
+  independent visible source span 0000..0719 (720 source frames).
+- B: canonical:ASSET_ALPHA:v1 / alpha_v1.mov, video-only placement;
+  SHA-256 67910939447e396ef0ce17d79d4303d223f20ca61b81337b034dfa8121d4d323;
+  independent visible source span 0000..0719 (720 source frames).
+- Independent UI adjacency oracle: A visible 0719 -> exactly one frame forward -> B visible 0000.
+  Native endpoint equality is not used as its own oracle.
+
+C. Native context/inventory, including the additional V2 track:
+
+| Field | Reported value |
+| --- | --- |
+| Product / version | DaVinci Resolve / 21.1.1.10 |
+| Project ID | 8023de71-f9c7-41fc-8fbf-fa1baebf613a |
+| Timeline ID | b806fe92-67ac-493c-8c48-5514cae8dd97 |
+| Timeline start / end | 86400 / 87840 |
+| Video / audio / subtitle track count | 2 / 1 / 0 |
+| V1 collection | numeric 1 -> userdata; numeric 2 -> userdata; __flags = 4194304 |
+| V2 collection | __flags = 4194304 only; no numeric TimelineItem observed |
+| Audio track 1 collection | __flags = 4194304 only; no numeric audio placement observed |
+
+| Placement field | A | B |
+| --- | --- | --- |
+| Native ID | 61a533ed-55be-4cb9-88e4-54380c839878 | 45505566-5157-4a7b-8455-3fcadee6d2bc |
+| Name | video_only_v1.mov | alpha_v1.mov |
+| Start / end / duration | 86400 / 87120 / 720 | 87120 / 87840 / 720 |
+| Source native ID | ad23d34e-1ef3-4d51-b835-b7f6674af9f2 | b698a0ec-2685-43b8-a1df-d1311b04727e |
+
+A/B are operator-reported roles, not inferred from numeric collection keys. The supplied summary does
+not assign each numeric key to a role; do not invent that mapping. __flags remains uninterpreted.
+Metadata-only V2/A1 means no numeric item observed in these captures, not a universal completeness or
+empty-track API guarantee. The extra V2 track is retained as observed, not normalized away.
+C01 and C02 use different placement and timeline IDs; a shared source ID is not placement equivalence.
+
+D/E. Approved bounded finding:
+- A.end == B.start == 87120; each placement reports duration 720.
+- Timeline span delta = 1440; independent source oracles = 720 + 720.
+- Independent junction evidence confirms A0719 -> next frame -> B0000.
+- The correspondence hypothesis is strengthened for these fixtures only.
+- Coordinate status: CORRESPONDENCE_CANDIDATE. Endpoint convention: NOT_ESTABLISHED.
+- FrameRange construction: NOT AUTHORIZED. VERIFIED_EXACT is NOT claimed.
+
+The existing Chat Gate explicitly approved this bounded attempt with the additional metadata-only V2
+track noted. Recording that decision does not change the runbook's stop rules for future deviations.
+Attempt 1 stays INCOMPLETE; attempt 2 PASS does not retroactively repair it or authorize further retries.
+
+## Current gate, limitations and scope
+
+C01 PASS, I0 PASS, C02 attempt 1 INCOMPLETE, C02 attempt 2 PASS are separate reviewed results.
+Coordinates remain AVAILABLE_AMBIGUOUS at raw-read capability level with a CORRESPONDENCE_CANDIDATE
+hypothesis for these fixtures. Raw string IDs/counts do not establish lifetime or semantic correspondence.
+Global half-open parity, endpoint exclusivity, source/timeline identity and exact basis outside these
+fixtures are NOT established. Currentness remains fail-closed: missing proof -> BLOCKED_UNKNOWN;
+known snapshot/base mismatch -> STALE. Human Edit Wins and existing shared semantics remain unchanged.
+Workspace launcher remains INCONCLUSIVE. P2 NOT EXECUTED; no synthesized transcript or pointer identity.
+C03-C07 NOT AUTHORIZED; I1 not executed/designed further; no I2-I4 promotion.
+
+Changed files: docs/FREE_CONVERSATIONAL_READ_CAPABILITY_MAP.md;
+docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md; IMPLEMENTATION_STATUS.md;
+tests/test_free_f1_runtime_reconciliation.py (four deterministic evidence-document checks only).
+No dedicated evidence document required; originals and historical summaries remain in this report.
+Validation: four new documentation checks failed before the evidence append, then four passed.
+Full local pytest (Python 3.14.6): 1442 passed / 2 skipped in 19.17 seconds. Skips: Windows symlink
+privilege and opt-in intentional naive invariant failure. Ruff PASS; strict mypy PASS (33 files);
+diff whitespace check PASS. These tests do not execute Lua or requalify native observations.
+Python 3.11 CI will be checked on the pushed head and reported with the final commit/run reference.
+
+Safety: runtime execution by Codex NO; Lua probe changed NO; shared Core changed NO;
+Studio checkpoint changed NO; C03-C07 started NO; I1 executed NO;
+F2/F3/IPC/listener/mutation/persistence/parity/distribution NO. STOP after reconciliation report.

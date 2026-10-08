@@ -182,3 +182,30 @@ Freshness-required use stays BLOCKED_UNKNOWN; known snapshot/base mismatch stays
 Seven controlled coordinate cases and independent I0-I4 comparisons are specified, not executed.
 No fixture creation/repair, probe extension, new native calls or installer/distribution work.
 All conversational readiness statuses above remain unchanged. Wait for Chat Gate before runtime work.
+
+## Current reconciliation - approved C01 / C02 / I0 (2026-10-09)
+
+This entry supersedes earlier evidence-availability summaries for these specific fixtures; earlier P3
+observations remain historical. Full values, source hashes and approval links are retained in
+[the appended runtime reconciliation report](reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md#f1-runtime-evidence-reconciliation-report---c01--c02--i0).
+
+| Evidence scope | Gate | Native fact / approved bounded finding | Semantic limit |
+| --- | --- | --- | --- |
+| C01, PF_FREE_C01_v1 / Timeline 1 | PASS bounded case | Timeline and placement 86400..87120; duration 720; independent visible source 0000..0719 = 720 | CORRESPONDENCE_CANDIDATE; endpoint NOT_ESTABLISHED |
+| I0, same C01 context | PASS immediate reread | Project/timeline/placement/source IDs and start/end/duration identical in A/B | STABLE_OBSERVED_AT_LEVEL for seven fields at I0 only |
+| C02 attempt 1 | INCOMPLETE | Unexpected A1 audio placement; stopped without deletion/repair/trim | Historical failure preserved; no adjacency result |
+| C02 attempt 2, C02_ADJACENT_24_ATTEMPT2 | PASS bounded case | A 86400..87120; B 87120..87840; duration 720 each; independent A0719 -> next frame -> B0000 | Strengthened CORRESPONDENCE_CANDIDATE, not VERIFIED_EXACT |
+
+Native context: product DaVinci Resolve, version 21.1.1.10; product is not proof of edition.
+C01 track counts video=1/audio=1/subtitle=0. C02 attempt 2 video=2/audio=1/subtitle=0;
+V1 has numeric entries 1,2 plus __flags=4194304; V2 and A1 have __flags only and no numeric items observed.
+No collection completeness/ordering or __flags interpretation follows. Raw ID/name/count shapes remain
+AVAILABLE_TYPED only; coordinates and collection correspondence remain AVAILABLE_AMBIGUOUS.
+
+Endpoint convention NOT_ESTABLISHED; FrameRange construction NOT AUTHORIZED. No global half-open,
+source/timeline coordinate identity, stable handle or shared IdentityScope promotion. I1-I4 NOT_OBSERVED.
+Currentness/atomicity/state token remain unverified; existing fail-closed rules unchanged.
+P3 sources are operator summaries and linked Chat approvals, not complete command/raw transcripts.
+P2 reviewed probe NOT EXECUTED. No new capture or synthetic probe output. Workspace launcher INCONCLUSIVE.
+These fixture results do not resolve the missing editorial facts for the five intents above or grant
+mutation readiness. C03-C07 not authorized; no I1 work or F2/F3/IPC/mutation/persistence/parity/distribution.

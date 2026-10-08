@@ -744,3 +744,21 @@ Stop for Chat Gate; this document does not itself execute or qualify a runtime c
 Runbook validation: six static tests PASS; local Python 3.14.6 full pytest 1438 passed / 2 skipped;
 Ruff PASS; strict mypy PASS (33 Python files); diff whitespace check PASS. CI not run for uncommitted
 runbook changes. Lua probe SHA-256 and Studio checkpoint remain unchanged.
+
+## TASK-023 F1 Runtime Evidence Reconciliation - C01 / C02 / I0 (2026-10-09)
+
+Base e02d1dfb5a466594cabb2e4111288a3adad99088. Runbook Chat APPROVED; existing PR #50 runtime gate
+comments checked and linked in docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md.
+C01 bounded PASS; I0 same-context immediate reread PASS (seven supplied fields only);
+C02 attempt 1 INCOMPLETE due unexpected A1 audio placement, preserved without repair;
+C02 attempt 2 separate bounded PASS, including the observed metadata-only V2/A1 collections.
+Coordinate status CORRESPONDENCE_CANDIDATE; endpoint NOT_ESTABLISHED; FrameRange NOT AUTHORIZED.
+This supersedes earlier partial-I0/no-coordinate-candidate summaries only for these reviewed fixtures.
+P3 manual summaries are not complete raw transcripts. P2 reviewed probe still NOT EXECUTED.
+Missing capture timestamp/run ID/command evidence not synthesized; no extra evidence schema introduced.
+No I1 execution/design, C03-C07 authorization, shared identity promotion, native currentness or mutation claim.
+No Lua/Core/Studio checkpoint change. F2/F3/IPC/listener/mutation/persistence/parity/distribution HOLD.
+Four deterministic documentation checks protect attempt preservation, provenance and semantic limits.
+
+Reconciliation checks: 4 new documentation tests PASS; local Python 3.14.6 full regression
+1442 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files). Native execution remains absent.
