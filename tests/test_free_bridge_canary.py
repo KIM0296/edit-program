@@ -17,7 +17,7 @@ def test_free_canary_is_strictly_read_only_and_local_only():
         "GetStartFrame",
         "GetEndFrame",
     }
-    assert required_reads <= {token.split("(")[0] for token in required_reads}
+    assert all(token in text for token in required_reads)
 
     forbidden = (
         "SetCurrent",
