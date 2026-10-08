@@ -1,6 +1,8 @@
 -- TASK-023 Free Resolve read-only canary.
 -- No mutation, file IO, network IO, eval, dynamic code, or generic method dispatch.
 
+print("FREE_CANARY|BOOT|START")
+
 local function emit(key, value)
     local text = tostring(value)
     text = string.gsub(text, "[\r\n]", " ")
@@ -30,29 +32,36 @@ local function call(label, object, method)
     return value
 end
 
-local ok_root, resolve_or_error = pcall(function()
-    if app == nil or type(app.GetResolve) ~= "function" then
-        return nil
-    end
-    return app:GetResolve()
-end)
+local resolve_instance = nil
 
-if not ok_root then
-    emit("ROOT", "ERROR:" .. tostring(resolve_or_error))
-    return
+if resolve ~= nil then
+    resolve_instance = resolve
+    emit("ROOT_SOURCE", "GLOBAL_RESOLVE")
+elseif app ~= nil and type(app.GetResolve) == "function" then
+    local ok, value = pcall(function()
+        return app:GetResolve()
+    end)
+    if ok then
+        resolve_instance = value
+        emit("ROOT_SOURCE", "APP_GETRESOLVE")
+    else
+        emit("ROOT_SOURCE", "APP_GETRESOLVE_ERROR")
+        emit("ROOT_ERROR", tostring(value))
+    end
+else
+    emit("ROOT_SOURCE", "NONE")
 end
 
-local resolve = resolve_or_error
-if resolve == nil then
+if resolve_instance == nil then
     emit("ROOT", "NONE")
     return
 end
 
 emit("ROOT", "CONNECTED")
-call("PRODUCT", resolve, "GetProductName")
-call("VERSION_STRING", resolve, "GetVersionString")
+call("PRODUCT", resolve_instance, "GetProductName")
+call("VERSION_STRING", resolve_instance, "GetVersionString")
 
-local manager = call("PROJECT_MANAGER", resolve, "GetProjectManager")
+local manager = call("PROJECT_MANAGER", resolve_instance, "GetProjectManager")
 if manager == nil then
     return
 end
