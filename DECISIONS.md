@@ -945,6 +945,24 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-08
 
 Detailed contract: docs/RESOLVE_EDITION_TRANSPORT_SPLIT.md.
 
+## ADR-042 - Cross-Edition Semantic Parity Contract v1
+Status: USER-DIRECTED ARCHITECTURE BASELINE - 2026-10-08; repository Chat Gate review pending.
+
+Studio is the reference runtime and Free is the compatibility runtime of one shared editing product.
+Only transport/capability producers vary. Equal corresponding native facts yield equal typed semantic
+observations; equal snapshots/requests yield equal semantic IR; equal IR/evidence yield equal Safety
+verdicts. Preserve raw provenance and exact profile/currentness evidence separately. No identity or
+coordinate inference is permitted merely to pass parity.
+
+Pause, targets, FrameRange, relationships, ExpectedDiff, Safety, candidate authority, human approval,
+postflight and editability cannot fork. Proven unsupported Free capabilities remain UNSUPPORTED;
+unproven capabilities remain UNKNOWN. Free limitations cannot remove verified Studio capabilities.
+UI automation cannot fabricate native parity. Shared features require cross-edition parity tests;
+mock equality is not runtime qualification. No parity implementation or IPC is authorized by this note.
+
+Detailed contract: docs/CROSS_EDITION_SEMANTIC_PARITY_CONTRACT.md.
+Order: ADR-042 review -> Free canary F0.1 -> Free Tier-A -> snapshot parity -> reviewed transport.
+
 # Open Decisions
 
 

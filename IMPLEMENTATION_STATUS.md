@@ -632,3 +632,18 @@ Free track:
 - TASK-023 Free In-Process Bridge Feasibility authorized
 - first implementation is a read-only Lua canary only
 - no bridge listener, mutation, UI automation or TASK-021 work
+
+## TASK-023 F0.1 / ADR-042 — 2026-10-08
+
+Canary commit 3aff59cbddc4920b95665697bf7529cecd5c0f92 is pushed to PR #50's Free branch.
+First executable statement emits FREE_CANARY|BOOT|START; root priority is injected global resolve,
+then app:GetResolve(), then NONE. Repo and user Utility copy SHA-256 both:
+184bd4d6550c4703cd2db6e2eb6eaccc173515cf82343c676832158e0f587687.
+Local full regression: 1419 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files).
+New BOOT regression failed before the change and passed in the full run.
+
+Earlier two menu executions without output remain INCONCLUSIVE. Revised canary execution count is 0.
+Resolve was restarted; physical Escape stopped Computer Use before confirmed Console filters / execution.
+F0 remains HOLD; no ROOT result or filter-state proof exists for this revision.
+ADR-042 records the user-directed shared semantic parity baseline; repository Chat Gate pending.
+No Studio checkpoint change, Free-specific Core, parity implementation, IPC, persistence or mutation.
