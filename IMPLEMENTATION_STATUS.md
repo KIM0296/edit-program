@@ -664,3 +664,15 @@ ADR-043 recorded as user-directed baseline; ADR-041/042 approved. F0 in-process 
 Console evidence, Workspace launcher still INCONCLUSIVE. F1 read-only investigation authorized on base
 9558c78639f23e97d6c5399cf80eb83faf440d73. Specification: tasks/TASK_023_F1_READ_CAPABILITY_MAP.md.
 No native F1 output yet. No Free edition proof from product name alone. F2/F3/mutation not authorized.
+
+## TASK-023 F1 prepared read-only map — runtime HOLD
+
+ADR-043 conversational interface invariant recorded; shared Core unchanged.
+Spec-before-code: 792c265; first F1 probe: tools/free_bridge_probe/resolve_free_f1.lua.
+Map: docs/FREE_CONVERSATIONAL_READ_CAPABILITY_MAP.md (A-L and five representative intents).
+F0 root PASS is operator-reported Console evidence; menu launcher remains INCONCLUSIVE.
+No F1 native run/output yet. All F1 candidates UNKNOWN; five intents BLOCKED_UNKNOWN.
+New static tests 5 passed; Python 3.11 full regression 1424 passed / 2 skipped; Ruff PASS;
+strict mypy PASS (33 Python files, not Lua). No existing semantic test modification.
+Report: docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md.
+No mutation, IPC, persistence, UI automation, Core or Studio checkpoint change. F2/F3 not authorized.

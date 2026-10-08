@@ -20,3 +20,11 @@ Expected console prefix:
 `FREE_CANARY|`
 
 A missing root is evidence to preserve, not a reason to fall back to UI automation.
+
+## F1 read-only capability map
+
+`resolve_free_f1.lua` is a separate reviewed one-shot probe for the already-proven global `resolve`
+context. It is not installed or executed automatically. F0 canary remains unchanged. Follow
+`tasks/TASK_023_F1_READ_CAPABILITY_MAP.md` and retain complete FREE_F1 BOOT/OBS/END output.
+A missing menu output remains inconclusive. No new launcher, transport, file sink or UI fallback exists.
+Field meanings and current UNKNOWNs: `docs/FREE_CONVERSATIONAL_READ_CAPABILITY_MAP.md`.
