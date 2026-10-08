@@ -963,6 +963,21 @@ mock equality is not runtime qualification. No parity implementation or IPC is a
 Detailed contract: docs/CROSS_EDITION_SEMANTIC_PARITY_CONTRACT.md.
 Order: ADR-042 review -> Free canary F0.1 -> Free Tier-A -> snapshot parity -> reviewed transport.
 
+## ADR-043 - Conversational Editing Interface Invariant
+Status: USER-DIRECTED PRODUCT/ARCHITECTURE BASELINE - 2026-10-08.
+
+One conversational editing product and natural-language interface serves Studio and Free. Edition
+variation is limited to verified capability, transport, startup/connection UX and execution availability.
+No edition-specific Chat language, intent, Domain, IR, ExpectedDiff, Safety, Authority or Postflight
+semantics. Free can understand/plan/explain when sufficient shared-contract evidence exists, even if
+execution is unavailable; missing facts remain unknown/unsupported, never fabricated for UX.
+Free findings may strengthen shared contracts but cannot lower verified Studio capability. No UI
+fabrication of native/parity proof. Human Edit Wins, Preserve Editability, Resolve source of truth and
+semantic-IR-only LLM output remain mandatory. No shared Core implementation change.
+
+Full twelve-point contract: docs/CONVERSATIONAL_EDITING_INTERFACE_INVARIANT.md.
+Consistent with ADR-041/042; no known conflict. Runtime support requires separate evidence.
+
 # Open Decisions
 
 

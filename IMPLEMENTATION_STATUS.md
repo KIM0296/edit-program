@@ -657,3 +657,10 @@ No Studio checkpoint change, Free-specific Core, parity implementation, IPC, per
 - Free capability gaps remain explicit UNKNOWN/UNSUPPORTED and do not remove verified Studio capability.
 - Revised Free canary F0.1 remains runtime HOLD until BOOT/root output is observed.
 - No IPC, listener, mutation bridge or cross-edition parity runner is authorized by ADR-042 approval alone.
+
+## TASK-023 F1 — IN PROGRESS
+
+ADR-043 recorded as user-directed baseline; ADR-041/042 approved. F0 in-process root PASS per operator
+Console evidence, Workspace launcher still INCONCLUSIVE. F1 read-only investigation authorized on base
+9558c78639f23e97d6c5399cf80eb83faf440d73. Specification: tasks/TASK_023_F1_READ_CAPABILITY_MAP.md.
+No native F1 output yet. No Free edition proof from product name alone. F2/F3/mutation not authorized.
