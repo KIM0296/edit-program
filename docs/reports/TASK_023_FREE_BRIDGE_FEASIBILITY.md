@@ -649,3 +649,117 @@ Pushed-head Python 3.11 CI result will be reported with final commit/run referen
 No Resolve execution, fixture mutation, new native method, Lua change, Core/checkpoint change,
 C04-C07/I2-I4/F2/F3/IPC/listener/mutation/persistence/parity/distribution work.
 Stop for Chat Gate before any C03 operator execution. No current C03 observation/transcript/result exists.
+
+# F1 C03 RUNTIME EVIDENCE RECONCILIATION REPORT
+
+Base: 41ce10b3f21f1ed7c040ee2ba9f9bdf34b3012ba; Free branch / PR #50.
+C03 attempt 1 gate: PASS - bounded case only, as supplied by the operator/user in this reconciliation.
+This append supersedes earlier C03 not-executed evidence status, not historical protocol records.
+C01/C02/I0/I1 and failed C02 attempt 1 remain separate, unchanged historical entries.
+
+## Provenance / evidence availability
+
+P3 operator manual summary supplied in the current task; not agent-captured runtime data.
+[Approved C03 protocol and manual execution gate](https://github.com/KIM0296/edit-program/pull/50#issuecomment-6073801553).
+The referenced comment approves the protocol, not this completed result. No separate C03-result comment
+was present in the retrieved discussion; this result is recorded from the current user instruction.
+P2 reviewed probe: NOT EXECUTED. No synthetic probe lines or reconstructed complete Console transcript.
+Exact original command/return transcript and screenshots: NOT SUPPLIED with this request. The UI
+observations below are operator-reported evidence, not screenshots inspected by Codex. Preserve original
+screenshots/returned lines as separate P3/UI attachments if supplied later; do not invent file names,
+image metadata, timestamps, run IDs, method arguments or Lua numeric subtypes to fill missing evidence.
+The UI timecodes below are timeline positions, NOT wall-clock capture timestamps.
+
+## Fixture / independent source and UI oracle
+
+Project PF_FREE_C01_v1; timeline C03_GAP1_24_ATTEMPT1; UI rate 24 fps; start 01:00:00:00.
+A: canonical:ASSET_VIDEO_ONLY:v1 / video_only_v1.mov; full untrimmed placement confirmed by operator;
+visible source span 0000..0719. B: canonical:ASSET_ALPHA:v1 / alpha_v1.mov; video-only and full untrimmed
+placement confirmed by operator; visible source span 0000..0719. Each independent canonical source has
+720 frames at exact 24/1; UI rate and source contract remain separate evidence.
+Approved source hashes are those already recorded in the runbook/source receipts; this task does not
+claim a new binary hash verification or native source/time correspondence.
+Unexpected: NONE reported. Observed metadata-only V2/A1 are still retained below, not removed or hidden.
+
+| UI position | Independent reported observation | Actual reported timeline position |
+| --- | --- | --- |
+| U0 | A visible frame 0719 | 01:00:29:23 |
+| U1 | EMPTY_GAP | 01:00:30:00 |
+| U2 | B visible frame 0000 | 01:00:30:01 |
+
+U0 -> U1: exactly one timeline-frame step; playhead only moved; clip did not move.
+U1 -> U2: exactly one timeline-frame step; playhead only moved; clip did not move.
+At U1 the timeline showed no covering placement at the controlled junction. This independent UI oracle
+is retained separately from GetEnd/GetStart differences; black output, snapping and collection order
+are not substituted as proof. Full/untrimmed is the supplied fixture confirmation, not inferred from
+zero offsets, equal durations or endpoint arithmetic.
+
+## Native P3 observations (summary, not normalized transcript)
+
+| Field | Supplied value |
+| --- | --- |
+| Product | DaVinci Resolve |
+| Version | 21.1.1.10 |
+| Project ID | 8023de71-f9c7-41fc-8fbf-fa1baebf613a |
+| Timeline ID | 30c4875c-0c2c-4601-aba7-741c6e10f682 |
+| Timeline start / end | 86400 / 87841 |
+| Video / audio / subtitle track count | 2 / 1 / 0 |
+| V1 collection | numeric key 1 -> userdata; numeric key 2 -> userdata; __flags = 4194304 |
+| V2 collection | __flags = 4194304 only; no numeric TimelineItem observed |
+| Audio 1 collection | __flags = 4194304 only; no numeric audio placement observed |
+
+| Placement field | A | B |
+| --- | --- | --- |
+| Placement ID | cc44d760-69a9-4020-bdd2-803e4a2447d8 | e422c5e4-fb8b-4dfc-acc3-98e7d61ce0cc |
+| Name | video_only_v1.mov | alpha_v1.mov |
+| Start / end / duration | 86400 / 87120 / 720 | 87121 / 87841 / 720 |
+| Source native ID | ad23d34e-1ef3-4d51-b835-b7f6674af9f2 | b698a0ec-2685-43b8-a1df-d1311b04727e |
+
+Roles A/B are as supplied, not assigned from numeric collection ordering. No key-to-role mapping beyond
+the summary is invented. __flags is preserved without interpretation. Metadata-only collections mean
+no numeric item observed in these captures, not a universal empty-track/completeness guarantee.
+Placement and source identity remain separate; reused source IDs do not merge C02/C03 placements.
+
+## Bounded C02/C03 comparison - after the independent oracle
+
+| Case | Independent UI layout | A.end | B.start | Observed within-case difference | H1 prediction | H2 prediction |
+| --- | --- | --- | --- | --- | --- | --- |
+| C02 | zero gap | 87120 | 87120 | 0 | 0 | 1 |
+| C03 | one-frame gap | 87120 | 87121 | 1 | 1 | 2 |
+
+C02 comparison refers to the separately reviewed attempt 2, not incomplete attempt 1:
+[bounded C02 approval](https://github.com/KIM0296/edit-program/pull/50#issuecomment-6064002073).
+C03 timeline delta: 87841 - 86400 = 1441. Independent layout: 720 + 1 gap + 720 = 1441.
+Native differences describe supplied observations; they do not establish the gap oracle or build ranges.
+No subtraction across different timeline origins, endpoint repair, rounding, tolerance or rebase occurred.
+
+- H1: SUPPORTED by C02+C03 bounded evidence. Hypothesis: item start labels first included frame and item
+  end labels first excluded boundary, under the bounded comparable unit/basis conditions. Observed 0/1
+  discriminates the independent zero-gap/one-frame-gap layouts exactly within this evidence.
+- H2: CONTRADICTED for this bounded evidence. Last-included-frame interpretation predicts C02=1 and
+  C03=2 under its stated common-unit/basis assumptions; observed values are 0 and 1. No +/-1 correction
+  is applied to make H2 fit, and no universal statement about every getter/runtime/fixture follows.
+- H3: NOT globally eliminated. No differing-basis repair/rebase was required to explain these bounded
+  within-case observations; global source/timeline basis identity remains unverified. Do not promote
+  that absence of required repair into a proven universal common basis.
+
+## Gate / limits / stop
+
+Coordinate status: CORRESPONDENCE_CANDIDATE.
+Endpoint convention: NOT_ESTABLISHED globally.
+FrameRange construction: NOT AUTHORIZED.
+No VERIFIED_EXACT, global half-open parity, universal GetEnd exclusivity, source/timeline coordinate
+identity, C04-C07 coverage, mutation readiness or identity/currentness promotion. I0/I1 remain their
+separate bounded observations; this case supplies no further lifetime/currentness evidence.
+Workspace launcher remains INCONCLUSIVE. Missing currentness stays BLOCKED_UNKNOWN; known mismatch STALE.
+
+Changed files: docs/FREE_CONVERSATIONAL_READ_CAPABILITY_MAP.md;
+docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md; IMPLEMENTATION_STATUS.md;
+tests/test_free_f1_runtime_reconciliation.py (two new deterministic documentation checks).
+No new evidence schema or capture file; previous history is retained append-only.
+Validation: two new documentation checks failed before the append, then all eight evidence checks
+passed. Full local pytest (Python 3.14.6): 1448 passed / 2 skipped in 19.66 seconds (Windows symlink
+privilege and intentional opt-in naive invariant failure). Ruff PASS; strict mypy PASS (33 files);
+diff whitespace check PASS. Pushed-head Python 3.11 CI checked before final report.
+Safety: no Resolve/P2 execution by Codex, Lua change, shared Core or Studio checkpoint change;
+no C04-C07/I2-I4/F2/F3/IPC/listener/mutation/persistence/parity/distribution work. STOP for Chat Gate.

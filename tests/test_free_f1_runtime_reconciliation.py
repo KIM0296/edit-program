@@ -96,3 +96,42 @@ def test_i1_does_not_promote_scope_or_fabricate_capture():
     ):
         assert limit in text
     assert "FREE_F1|OBS|" not in text
+
+
+def c03_evidence():
+    return REPORT.read_text(encoding="utf-8").split(
+        "# F1 C03 RUNTIME EVIDENCE RECONCILIATION REPORT", 1
+    )[1]
+
+
+def test_c03_retains_independent_three_position_oracle_and_native_facts():
+    text = c03_evidence()
+    for value in (
+        "U0 | A visible frame 0719 | 01:00:29:23",
+        "U1 | EMPTY_GAP | 01:00:30:00",
+        "U2 | B visible frame 0000 | 01:00:30:01",
+        "30c4875c-0c2c-4601-aba7-741c6e10f682",
+        "cc44d760-69a9-4020-bdd2-803e4a2447d8",
+        "e422c5e4-fb8b-4dfc-acc3-98e7d61ce0cc",
+        "86400 / 87120 / 720", "87121 / 87841 / 720",
+        "__flags = 4194304", "720 + 1 gap + 720 = 1441",
+    ):
+        assert value in text
+    assert "playhead only moved; clip did not move" in text
+    assert "screenshots: NOT SUPPLIED" in text
+
+
+def test_c03_bounded_discriminator_preserves_semantic_limits():
+    text = c03_evidence()
+    for value in (
+        "C03 attempt 1 gate: PASS - bounded case only",
+        "C02 | zero gap | 87120 | 87120 | 0 | 0 | 1",
+        "C03 | one-frame gap | 87120 | 87121 | 1 | 1 | 2",
+        "H1: SUPPORTED", "H2: CONTRADICTED", "H3: NOT globally eliminated",
+        "Coordinate status: CORRESPONDENCE_CANDIDATE",
+        "Endpoint convention: NOT_ESTABLISHED globally",
+        "FrameRange construction: NOT AUTHORIZED",
+        "P2 reviewed probe: NOT EXECUTED",
+    ):
+        assert value in text
+    assert "FREE_F1|OBS|" not in text

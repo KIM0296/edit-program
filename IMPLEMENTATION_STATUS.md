@@ -795,3 +795,20 @@ No C04-C07/I2-I4/F2/F3/IPC/mutation/persistence/parity/distribution work. Stop f
 
 C03 protocol validation: runbook tests 8 PASS; local Python 3.14.6 full regression 1446 passed / 2 skipped;
 Ruff PASS; strict mypy PASS (33 files); diff whitespace PASS. Lua hash and Studio checkpoint unchanged.
+
+## TASK-023 F1 C03 runtime evidence reconciliation
+
+Base 41ce10b3f21f1ed7c040ee2ba9f9bdf34b3012ba. Current user supplies C03 attempt 1 bounded PASS.
+Independent UI oracle retained separately: A0719 at 01:00:29:23 -> gap at 01:00:30:00 -> B0000 at
+01:00:30:01, two one-frame playhead-only steps. Native within-case difference C02=0 / C03=1;
+C03 timeline delta=1441 matches independent 720+1+720 layout. H1 supported / H2 contradicted bounded;
+H3 not globally eliminated. Coordinate CORRESPONDENCE_CANDIDATE; global endpoint NOT_ESTABLISHED;
+FrameRange NOT AUTHORIZED. No identity/currentness promotion or expanded scope.
+P3 summary, not a complete raw capture; missing screenshots/transcript metadata not fabricated.
+P2 still NOT EXECUTED. Prior C01/C02/I0/I1 and C02 failed attempt preserved as historical entries.
+Three docs plus two new checks in existing evidence test file only; no Lua/Core/checkpoint changes.
+No Resolve execution by Codex; C04-C07/I2-I4/F2/F3/IPC/mutation/persistence/parity/distribution HOLD.
+
+C03 reconciliation checks: eight evidence tests PASS; full local Python 3.14.6 regression
+1448 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files); diff whitespace PASS.
+Lua probe hash and Studio checkpoint remain unchanged. Pushed-head CI checked before final report.

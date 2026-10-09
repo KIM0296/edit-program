@@ -227,3 +227,25 @@ state token or handle stability proof. Raw capability classes and conversational
 Coordinate CORRESPONDENCE_CANDIDATE; endpoint NOT_ESTABLISHED; FrameRange construction NOT_AUTHORIZED.
 P2 probe still NOT_EXECUTED; P3 summary is not a complete transcript. No new Resolve execution or reads.
 C03-C07/F2/F3/IPC/mutation/persistence/parity/distribution remain out of scope; stop for Chat Gate.
+
+## Current C03 attempt 1 reconciliation - bounded PASS
+
+Current operator supplies C03_GAP1_24_ATTEMPT1 bounded PASS. Full values and protocol references are
+preserved in [the appended C03 report](reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md#f1-c03-runtime-evidence-reconciliation-report).
+Independent UI positions: U0 A0719 at 01:00:29:23; U1 EMPTY_GAP at 01:00:30:00 with no covering
+placement; U2 B0000 at 01:00:30:01. Each step moved only the playhead by one timeline frame.
+A/B full untrimmed and B video-only are operator confirmations, not native arithmetic inferences.
+
+Native A 86400/87120/720; B 87121/87841/720. C02 zero-gap difference=0; C03 difference=1.
+Timeline delta=1441 agrees with independent 720+1+720 layout. H1 SUPPORTED and H2 CONTRADICTED only
+for the bounded comparable evidence. H3 not globally eliminated; no differing-basis repair/rebase was
+required, but global source/timeline coordinate identity remains unverified.
+
+Coordinate CORRESPONDENCE_CANDIDATE; endpoint NOT_ESTABLISHED globally; FrameRange NOT_AUTHORIZED.
+No VERIFIED_EXACT, universal GetEnd exclusivity, identity/currentness promotion or mutation readiness.
+Track counts 2/1/0; V1 keys 1,2 + __flags=4194304; V2/A1 metadata-only, no numeric items observed.
+No __flags interpretation, collection ordering or universal empty-track completeness inferred.
+P3 summary remains distinct from missing complete raw transcript/screenshots; no metadata invented.
+P2 NOT_EXECUTED; Lua unchanged. This updates earlier C03-not-executed historical status only.
+Conversational readiness and missing currentness remain conservative. C04-C07/I2-I4 and all transport,
+mutation/persistence/parity/distribution work remain NOT AUTHORIZED/HOLD. Stop for Chat Gate.
