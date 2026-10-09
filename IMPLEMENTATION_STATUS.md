@@ -778,3 +778,20 @@ No Lua/Core/checkpoint change; no C03-C07/I2-I4/F2/F3/IPC/mutation/persistence/p
 
 I1 reconciliation validation: six evidence tests PASS; local Python 3.14.6 full pytest
 1444 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files). Final-head Python 3.11 CI checked after push.
+
+## TASK-023 F1 C03 one-frame gap protocol - prepared for Chat Gate
+
+Base 5ad09de305b9dfb690fc838dbcbfc758d6fcea4c. Only C03 newly operationalized in the runtime runbook;
+this is protocol preparation, not C03 execution/qualification. C04-C07 and I2-I4 remain deferred.
+A=VIDEO_ONLY v1, B=ALPHA v1 video only, each independent 720-frame source at exact 24/1.
+UI oracle requires three individually recorded positions: A0719 -> empty/gap -> B0000, each one frame
+apart. Native getter differences, snap or collection ordering cannot establish the gap.
+H1/H2/common-basis alternatives and H3 unresolved-basis alternative recorded without preselection or
+repair. C02 zero-gap comparison is conditional on adequate evidence, not silent cross-timeline rebase.
+PASS is bounded only; endpoint NOT_ESTABLISHED, coordinate CORRESPONDENCE_CANDIDATE at most,
+FrameRange NOT AUTHORIZED. No Lua/native-method/Core/checkpoint change or runtime action.
+Runbook static coverage expanded to C03 with two new tests; remaining scope constraints unchanged.
+No C04-C07/I2-I4/F2/F3/IPC/mutation/persistence/parity/distribution work. Stop for Chat Gate.
+
+C03 protocol validation: runbook tests 8 PASS; local Python 3.14.6 full regression 1446 passed / 2 skipped;
+Ruff PASS; strict mypy PASS (33 files); diff whitespace PASS. Lua hash and Studio checkpoint unchanged.

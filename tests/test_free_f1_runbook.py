@@ -20,8 +20,8 @@ def test_runbook_has_no_preset_result_and_requires_independent_oracle():
 
 def test_bounded_cases_and_no_runtime_authorization():
     c = schema()
-    assert c["operational_coordinate_cases"] == ["C01", "C02"]
-    assert c["planned_coordinate_cases"] == ["C03", "C04", "C05", "C06", "C07"]
+    assert c["operational_coordinate_cases"] == ["C01", "C02", "C03"]
+    assert c["planned_coordinate_cases"] == ["C04", "C05", "C06", "C07"]
     assert c["operational_identity_levels"] == ["I0", "I1"]
     assert c["future_not_authorized_identity_levels"] == ["I2", "I3", "I4"]
     assert c["execute_in_this_task"] is False
@@ -71,7 +71,7 @@ def test_case_sections_and_package_contract():
         "Forbidden conclusions", "PASS / CONFLICT / UNKNOWN / INCOMPLETE conditions",
         "Cleanup / stop point",
     }
-    for case in ("C01", "C02", "I0", "I1"):
+    for case in ("C01", "C02", "C03", "I0", "I1"):
         section = text.split(f"## {case} ", 1)[1].split("\n## ", 1)[0]
         assert all(f"**{heading}:**" in section for heading in required)
     index = json.loads(Path(
@@ -90,3 +90,32 @@ def test_no_scope_expansion():
     ]
     assert c["shared_core_changes"] == []
     assert c["lua_probe_changes"] == []
+
+
+def test_c03_oracle_has_three_independent_ui_positions():
+    c = schema()["c03_protocol"]
+    assert c["source_roles"] == {
+        "A": "canonical:ASSET_VIDEO_ONLY:v1", "B": "canonical:ASSET_ALPHA:v1"
+    }
+    assert c["ui_position_sequence"] == ["A0719", "EMPTY_GAP", "B0000"]
+    assert c["individual_ui_positions_required"] == 3
+    assert c["native_getters_are_gap_oracle"] is False
+    assert c["snap_or_collection_order_is_oracle"] is False
+    assert c["comparison_requires_independent_gap_evidence"] is True
+    text = RUNBOOK.read_text(encoding="utf-8-sig")
+    section = text.split("## C03 ", 1)[1].split("\n## ", 1)[0]
+    for position in ("U0", "U1", "U2"):
+        assert f"| {position} |" in section
+
+
+def test_c03_competing_hypotheses_are_not_endpoint_repairs():
+    c = schema()["c03_protocol"]
+    assert c["hypotheses"] == ["H1", "H2", "H3"]
+    assert c["selected_hypothesis"] is None
+    assert c["gate_result"] is None
+    assert c["pass_scope"] == "BOUNDED_CASE_ONLY"
+    assert c["endpoint_status"] == "NOT_ESTABLISHED"
+    assert c["frame_range_authorized"] is False
+    assert c["native_methods_added"] == []
+    assert c["compare_to_c02_without_rebase"] is True
+    assert c["codex_executes_case"] is False

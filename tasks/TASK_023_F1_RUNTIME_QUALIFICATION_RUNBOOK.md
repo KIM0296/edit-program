@@ -1,10 +1,11 @@
 # TASK-023 F1 Runtime Qualification Runbook
 
-Status: DRAFT FOR CHAT GATE; no runtime results. This task writes a protocol, executes nothing.
+Status: C01/C02/I0/I1 runbook previously APPROVED; C03 protocol addition DRAFT FOR CHAT GATE.
+This revision writes a protocol only; it executes nothing and records no C03 result.
 Base: 75cf16717666c5ed725c92b64ce32695aa21356e, PR #50, feat/free-in-resolve-bridge-feasibility.
 Authoritative design: [Phase 1](TASK_023_F1_SEMANTIC_QUALIFICATION_PHASE_1.md), now Chat APPROVED.
 ADR-041/042/043, shared ADR-008/015/016/021/022 and OPEN-001/006/008/012 remain unchanged.
-Only C01/C02 and I0/I1 are operationalized for later reviewed operator execution. Each case requires
+C01/C02/C03 and I0/I1 are operationalized for later reviewed operator execution. Each case requires
 Chat approval of its bounded case packet before action. This document grants no blanket execution,
 fixture automation, probe extension, mutation, transport or distribution permission.
 
@@ -230,6 +231,146 @@ stay separate; no PASS despite blocking evidence or missing declared coverage.
 
 **Cleanup / stop point:** Preserve fixture and all evidence; stop for Chat. No automatic progression C03.
 
+## C03 - One independently verified timeline-frame gap
+
+Protocol revision base: 5ad09de305b9dfb690fc838dbcbfc758d6fcea4c. Only C03 is newly operationalized.
+C01/C02 bounded PASS and I0/I1 observations remain as previously reviewed; I1's 9h30m interval grants
+no further lifetime claim. Current coordinate status CORRESPONDENCE_CANDIDATE, endpoint NOT_ESTABLISHED,
+FrameRange construction NOT AUTHORIZED. C03 runtime NOT EXECUTED by this task; result unfilled.
+
+**Purpose:** Determine whether exact native observations distinguish the independently verified C02
+zero-gap from an independently verified C03 one-frame gap, without selecting an endpoint convention
+in advance. The two 720-frame sources do not themselves prove a native gap or native placement length.
+
+**Prerequisites:** C03 case packet reviewed by Chat; disposable preparation context; common canonical
+checklist satisfied; A/B independently bound; exact timeline rate/base evidence and preparation receipt.
+C02 attempt 2 comparison evidence and its limitations must be linked, not reconstructed as a transcript.
+No old C02 timeline is repaired or reused without provenance. Missing required oracle -> HOLD.
+
+**Independent oracle:** A=canonical:ASSET_VIDEO_ONLY:v1 and B=canonical:ASSET_ALPHA:v1 video only.
+Each source has 720 frames at exact 24/1. Use the common source hashes; confirm byte identity and visible
+0000..0719 spans independently. The gap oracle is a native UI observation sequence, not a native getter,
+endpoint subtraction, snap behavior, array ordering or a calculated FrameRange.
+
+At the junction, the operator must record THREE distinct consecutive timeline positions:
+
+| UI position label | Required observation (not a pre-filled result) | Evidence to retain |
+| --- | --- | --- |
+| U0 | A last visible source frame 0719 | Actual timeline timecode/frame label, A role receipt, source counter and timeline-view evidence |
+| U1 | Exactly one manual timeline-frame step from U0: EMPTY_GAP | Actual position label and visible absence of any covering placement/layer; viewer state and timeline gap |
+| U2 | Exactly one manual timeline-frame step from U1: B first visible source frame 0000 | Actual position label, B role receipt, source counter and timeline-view evidence |
+
+UI labels U0/U1/U2 are evidence labels, not native coordinates. Actual displayed labels and observation
+references are unfilled until capture. Preserve all three positions separately, not just a sentence that
+there was a gap. Record each single-frame step action and whether the timeline viewer had focus.
+Black output alone is insufficient (it could be black media, a hidden/disabled layer or display state).
+The U1 receipt must independently show an empty interval on the controlled track and no other placement
+covering that position. A held viewer frame, unclear focus, fractional scrub, hidden structure, unexpected
+layer or inability to inspect the UI position means UNKNOWN/INCOMPLETE. Do not infer blankness from API.
+This is manual operator observation, never UI automation or native capability fabrication.
+
+**Exact fixture preparation instructions:** For a later separately reviewed operator preparation only:
+1. Prepare a fresh disposable C03 timeline, e.g. C03_GAP1_24_ATTEMPT1; name is descriptive, not authority.
+   Leave C01/C02 and every prior failed attempt unchanged. Record actual project/timeline identity later.
+2. Before placements, select intended timeline rate 24/1 and start label 01:00:00:00 via native UI;
+   preserve actual setting/rate evidence, not a guessed native numeric origin. If exact rate/base is
+   unproven, stop; no automatic 86400 assumption or timecode-to-frame conversion.
+3. Import/select the hash-verified A and B sources with separate pool/source receipts. Place A once on
+   V1, full intended 0000..0719 visible span. Place B video only once on the same controlled track,
+   intended full 0000..0719 span. No ALPHA audio, retime, effect, transition or covering layer intended.
+4. Establish the intended layout manually before the capture fence: use native UI single-frame
+   timeline navigation and a manual whole-placement B positioning action, without trimming either
+   boundary, to leave exactly one timeline frame between the visible A and B spans. Record the exact
+   UI action used on this installation. Do not prescribe an unverified keyboard shortcut or automate it.
+   An intended one-frame move or snap is NOT the oracle. If that operation cannot be performed or
+   documented unambiguously, HOLD; do not use API mutation, workaround or a guessed position.
+5. Independently verify A and B visible spans and perform U0 -> U1 -> U2 as above. Record timeline labels,
+   screenshots/observation refs and both one-frame actions, before reading endpoints under test.
+   If audio, gap-length error, hidden layer, trim or another deviation is found, preserve and STOP.
+   Do not move/trim/delete anything to turn that failed attempt into a clean attempt.
+6. Freeze preparation. Link role A/B to explicit concrete placement/source evidence using the common
+   approved read sheet and reviewed preparation receipts. Do not infer A/B from numeric keys, name,
+   source ID alone, first-match or current position. Ambiguous correspondence blocks comparison.
+
+Fixture preparation receipt fields: case/attempt evidence label; actual operator and preparation times
+when supplied; project/timeline context; source asset IDs/hashes and native source bindings; exact
+rate/base evidence; A/B intended spans and preparation actions; independently checked visible spans;
+U0/U1/U2 records; track/layer inspection; deviations; capture-fence declaration and role-binding refs.
+None is pre-filled as an observation. Receipt source expectations remain separate from observed state.
+
+**Allowed operator actions:** Only later Chat-approved manual preparation and independent UI oracle
+checks before the fence, then the existing bounded read sheet. Preserve observations without edits.
+No playback/scrub/selection retargeting or UI preparation during native capture.
+
+**Forbidden operator actions:** Resolve execution by Codex; preparation/mutation scripts; probe extension;
+endpoint-driven gap adjustment; +/-1 repair; rounding, tolerance, clamping, rebase or endpoint normalization;
+using snap/order as oracle; deleting unexpected audio/layers; retry-until-green; advancing to other cases.
+
+**Exact native reads:** Existing common sheet only: r:GetProductName(), r:GetVersionString(),
+r:GetProjectManager(), pm:GetCurrentProject(), p:GetUniqueId(), p:GetName(), p:GetCurrentTimeline(),
+t:GetUniqueId(), t:GetName(), t:GetStartFrame(), t:GetEndFrame(); t:GetTrackCount for the existing video,
+audio, subtitle arguments; t:GetItemListInTrack for each reported track/type/index using the already
+approved enumeration method. No new native method or Lua implementation is added.
+For each independently bound A/B: item:GetUniqueId(), item:GetName(), item:GetStart(false),
+item:GetEnd(false), item:GetDuration(false), item:GetMediaPoolItem(), mpi:GetUniqueId().
+Preserve exact arguments/track indices, native raw types and all mixed-key metadata. Enumerating all
+reported tracks documents unexpected structure; it is not a completeness or participant-selection proof.
+No true-argument extension, source-coordinate getter, settings dump or other read is authorized here.
+
+**Raw output retention requirements:** Keep complete exact P3 commands/returned lines/errors and original
+UI/source/preparation evidence, not a normalized transcript. P2 remains separate, requires exact reviewed
+probe commit/hash and BOOT -> OBS -> END; Workspace launcher still INCONCLUSIVE with no bypass.
+A partial transcript, failed binding or failed fixture is retained. No source hash or prior PASS fills a
+missing C03 return. Opaque handles remain typed OPAQUE, never pointer identity. No invented dates/run IDs.
+
+**Expected evidence schema:** Existing append-only record format with case_id C03, no new architecture
+schema. Link the fixture receipt/U0/U1/U2 via fixture_oracle_ref/preparation_receipt_ref/transcript_ref;
+record three separate UI observation records with their actual labels/raw observations in the existing
+stage/raw_value fields (native_method unfilled for a UI-only record). UI evidence is not a native call.
+Then separate native observations, hypothesis/comparison records and gate decision. Clearly mark planned
+expectation versus observed value. Initial semantic status NOT_ESTABLISHED until evidence supports a
+candidate; no native number is converted into FrameRange. Gate result remains null until review.
+
+**Allowed conclusions:** Only AFTER U0/U1/U2 independently establishes the one-frame gap and bindings/
+rate/base are adequate, compare these explicitly stated hypotheses without preselecting H1:
+
+| Hypothesis | Stated interpretation to test, not conversion rule | Conditional prediction / discriminator |
+| --- | --- | --- |
+| H1 | Item start labels first included frame; item end labels first excluded boundary in a common unit/basis | C02 raw B.start minus A.end would be 0 and C03 would be 1; known visible lengths and GetDuration must also be consistent |
+| H2 | Item start labels first included frame; item end labels last included frame in a common unit/basis | C02 raw B.start minus A.end would be 1 and C03 would be 2; compare lengths/duration independently, never add/subtract a frame to fix returned values |
+| H3 | Getter endpoint or coordinate bases are not one unified item/timeline convention | Preserve a separate alternative; do not fit offsets to force agreement. If basis cannot be specified from independent evidence, comparison remains UNKNOWN/underdetermined |
+
+These predictions are hypotheses, NOT gap oracles or repaired endpoints. Timeline.GetEndFrame has no
+inherited item-end interpretation; test timeline extent separately against independent A/gap/B layout.
+For each H record C02 evidence ref, C03 raw observations, independently observed gap (0 vs 1), whether
+all stated predictions hold and counterevidence. Do not subtract absolute coordinates between different
+timelines or silently align origins. Compare only within-case raw differences and qualified comparable
+conditions; rate/base/placement mismatches stay explicit. Source/timeline identity is not assumed.
+Ask: do native observations distinguish the independent zero-gap and one-frame-gap EXACTLY, and is one
+explicit hypothesis consistent with all bounded evidence? If several interpretations survive, retain
+ambiguity; no majority/ranking or automatic H1 selection. Historical C02 summaries are summaries; missing
+comparison evidence remains missing. Current C01/C02 data do not pre-fill a C03 expected observation.
+
+**Forbidden conclusions:** C03 PASS is not VERIFIED_EXACT globally, global half-open parity, allowed
+FrameRange construction, source/timeline coordinate identity, C04-C07 coverage, identity promotion or
+mutation readiness. Do not turn a hypothesis-specific arithmetic prediction into endpoint normalization.
+
+**PASS / CONFLICT / UNKNOWN / INCOMPLETE conditions:**
+- PASS: complete bounded observations agree with one explicitly stated hypothesis AND the independent
+  one-frame-gap oracle, with comparable C02 evidence and no unresolved blocking ambiguity. Bounded only;
+  coordinate conclusion at most CORRESPONDENCE_CANDIDATE, endpoint convention still NOT_ESTABLISHED.
+- CONFLICT: comparable observations contradict a declared hypothesis or independent oracle; retain the
+  exact failed prediction and all evidence. Do not repair/retry to remove it. Rejected competing hypotheses
+  remain recorded even if another hypothesis fits; case gate must explain its scoped conclusion.
+- UNKNOWN: gap, empty UI position, focus, coordinate basis/rate, identity correspondence or discrimination
+  among surviving hypotheses cannot be established. Black output or getter equality alone is insufficient.
+- INCOMPLETE: any U0/U1/U2 record, command/output, source/preparation receipt, required read or context is
+  missing/truncated, or fixture deviation stops capture. Preserve all findings; never force PASS.
+
+**Cleanup / stop point:** Preserve unchanged fixture and all attempts/observations; stop for Chat Gate.
+No automatic deletion, undo, repair, further case or lifetime experiment. C04-C07, I2-I4, F2/F3, IPC,
+persistence, mutation automation, parity runner and distribution remain NOT AUTHORIZED/HOLD.
+
 ## I0 — Immediate reread in unchanged context
 
 **Purpose:** Measure same-context immediate equality field by field without identity/currentness promotion.
@@ -320,7 +461,6 @@ The following rows are case packets to be completed at a later Chat review, not 
 
 | Case ID | Purpose | Independent oracle / prerequisite | Exact preparation and native reads |
 | --- | --- | --- | --- |
-| C03 | One-frame gap | Independently verified gap, exact rates/base and source binding | NOT SPECIFIED FOR EXECUTION; future review |
 | C04 | Naturally permitted one-frame overlap | Independently verified overlap/track layout; no forced transition | NOT SPECIFIED FOR EXECUTION; conditional availability |
 | C05 | Trimmed placement | Independent visible/source span and trim receipt | NOT SPECIFIED FOR EXECUTION |
 | C06 | Different timeline start/base | Independent layouts and base/rate evidence | NOT SPECIFIED FOR EXECUTION |
@@ -369,8 +509,8 @@ The machine-checkable design below is a schema/template, not an executed record 
 {
   "schema_version": "f1-runtime-runbook-v1",
   "package_digest": "17b5b007df4f328a414505e68b395bab4f466b72a207e93a4f006595cbc375de",
-  "operational_coordinate_cases": ["C01", "C02"],
-  "planned_coordinate_cases": ["C03", "C04", "C05", "C06", "C07"],
+  "operational_coordinate_cases": ["C01", "C02", "C03"],
+  "planned_coordinate_cases": ["C04", "C05", "C06", "C07"],
   "operational_identity_levels": ["I0", "I1"],
   "future_not_authorized_identity_levels": ["I2", "I3", "I4"],
   "execute_in_this_task": false,
@@ -407,6 +547,34 @@ The machine-checkable design below is a schema/template, not an executed record 
     "comparison_record_refs": [], "per_field_identity_outcome": null,
     "elapsed_time_evidence": null, "activity_log_ref": null, "findings": [],
     "gate_result": null, "gate_scope": null, "supersedes_record_id": null, "correction_reason": null
+  },
+  "c03_protocol": {
+    "source_roles": {
+      "A": "canonical:ASSET_VIDEO_ONLY:v1",
+      "B": "canonical:ASSET_ALPHA:v1"
+    },
+    "ui_position_sequence": [
+      "A0719",
+      "EMPTY_GAP",
+      "B0000"
+    ],
+    "individual_ui_positions_required": 3,
+    "native_getters_are_gap_oracle": false,
+    "snap_or_collection_order_is_oracle": false,
+    "comparison_requires_independent_gap_evidence": true,
+    "hypotheses": [
+      "H1",
+      "H2",
+      "H3"
+    ],
+    "selected_hypothesis": null,
+    "gate_result": null,
+    "pass_scope": "BOUNDED_CASE_ONLY",
+    "endpoint_status": "NOT_ESTABLISHED",
+    "frame_range_authorized": false,
+    "native_methods_added": [],
+    "compare_to_c02_without_rebase": true,
+    "codex_executes_case": false
   }
 }
 ```
@@ -415,7 +583,7 @@ No aggregate PASS masks a conflict, missing oracle, failed read or unknown corre
 findings; final case result and reason must describe blocking evidence. A conflicted hypothesis remains
 CONFLICT; incomplete collection is not made complete by dropping entries. Gate review may request a
 new separately authorized case, never erase/relabel an old run. Full qualification is not achieved by
-completing these first two coordinate cases or two lifetime levels.
+completing these bounded coordinate cases or two lifetime levels.
 
 ## Stop / submission checklist
 

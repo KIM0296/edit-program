@@ -599,3 +599,53 @@ symlink privilege test and opt-in intentional naive invariant failure. Ruff PASS
 (33 files); diff whitespace check PASS. Python 3.11 CI is checked after push on the final head.
 Lua probe, shared Core and Studio checkpoint unchanged. No C03-C07/I2-I4, F2/F3, IPC/listener,
 mutation, persistence, parity runner or distribution work. STOP for Chat Gate after reconciliation.
+
+# F1 C03 ONE-FRAME GAP QUALIFICATION PROTOCOL REPORT
+
+Base: 5ad09de305b9dfb690fc838dbcbfc758d6fcea4c; PR #50, Free feasibility branch.
+User authorizes operationalizing C03 protocol only. This supersedes earlier C03-deferred design status,
+not its absence of runtime evidence. C03 has NOT been executed or passed by this task.
+
+## Protocol
+
+Updated tasks/TASK_023_F1_RUNTIME_QUALIFICATION_RUNBOOK.md with a complete C03 case packet:
+independent source/preparation oracle, exact manual preparation receipt, three-position UI gap procedure,
+allowed/forbidden actions, existing native method read sheet, raw evidence requirements, hypothesis
+comparison, bounded PASS/CONFLICT/UNKNOWN/INCOMPLETE conditions and cleanup/stop.
+
+A uses canonical:ASSET_VIDEO_ONLY:v1; B canonical:ASSET_ALPHA:v1 video only. Each source has 720 frames
+at exact 24/1; source facts are not presumed native placement facts. Independently retain U0=A0719,
+U1=empty gap, U2=B0000 with actual timeline labels and two individual one-frame UI steps. Black viewer,
+snapping, collection ordering, GetEnd/GetStart or endpoint subtraction alone are not gap proof.
+
+H1 exclusive-end and H2 last-included-end interpretations make different conditional predictions for
+C02 zero-gap vs C03 one-frame gap; H3 preserves unresolved/differing coordinate basis. No hypothesis
+is selected before evidence. These are comparison hypotheses, not +/-1 normalization or repair rules.
+All alternatives, missing facts and counterevidence remain visible. No rounding/tolerance/rebase.
+
+C03 PASS means complete bounded evidence agrees with one stated hypothesis and the independent gap
+oracle only. No VERIFIED_EXACT globally, FrameRange construction, C04-C07 coverage or source/timeline
+coordinate identity. Current approved coordinate status CORRESPONDENCE_CANDIDATE and endpoint
+NOT_ESTABLISHED remain unchanged. I0/I1 observations grant no additional lifetime/identity promotion.
+
+## Exact changed files
+
+- tasks/TASK_023_F1_RUNTIME_QUALIFICATION_RUNBOOK.md
+- tests/test_free_f1_runbook.py
+- IMPLEMENTATION_STATUS.md
+- docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md
+
+Existing exact-scope test expectations now include only the explicitly authorized C03 addition;
+C04-C07 remain excluded. Two new deterministic tests check three-position oracle and nonselected
+competing hypotheses. No shared semantic tests changed; no production code or Lua extension.
+
+## Validation / stop
+
+Red-first: four runbook checks failed (two scope/section checks, two new tests), four passed before
+protocol update; updated suite eight passed. Ruff PASS; strict mypy PASS (33 Python files).
+Full local regression (Python 3.14.6): 1446 passed / 2 skipped in 15.48 seconds. Skips: Windows
+symlink privilege and opt-in intentional naive invariant failure. Diff whitespace check PASS.
+Pushed-head Python 3.11 CI result will be reported with final commit/run reference.
+No Resolve execution, fixture mutation, new native method, Lua change, Core/checkpoint change,
+C04-C07/I2-I4/F2/F3/IPC/listener/mutation/persistence/parity/distribution work.
+Stop for Chat Gate before any C03 operator execution. No current C03 observation/transcript/result exists.
