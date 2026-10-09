@@ -616,3 +616,199 @@ Media sealed locally outside Git; no release/publication. Chat Gate APPROVED on 
 OPEN-021 is RESOLVED FOR FIRST PACKAGE GENERATION; OPEN-020 unchanged. No Resolve validation.
 Report: docs/reports/TASK_022_COMPLETION.md.
 TASK-020/021 not started.
+
+
+## Resolve edition split — 2026-10-08
+
+Studio / Professional track:
+- preserved at `checkpoint/studio-task020-phase-a-v1`
+- TASK-020 Phase A Chat APPROVED
+- Phase B HOLD
+- PR #49 remains Draft/unmerged
+
+Free track:
+- branch `feat/free-in-resolve-bridge-feasibility`
+- ADR-041 accepted
+- TASK-023 Free In-Process Bridge Feasibility authorized
+- first implementation is a read-only Lua canary only
+- no bridge listener, mutation, UI automation or TASK-021 work
+
+## TASK-023 F0.1 / ADR-042 — 2026-10-08
+
+Canary commit 3aff59cbddc4920b95665697bf7529cecd5c0f92 is pushed to PR #50's Free branch.
+First executable statement emits FREE_CANARY|BOOT|START; root priority is injected global resolve,
+then app:GetResolve(), then NONE. Repo and user Utility copy SHA-256 both:
+184bd4d6550c4703cd2db6e2eb6eaccc173515cf82343c676832158e0f587687.
+Local full regression: 1419 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files).
+New BOOT regression failed before the change and passed in the full run.
+
+Earlier two menu executions without output remain INCONCLUSIVE. Revised canary execution count is 0.
+Resolve was restarted; physical Escape stopped Computer Use before confirmed Console filters / execution.
+F0 remains HOLD; no ROOT result or filter-state proof exists for this revision.
+ADR-042 records the user-directed shared semantic parity baseline; repository Chat Gate pending.
+No Studio checkpoint change, Free-specific Core, parity implementation, IPC, persistence or mutation.
+
+
+## Cross-edition parity gate — 2026-10-08
+
+- ADR-042 Chat APPROVED.
+- Studio remains the reference runtime; Free remains the compatibility runtime.
+- Shared Domain/Safety/IR/Evidence semantics may not fork by edition.
+- Free capability gaps remain explicit UNKNOWN/UNSUPPORTED and do not remove verified Studio capability.
+- Revised Free canary F0.1 remains runtime HOLD until BOOT/root output is observed.
+- No IPC, listener, mutation bridge or cross-edition parity runner is authorized by ADR-042 approval alone.
+
+## TASK-023 F1 — IN PROGRESS
+
+ADR-043 recorded as user-directed baseline; ADR-041/042 approved. F0 in-process root PASS per operator
+Console evidence, Workspace launcher still INCONCLUSIVE. F1 read-only investigation authorized on base
+9558c78639f23e97d6c5399cf80eb83faf440d73. Specification: tasks/TASK_023_F1_READ_CAPABILITY_MAP.md.
+No native F1 output yet. No Free edition proof from product name alone. F2/F3/mutation not authorized.
+
+## TASK-023 F1 prepared read-only map — historical status before P3 reconciliation
+
+ADR-043 conversational interface invariant recorded; shared Core unchanged.
+Spec-before-code: 792c265; first F1 probe: tools/free_bridge_probe/resolve_free_f1.lua.
+Map: docs/FREE_CONVERSATIONAL_READ_CAPABILITY_MAP.md (A-L and five representative intents).
+F0 root PASS is operator-reported Console evidence; menu launcher remains INCONCLUSIVE.
+No F1 native run/output yet. All F1 candidates UNKNOWN; five intents BLOCKED_UNKNOWN.
+New static tests 5 passed; Python 3.11 full regression 1424 passed / 2 skipped; Ruff PASS;
+strict mypy PASS (33 Python files, not Lua). No existing semantic test modification.
+Report: docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md.
+No mutation, IPC, persistence, UI automation, Core or Studio checkpoint change. F2/F3 not authorized.
+
+## TASK-023 F1 runtime evidence reconciliation — 2026-10-08
+
+Base 240e0aec3cca8380dbf8759a023a2dc236a008cf; PR #50 / Free branch.
+ADR-043 and F1 static spec/probe Chat APPROVED. F1 runtime qualification IN PROGRESS.
+This entry supersedes the historical blanket all-F1-UNKNOWN/no-F1-observations status above.
+
+P3 = operator manual F1 Console observation, separate from P0 F0 and P2 reviewed probe output.
+P3 reports one video and one audio track, one placement in each, distinct placement IDs with the same
+source native ID. Exact names/IDs/ranges/counts/booleans/offsets are recorded in the map and report.
+Raw string/count/boolean shapes are AVAILABLE_TYPED only; coordinates/durations/offsets, handles and
+collection semantics are AVAILABLE_AMBIGUOUS. Unobserved facts remain UNKNOWN; no UNAVAILABLE claim.
+Same source does not establish A/V linking or identity lifetime; zero offsets do not prove source coverage.
+
+Reviewed resolve_free_f1.lua has NOT run. No FREE_F1 output synthesized. Complete P2 BOOT -> OBS -> END
+capture remains pending; one-shot operator plan prepared only, with directly evidenced entry path required.
+Workspace launcher remains INCONCLUSIVE. Source-origin intent PARTIAL; other four intents BLOCKED_UNKNOWN.
+No mutation readiness, persistence, IPC, parity or Studio qualification claimed.
+Initial reconciliation changed three documents; the subsequent authorized mixed-key correction below
+also changes the bounded F1 probe/spec/static tests. No Core/checkpoint changes.
+F2/F3/mutation/parity runner NOT AUTHORIZED. Stop after reconciliation report.
+
+### P3 mixed collection correction (not executed)
+
+Manual video/audio GetItemListInTrack tables contain string __flags=4194304 and numeric 1=TimelineItem.
+Probe now retains metadata and inspects numeric candidates independently; malformed entries fail closed
+individually. __flags is uninterpreted; ordering/completeness unqualified. Spec and static fixture updated.
+Two consecutive video ID/start/end/duration reads matched: same-session immediate reread stability only.
+GetDuration(false)==GetDuration(true)==87 for this fixture only; no subframe semantics conclusion.
+Previous reviewed probe and revised probe both remain NOT EXECUTED. Revised source requires Chat review.
+No F2, mutation, IPC, listener, persistence or parity runner begun.
+
+Correction validation: new red tests 2 failed then F1 static suite 7 passed. Full local Python 3.14.6
+regression 1426 passed / 2 skipped; final narrow correction rechecked with 7 F1 passes. Ruff PASS;
+strict mypy PASS (33 Python files). No new Python 3.11 CI or Lua/runtime execution claim.
+
+## TASK-023 F1 Semantic Qualification Phase 1 — design prepared
+
+Base 95cd83c5c45efb7a3d6c9b506b9c23f76f9324d7. ADR-041/042/043 and F1 mixed-key correction APPROVED.
+Shared contracts audited without edits: ADR-008/012/015/016/021/022, StableTarget and parity requirements.
+New spec: tasks/TASK_023_F1_SEMANTIC_QUALIFICATION_PHASE_1.md; six deterministic spec-only tests.
+C01-C07 controlled fixture matrix and independent I0-I4 comparison outcomes defined.
+Current coordinate correspondence NOT_ESTABLISHED. P3 I0 evidence limited to video ID/range/duration;
+I1-I4 NOT_OBSERVED. No endpoint inference, FrameRange construction or identity/currentness promotion.
+Proposed true-argument read extension documented for future Chat review only; Lua probe unchanged.
+No runtime/fixture execution, shared Core, Studio checkpoint, F2/F3, mutation, parity or distribution work.
+Await Chat Gate after design report. No broader reads authorized by this design.
+
+Phase 1 validation: six spec tests PASS; local Python 3.14.6 full regression 1432 passed / 2 skipped;
+Ruff PASS; strict mypy PASS (33 files). CI not run for uncommitted design changes. Lua probe hash
+86d4a843fe6ea11dd086feaa99ba035ce6dab0f554dd0c66e549ed3453cf58e3 unchanged.
+
+## TASK-023 F1 Runtime Qualification Runbook — prepared for Chat Gate
+
+Base 75cf16717666c5ed725c92b64ce32695aa21356e. Phase 1 design now Chat APPROVED per user.
+Runbook: tasks/TASK_023_F1_RUNTIME_QUALIFICATION_RUNBOOK.md.
+C01/C02 and I0/I1 operationalized for later reviewed operator cases only; C03-C07 and I2-I4 deferred.
+Independent source oracle, manual preparation receipt, native capture, semantic comparison and gate are
+separate. Approved canonical package digest is referenced; native import/materialization NOT QUALIFIED.
+One append-only evidence format preserves P2/P3, raw type/value/errors, context, oracle and missing facts.
+No runtime result pre-filled, no FrameRange conversion or lifetime promotion, no launcher workaround.
+Six static runbook/schema tests added. No existing tests weakened.
+No Resolve execution, fixtures, Lua changes, Core/checkpoint, F2/F3, IPC, mutation or distribution work.
+Stop for Chat Gate; this document does not itself execute or qualify a runtime case.
+
+Runbook validation: six static tests PASS; local Python 3.14.6 full pytest 1438 passed / 2 skipped;
+Ruff PASS; strict mypy PASS (33 Python files); diff whitespace check PASS. CI not run for uncommitted
+runbook changes. Lua probe SHA-256 and Studio checkpoint remain unchanged.
+
+## TASK-023 F1 Runtime Evidence Reconciliation - C01 / C02 / I0 (2026-10-09)
+
+Base e02d1dfb5a466594cabb2e4111288a3adad99088. Runbook Chat APPROVED; existing PR #50 runtime gate
+comments checked and linked in docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md.
+C01 bounded PASS; I0 same-context immediate reread PASS (seven supplied fields only);
+C02 attempt 1 INCOMPLETE due unexpected A1 audio placement, preserved without repair;
+C02 attempt 2 separate bounded PASS, including the observed metadata-only V2/A1 collections.
+Coordinate status CORRESPONDENCE_CANDIDATE; endpoint NOT_ESTABLISHED; FrameRange NOT AUTHORIZED.
+This supersedes earlier partial-I0/no-coordinate-candidate summaries only for these reviewed fixtures.
+P3 manual summaries are not complete raw transcripts. P2 reviewed probe still NOT EXECUTED.
+Missing capture timestamp/run ID/command evidence not synthesized; no extra evidence schema introduced.
+No I1 execution/design, C03-C07 authorization, shared identity promotion, native currentness or mutation claim.
+No Lua/Core/Studio checkpoint change. F2/F3/IPC/listener/mutation/persistence/parity/distribution HOLD.
+Four deterministic documentation checks protect attempt preservation, provenance and semantic limits.
+
+Reconciliation checks: 4 new documentation tests PASS; local Python 3.14.6 full regression
+1442 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files). Native execution remains absent.
+
+## TASK-023 F1 I1 runtime evidence reconciliation
+
+Base 2d807710aeda9f82b7e655c4a3697701c1709094; prior runtime reconciliation APPROVED.
+Current user supplies I1 PASS: A 02:05:20 KST, B 11:35:20 KST, elapsed 9 hours 30 minutes;
+no edit/playback/scrub/switch/reopen, PC idle. Match count 1 each; seven ID/range/duration fields stable
+at I1 for this target/interval only. Full values appended to existing report as P3 summary, not transcript.
+Calendar dates, run IDs and exact commands not invented. P2 reviewed probe NOT EXECUTED.
+I1 availability supersedes earlier NOT_OBSERVED summaries; I0 and both C02 attempts remain separate.
+No I2-I4 or shared IdentityScope promotion, native persistence, atomicity/currentness or state token proof.
+Coordinate CORRESPONDENCE_CANDIDATE; endpoint NOT_ESTABLISHED; FrameRange construction NOT AUTHORIZED.
+Only three documentation files plus two new checks in existing evidence test file changed.
+No Lua/Core/checkpoint change; no C03-C07/I2-I4/F2/F3/IPC/mutation/persistence/parity/distribution work.
+
+I1 reconciliation validation: six evidence tests PASS; local Python 3.14.6 full pytest
+1444 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files). Final-head Python 3.11 CI checked after push.
+
+## TASK-023 F1 C03 one-frame gap protocol - prepared for Chat Gate
+
+Base 5ad09de305b9dfb690fc838dbcbfc758d6fcea4c. Only C03 newly operationalized in the runtime runbook;
+this is protocol preparation, not C03 execution/qualification. C04-C07 and I2-I4 remain deferred.
+A=VIDEO_ONLY v1, B=ALPHA v1 video only, each independent 720-frame source at exact 24/1.
+UI oracle requires three individually recorded positions: A0719 -> empty/gap -> B0000, each one frame
+apart. Native getter differences, snap or collection ordering cannot establish the gap.
+H1/H2/common-basis alternatives and H3 unresolved-basis alternative recorded without preselection or
+repair. C02 zero-gap comparison is conditional on adequate evidence, not silent cross-timeline rebase.
+PASS is bounded only; endpoint NOT_ESTABLISHED, coordinate CORRESPONDENCE_CANDIDATE at most,
+FrameRange NOT AUTHORIZED. No Lua/native-method/Core/checkpoint change or runtime action.
+Runbook static coverage expanded to C03 with two new tests; remaining scope constraints unchanged.
+No C04-C07/I2-I4/F2/F3/IPC/mutation/persistence/parity/distribution work. Stop for Chat Gate.
+
+C03 protocol validation: runbook tests 8 PASS; local Python 3.14.6 full regression 1446 passed / 2 skipped;
+Ruff PASS; strict mypy PASS (33 files); diff whitespace PASS. Lua hash and Studio checkpoint unchanged.
+
+## TASK-023 F1 C03 runtime evidence reconciliation
+
+Base 41ce10b3f21f1ed7c040ee2ba9f9bdf34b3012ba. Current user supplies C03 attempt 1 bounded PASS.
+Independent UI oracle retained separately: A0719 at 01:00:29:23 -> gap at 01:00:30:00 -> B0000 at
+01:00:30:01, two one-frame playhead-only steps. Native within-case difference C02=0 / C03=1;
+C03 timeline delta=1441 matches independent 720+1+720 layout. H1 supported / H2 contradicted bounded;
+H3 not globally eliminated. Coordinate CORRESPONDENCE_CANDIDATE; global endpoint NOT_ESTABLISHED;
+FrameRange NOT AUTHORIZED. No identity/currentness promotion or expanded scope.
+P3 summary, not a complete raw capture; missing screenshots/transcript metadata not fabricated.
+P2 still NOT EXECUTED. Prior C01/C02/I0/I1 and C02 failed attempt preserved as historical entries.
+Three docs plus two new checks in existing evidence test file only; no Lua/Core/checkpoint changes.
+No Resolve execution by Codex; C04-C07/I2-I4/F2/F3/IPC/mutation/persistence/parity/distribution HOLD.
+
+C03 reconciliation checks: eight evidence tests PASS; full local Python 3.14.6 regression
+1448 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files); diff whitespace PASS.
+Lua probe hash and Studio checkpoint remain unchanged. Pushed-head CI checked before final report.

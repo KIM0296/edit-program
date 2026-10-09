@@ -921,6 +921,63 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 
 Detailed contract: docs/NATIVE_PROBE_ENVIRONMENT_AUTHENTICITY.md.
 
+
+
+## ADR-041 - Resolve Edition / Transport Split v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-08
+
+1. The editing product keeps one shared Domain/Safety/IR/Evidence core across Resolve editions.
+2. Resolve Studio / Professional uses the external scripting transport already implemented in TASK-020
+   Phase A. The preserved checkpoint is `checkpoint/studio-task020-phase-a-v1` at
+   `6025e944bae260359635fe41e216a8fc22533cd7`.
+3. Resolve Free uses a separate in-Resolve transport track and does not attempt to make external
+   `scriptapp("Resolve")` behave like Studio.
+4. The first Free 21.1.x feasibility target is an in-process **Lua** read-only canary. Python in-process
+   support is optional and must be proven by the exact runtime before use.
+5. Edition name alone never grants capabilities. Both tracks use RuntimeProfile/capability evidence.
+6. Free support may have a different connection UX while preserving the same Safety requirements.
+7. No UI automation fallback is accepted as the primary core-editing transport.
+8. No arbitrary remote method proxy, generated Lua/Python, eval/exec or unrestricted script surface is
+   allowed.
+9. The Free track starts read-only. Mutation transport design requires a later Chat Gate.
+10. Studio checkpoint evidence is immutable historical work and Free-track changes must not silently
+    rewrite it.
+
+Detailed contract: docs/RESOLVE_EDITION_TRANSPORT_SPLIT.md.
+
+## ADR-042 - Cross-Edition Semantic Parity Contract v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-08.
+
+Studio is the reference runtime and Free is the compatibility runtime of one shared editing product.
+Only transport/capability producers vary. Equal corresponding native facts yield equal typed semantic
+observations; equal snapshots/requests yield equal semantic IR; equal IR/evidence yield equal Safety
+verdicts. Preserve raw provenance and exact profile/currentness evidence separately. No identity or
+coordinate inference is permitted merely to pass parity.
+
+Pause, targets, FrameRange, relationships, ExpectedDiff, Safety, candidate authority, human approval,
+postflight and editability cannot fork. Proven unsupported Free capabilities remain UNSUPPORTED;
+unproven capabilities remain UNKNOWN. Free limitations cannot remove verified Studio capabilities.
+UI automation cannot fabricate native parity. Shared features require cross-edition parity tests;
+mock equality is not runtime qualification. No parity implementation or IPC is authorized by this note.
+
+Detailed contract: docs/CROSS_EDITION_SEMANTIC_PARITY_CONTRACT.md.
+Order: ADR-042 review -> Free canary F0.1 -> Free Tier-A -> snapshot parity -> reviewed transport.
+
+## ADR-043 - Conversational Editing Interface Invariant
+Status: USER-DIRECTED PRODUCT/ARCHITECTURE BASELINE - 2026-10-08.
+
+One conversational editing product and natural-language interface serves Studio and Free. Edition
+variation is limited to verified capability, transport, startup/connection UX and execution availability.
+No edition-specific Chat language, intent, Domain, IR, ExpectedDiff, Safety, Authority or Postflight
+semantics. Free can understand/plan/explain when sufficient shared-contract evidence exists, even if
+execution is unavailable; missing facts remain unknown/unsupported, never fabricated for UX.
+Free findings may strengthen shared contracts but cannot lower verified Studio capability. No UI
+fabrication of native/parity proof. Human Edit Wins, Preserve Editability, Resolve source of truth and
+semantic-IR-only LLM output remain mandatory. No shared Core implementation change.
+
+Full twelve-point contract: docs/CONVERSATIONAL_EDITING_INTERFACE_INVARIANT.md.
+Consistent with ADR-041/042; no known conflict. Runtime support requires separate evidence.
+
 # Open Decisions
 
 
