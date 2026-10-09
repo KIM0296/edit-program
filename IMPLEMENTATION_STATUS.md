@@ -762,3 +762,19 @@ Four deterministic documentation checks protect attempt preservation, provenance
 
 Reconciliation checks: 4 new documentation tests PASS; local Python 3.14.6 full regression
 1442 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files). Native execution remains absent.
+
+## TASK-023 F1 I1 runtime evidence reconciliation
+
+Base 2d807710aeda9f82b7e655c4a3697701c1709094; prior runtime reconciliation APPROVED.
+Current user supplies I1 PASS: A 02:05:20 KST, B 11:35:20 KST, elapsed 9 hours 30 minutes;
+no edit/playback/scrub/switch/reopen, PC idle. Match count 1 each; seven ID/range/duration fields stable
+at I1 for this target/interval only. Full values appended to existing report as P3 summary, not transcript.
+Calendar dates, run IDs and exact commands not invented. P2 reviewed probe NOT EXECUTED.
+I1 availability supersedes earlier NOT_OBSERVED summaries; I0 and both C02 attempts remain separate.
+No I2-I4 or shared IdentityScope promotion, native persistence, atomicity/currentness or state token proof.
+Coordinate CORRESPONDENCE_CANDIDATE; endpoint NOT_ESTABLISHED; FrameRange construction NOT AUTHORIZED.
+Only three documentation files plus two new checks in existing evidence test file changed.
+No Lua/Core/checkpoint change; no C03-C07/I2-I4/F2/F3/IPC/mutation/persistence/parity/distribution work.
+
+I1 reconciliation validation: six evidence tests PASS; local Python 3.14.6 full pytest
+1444 passed / 2 skipped; Ruff PASS; strict mypy PASS (33 files). Final-head Python 3.11 CI checked after push.

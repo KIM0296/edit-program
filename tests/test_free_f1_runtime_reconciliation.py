@@ -55,3 +55,44 @@ def test_placement_and_source_bindings_are_preserved():
     assert "86400 / 87120 / 720" in text
     assert "87120 / 87840 / 720" in text
     assert "__flags = 4194304" in text
+
+
+def i1_evidence():
+    return REPORT.read_text(encoding="utf-8").split(
+        "# F1 I1 RUNTIME EVIDENCE RECONCILIATION REPORT", 1
+    )[1]
+
+
+def test_i1_preserves_exact_pair_and_activity():
+    text = i1_evidence()
+    expected = {
+        "target match count": "1",
+        "project ID": "8023de71-f9c7-41fc-8fbf-fa1baebf613a",
+        "timeline ID": "b806fe92-67ac-493c-8c48-5514cae8dd97",
+        "placement ID": "61a533ed-55be-4cb9-88e4-54380c839878",
+        "source ID": "ad23d34e-1ef3-4d51-b835-b7f6674af9f2",
+        "start": "86400", "end": "87120", "duration": "720",
+    }
+    for field, value in expected.items():
+        row = next(line for line in text.splitlines() if line.startswith(f"| {field} |"))
+        assert row.split("|")[2:4] == [f" {value} ", f" {value} "]
+        if field != "target match count":
+            assert "STABLE_OBSERVED_AT_LEVEL" in row
+    assert "02:05:20 KST" in text and "11:35:20 KST" in text
+    assert "9 hours 30 minutes" in text
+    for activity in ("Resolve edit: NO", "playback/scrub: NO", "timeline switch: NO",
+                     "project close/reopen: NO", "other activity: PC idle"):
+        assert activity in text
+
+
+def test_i1_does_not_promote_scope_or_fabricate_capture():
+    text = i1_evidence()
+    for limit in (
+        "exact observed interval only", "I2/I3/I4: NOT OBSERVED / NOT AUTHORIZED",
+        "No SESSION_LOCAL_VERIFIED or PERSISTENT_VERIFIED promotion",
+        "Calendar dates, run IDs and exact command transcripts: NOT SUPPLIED",
+        "P2 reviewed probe: NOT EXECUTED", "Endpoint convention: NOT_ESTABLISHED",
+        "FrameRange construction: NOT AUTHORIZED", "Coordinate status: CORRESPONDENCE_CANDIDATE",
+    ):
+        assert limit in text
+    assert "FREE_F1|OBS|" not in text

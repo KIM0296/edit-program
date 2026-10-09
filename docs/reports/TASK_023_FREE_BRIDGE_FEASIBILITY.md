@@ -522,3 +522,80 @@ Python 3.11 CI will be checked on the pushed head and reported with the final co
 Safety: runtime execution by Codex NO; Lua probe changed NO; shared Core changed NO;
 Studio checkpoint changed NO; C03-C07 started NO; I1 executed NO;
 F2/F3/IPC/listener/mutation/persistence/parity/distribution NO. STOP after reconciliation report.
+
+# F1 I1 RUNTIME EVIDENCE RECONCILIATION REPORT
+
+Base: 2d807710aeda9f82b7e655c4a3697701c1709094; Free branch / PR #50.
+This appended summary updates I1 evidence availability only. Earlier I0/C01/C02 results remain historical
+and unchanged, including C02 attempt 1 INCOMPLETE. Prior I1 NOT_OBSERVED entries describe their earlier stage.
+
+## Provenance / supplied gate
+
+Source: current user-supplied I1 operator evidence and PASS instruction, classified as P3 manual summary.
+Prior reconciliation approval / bounded I1 authorization:
+[PR #50 Chat Gate](https://github.com/KIM0296/edit-program/pull/50#issuecomment-6064282293).
+That comment authorizes I1; it is not itself an I1 result/transcript. No separate I1-result comment was
+observed in the retrieved PR discussion. The supplied I1 result is recorded here for reconciliation review.
+P2 reviewed probe: NOT EXECUTED. No synthetic probe output or complete P3 transcript is created.
+Calendar dates, run IDs and exact command transcripts: NOT SUPPLIED. Do not attach today's date to the
+provided clock times or infer an absolute capture timestamp/session token. Raw Lua numeric subtypes,
+method arguments and capture-completeness proof not supplied in this summary remain unqualified.
+
+## I1 pair - exact operator-reported values
+
+Set A time: 02:05:20 KST.
+Set B time: 11:35:20 KST.
+Elapsed interval supplied by operator: 9 hours 30 minutes. This is the observed interval, not a minimum
+wait threshold or a general duration guarantee; no timestamp beyond these supplied times is invented.
+Same Resolve session/context and no edit are operator-reported, not independently captured by Codex.
+
+| Field | Set A | Set B | Per-field I1 outcome |
+| --- | --- | --- | --- |
+| target match count | 1 | 1 | Reported equality; no extra identity promotion |
+| project ID | 8023de71-f9c7-41fc-8fbf-fa1baebf613a | 8023de71-f9c7-41fc-8fbf-fa1baebf613a | STABLE_OBSERVED_AT_LEVEL |
+| timeline ID | b806fe92-67ac-493c-8c48-5514cae8dd97 | b806fe92-67ac-493c-8c48-5514cae8dd97 | STABLE_OBSERVED_AT_LEVEL |
+| placement ID | 61a533ed-55be-4cb9-88e4-54380c839878 | 61a533ed-55be-4cb9-88e4-54380c839878 | STABLE_OBSERVED_AT_LEVEL |
+| source ID | ad23d34e-1ef3-4d51-b835-b7f6674af9f2 | ad23d34e-1ef3-4d51-b835-b7f6674af9f2 | STABLE_OBSERVED_AT_LEVEL |
+| start | 86400 | 86400 | STABLE_OBSERVED_AT_LEVEL |
+| end | 87120 | 87120 | STABLE_OBSERVED_AT_LEVEL |
+| duration | 720 | 720 | STABLE_OBSERVED_AT_LEVEL |
+
+These IDs correspond to the previously reported C02 attempt 2 timeline / A placement, not the C01/I0
+placement. This cross-reference does not invent a new identity mapping or extrapolate I0 to this target.
+Target match count=1 is retained as supplied; the matching algorithm/commands were not provided and are
+not reconstructed from filenames, source ID, collection order or position.
+
+Intervening activity supplied by operator:
+- Resolve edit: NO
+- playback/scrub: NO
+- timeline switch: NO
+- project close/reopen: NO
+- other activity: PC idle
+
+## Bounded conclusion and unchanged limits
+
+I1 gate: PASS - same-session later reread, exact observed interval only.
+Highest observed level now includes I1 for the seven supplied fields, this target and this interval.
+I0 remains a separately reviewed observation, not a prerequisite inferred from I1.
+I2/I3/I4: NOT OBSERVED / NOT AUTHORIZED.
+No SESSION_LOCAL_VERIFIED or PERSISTENT_VERIFIED promotion. No native persistence guarantee, atomic
+snapshot/currentness, trustworthy state token, persistent opaque-handle identity or mutation readiness.
+No claim about unmeasured activity, broader session duration, other objects, or future identical results.
+
+Coordinate status: CORRESPONDENCE_CANDIDATE. Endpoint convention: NOT_ESTABLISHED.
+FrameRange construction: NOT AUTHORIZED. I1 equality adds no endpoint/basis/precision proof.
+Missing currentness remains BLOCKED_UNKNOWN; known base/snapshot mismatch remains STALE.
+Workspace launcher remains INCONCLUSIVE. No native call was made by Codex.
+
+## Changes / verification / stop
+
+Changed only docs/FREE_CONVERSATIONAL_READ_CAPABILITY_MAP.md,
+docs/reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md, IMPLEMENTATION_STATUS.md and
+tests/test_free_f1_runtime_reconciliation.py (two additional deterministic documentation checks).
+Existing tests and historical evidence remain intact. No new evidence schema or separate capture artifact.
+Validation: two new checks failed before the I1 append; all six evidence checks then passed.
+Full local pytest (Python 3.14.6): 1444 passed / 2 skipped, 23.48 seconds. Skips are the Windows
+symlink privilege test and opt-in intentional naive invariant failure. Ruff PASS; strict mypy PASS
+(33 files); diff whitespace check PASS. Python 3.11 CI is checked after push on the final head.
+Lua probe, shared Core and Studio checkpoint unchanged. No C03-C07/I2-I4, F2/F3, IPC/listener,
+mutation, persistence, parity runner or distribution work. STOP for Chat Gate after reconciliation.

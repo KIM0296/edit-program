@@ -209,3 +209,21 @@ P3 sources are operator summaries and linked Chat approvals, not complete comman
 P2 reviewed probe NOT EXECUTED. No new capture or synthetic probe output. Workspace launcher INCONCLUSIVE.
 These fixture results do not resolve the missing editorial facts for the five intents above or grant
 mutation readiness. C03-C07 not authorized; no I1 work or F2/F3/IPC/mutation/persistence/parity/distribution.
+
+## Current I1 reconciliation - later same-session observation
+
+P3 operator summary now supplies I1 Set A 02:05:20 KST and Set B 11:35:20 KST; reported elapsed
+interval 9 hours 30 minutes. Calendar dates/run IDs/exact commands/full transcript were not supplied.
+Target match count=1 in both sets. Project/timeline/placement/source IDs and start/end/duration were
+identical; all seven fields are STABLE_OBSERVED_AT_LEVEL at I1 only. Values and activity are preserved in
+[the appended I1 report](reports/TASK_023_FREE_BRIDGE_FEASIBILITY.md#f1-i1-runtime-evidence-reconciliation-report).
+The target is the reported C02 attempt 2 A placement, not the distinct C01/I0 placement.
+
+Operator activity: no edit, playback/scrub, timeline switch or project close/reopen; PC idle.
+Supplied I1 gate PASS applies to this same-session later reread and exact interval only. Earlier
+NOT_OBSERVED entries remain historical; I2-I4 remain NOT_OBSERVED/NOT_AUTHORIZED. No inference between levels.
+No SESSION_LOCAL_VERIFIED/PERSISTENT_VERIFIED promotion, native persistence, currentness/atomicity,
+state token or handle stability proof. Raw capability classes and conversational readiness unchanged.
+Coordinate CORRESPONDENCE_CANDIDATE; endpoint NOT_ESTABLISHED; FrameRange construction NOT_AUTHORIZED.
+P2 probe still NOT_EXECUTED; P3 summary is not a complete transcript. No new Resolve execution or reads.
+C03-C07/F2/F3/IPC/mutation/persistence/parity/distribution remain out of scope; stop for Chat Gate.
