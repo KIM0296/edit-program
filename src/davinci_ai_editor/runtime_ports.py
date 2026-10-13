@@ -135,8 +135,15 @@ class RuntimeObservationPort(Protocol):
         binding: t.ArtifactBinding,
         scope: d.PreservationScope,
         before: PortValue[CurrentnessPayload],
+        *,
+        targets: tuple[ir.ExecutionTargetBinding, ...],
+        transaction: t.Transaction,
     ) -> PortResult[PostflightPayload]:
         """Derive ActualDiff from retained pre-state and fresh post observations.
+
+        targets retain the admitted semantic/native correspondence and pre-reads;
+        transaction supplies exact journal context for the post-read ordering link.
+        Neither command acknowledgment nor expected effect values are actual evidence.
 
         Scope/binding references correlate evidence only; no expected changed
         values are inputs. Own identity, relation, topology, and scope coverage

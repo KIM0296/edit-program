@@ -9,6 +9,7 @@ from .expected_diff import DiffVerificationStatus
 from .native_snapshot import ObservedValue
 from .safety_preflight import PreflightStatus, SafetyVerdict
 from .temporal_mapping import NativeSnapshotRef
+from .trust_evidence import PreparedArtifactRevision
 
 
 def _text(value: str) -> None:
@@ -101,11 +102,14 @@ class ArtifactBinding:
     expected_diff_ref: str
     safety_result_ref: str
     base_snapshot: NativeSnapshotRef
+    artifact_revision: PreparedArtifactRevision | None = None
 
     def __post_init__(self) -> None:
         _text(self.expected_diff_ref)
         _text(self.safety_result_ref)
         _typed(self.base_snapshot, NativeSnapshotRef)
+        if self.artifact_revision is not None:
+            _typed(self.artifact_revision, PreparedArtifactRevision)
 
 
 @dataclass(frozen=True)

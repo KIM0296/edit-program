@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Literal, TypeVar
 
 import pytest
+from support import trust001_fixtures as trust
 from test_orchestration import completion, runtime_admission
 from test_runtime_ports import SyntheticLifecycle, SyntheticReadProducer, snapshot
 
@@ -294,6 +295,9 @@ class Harness:
         binding: t.ArtifactBinding,
         scope: d.PreservationScope,
         before: p.PortValue[p.CurrentnessPayload],
+        *,
+        targets: tuple[ir.ExecutionTargetBinding, ...],
+        transaction: t.Transaction,
     ) -> p.PortResult[p.PostflightPayload]:
         self.trace.append("postflight")
         if "postflight" in self.faults:
@@ -302,9 +306,10 @@ class Harness:
         # This method has no ExpectedDiff input and never measures values from scope.
         actual = self.post_override or self.completed.actual_diff
         assert actual is not None
+        assert actual.post_read is not None
         self.post_reply = supplied(
-            (snapshot(actual.post_snapshot, "post-observation"), actual),
-            "post-observation",
+            (actual.post_read.capture, actual),
+            actual.post_read.capture.capture_id,
             (before.receipt.receipt_ref,),
         )
         return self.post_reply
@@ -667,7 +672,7 @@ def test_postflight_failure_preserves_appended_history_without_promotion(damage:
     actual = h.completed.actual_diff
     assert actual is not None
     h.post_override = (
-        replace(actual, primary_changes=())
+        trust.zero_result(actual)
         if damage == "mismatch"
         else replace(actual, identity_evidence_ref=None)
     )
@@ -692,7 +697,9 @@ def test_actual_diff_is_port_produced_and_not_changed_by_expected_displacements(
     assert changed is not None and changed.displacements != expected.displacements
     assert actual is h.completed.actual_diff
     assert (
-        d.verify_diff(changed, actual, actual.post_snapshot).status
+        d.verify_diff(
+            changed, actual, actual.post_snapshot, h.auth.prepared.artifact_revision
+        ).status
         == d.DiffVerificationStatus.MISMATCH
     )
     assert (
@@ -706,7 +713,11 @@ def test_actual_diff_is_port_produced_and_not_changed_by_expected_displacements(
     assert h.auth.prepared.expected_diff == changed
     assert evidence.admission_currentness is not None
     observed_again = h.observe_postflight(
-        h.auth.prepared.binding, h.auth.prepared.inputs.scope, evidence.admission_currentness
+        h.auth.prepared.binding,
+        h.auth.prepared.inputs.scope,
+        evidence.admission_currentness,
+        targets=h.admission_data.validation_inputs.execution_ir.targets,
+        transaction=h.completed.transaction,
     )
     assert isinstance(observed_again, p.PortValue) and observed_again.value[1] is actual
 

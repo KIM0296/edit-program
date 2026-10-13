@@ -15,7 +15,6 @@ from davinci_ai_editor.expected_diff import (
     PostRelationStatus,
     PreservationScope,
     compile_expected_diff,
-    verify_diff,
 )
 from davinci_ai_editor.expected_diff import (
     DiffVerificationStatus as V,
@@ -25,6 +24,9 @@ from davinci_ai_editor.expected_diff import (
 )
 from davinci_ai_editor.expected_diff import (
     ParticipationStatus as P,
+)
+from davinci_ai_editor.expected_diff import (
+    _verify_legacy_semantics as verify_diff,
 )
 from davinci_ai_editor.pause_planning import (
     GeometryProvenance,
@@ -677,6 +679,8 @@ def test_no_runtime_import_dependencies():
         "typing",
         "domain",
         "pause_planning",
+        "native_snapshot",
         "temporal_mapping",
+        "trust_evidence",
     }
     assert not any(isinstance(node, ast.Import) for node in ast.walk(tree))

@@ -11,6 +11,7 @@ from .native_snapshot import IdentityScope, ObservedValue
 from .safety_preflight import PreflightStatus, SafetyPreflightResult, SafetyVerdict
 from .temporal_mapping import NativeSnapshotRef
 from .transaction import ArtifactBinding, ExecutionAuthorization, RollbackCapability
+from .trust_evidence import TargetCorrespondence
 
 T = TypeVar("T")
 SemanticEffect: TypeAlias = RangeRemovalEffect | TemporalDisplacement
@@ -178,6 +179,7 @@ class ExecutionTargetBinding:
     mutation_stability_ref: str | None = None
     postflight_correspondence_ref: str | None = None
     contract_version: str = "v1"
+    correspondence: TargetCorrespondence | None = None
 
     def __post_init__(self) -> None:
         for v in (self.target_ref, self.session_ref, self.contract_version):
@@ -455,7 +457,22 @@ def _findings(v: ExecutionIRValidationInput) -> tuple[ValidationFinding, ...]:
         findings.append(ValidationFinding(status, reason, ref))
 
     diff, logical, plan, manifest = v.expected_diff, v.execution_ir, v.lowering, v.manifest
-    binding = ArtifactBinding(diff.expected_diff_ref, v.safety_result_ref, diff.base_snapshot)
+    revision = logical.authorization.binding.artifact_revision
+    binding = ArtifactBinding(
+        diff.expected_diff_ref, v.safety_result_ref, diff.base_snapshot, revision
+    )
+    if revision is not None:
+        for target in logical.targets:
+            correspondence = target.correspondence
+            if (
+                correspondence is None
+                or not correspondence.admission_bound()
+                or correspondence.artifact_revision != revision
+                or correspondence.semantic_object != target.before.object_id
+                or correspondence.target_ref != target.target_ref
+                or correspondence.semantic_snapshot != binding.base_snapshot
+            ):
+                add(S.INCOMPLETE, R.ARTIFACT_BINDING, target.target_ref)
 
     def bound(b: ArtifactBinding, profile: RuntimeProfile | None, ref: str) -> None:
         if b.base_snapshot != binding.base_snapshot:

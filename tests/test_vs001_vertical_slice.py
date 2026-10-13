@@ -133,7 +133,7 @@ def test_happy_path_to_verified_commit_and_historical_promotion() -> None:
     assert evidence.actual is not None and evidence.complete
     assert evidence.actual.primary_changes[0] == request.diff.primary_changes[0]
     assert evidence.actual.primary_changes[0] is not request.diff.primary_changes[0]
-    verified = d.verify_diff(request.diff, evidence.actual, POST)
+    verified = d._verify_legacy_semantics(request.diff, evidence.actual, POST)
     assert verified.status == d.DiffVerificationStatus.MATCH
     tx = sim.finish_transaction(request, run, evidence, run.state)
     assert tx.state.outcome == t.TransactionOutcome.VERIFIED_COMMITTED
@@ -183,7 +183,7 @@ def test_c_actual_primary_off_by_one(monkeypatch: pytest.MonkeyPatch) -> None:
     evidence = sim.derive_actual(req.base, run.state, run.receipt, sim.correlations(req))
     assert evidence.actual is not None
     assert evidence.actual.primary_changes[0].removed_timeline_range == R(347, 420)
-    assert d.verify_diff(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MISMATCH
+    assert d._verify_legacy_semantics(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MISMATCH
     assert sim.finish_transaction(req, run, evidence, run.state).state.outcome != (
         t.TransactionOutcome.VERIFIED_COMMITTED
     )
@@ -201,7 +201,7 @@ def test_d_actual_wrong_translation(monkeypatch: pytest.MonkeyPatch) -> None:
     req, run = run_fixture()
     evidence = sim.derive_actual(req.base, run.state, run.receipt, sim.correlations(req))
     assert evidence.actual is not None
-    assert d.verify_diff(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MISMATCH
+    assert d._verify_legacy_semantics(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MISMATCH
 
 
 def test_e_unexpected_extra_object_mutation() -> None:
@@ -211,7 +211,7 @@ def test_e_unexpected_extra_object_mutation() -> None:
     actual_state = replace(run.state, objects=(*run.state.objects, extra))
     evidence = sim.derive_actual(req.base, actual_state, run.receipt, sim.correlations(req))
     assert evidence.actual is not None
-    assert d.verify_diff(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MISMATCH
+    assert d._verify_legacy_semantics(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MISMATCH
 
 
 def test_f_invalid_second_operation_rejects_entire_batch() -> None:
@@ -244,7 +244,7 @@ def test_missing_correspondence_never_matches() -> None:
     receipt = replace(run.receipt, operations=())
     evidence = sim.derive_actual(req.base, run.state, receipt, sim.correlations(req))
     assert not evidence.complete
-    assert evidence.actual is None or d.verify_diff(
+    assert evidence.actual is None or d._verify_legacy_semantics(
         req.diff, evidence.actual, POST).status != d.DiffVerificationStatus.MATCH
 
 
@@ -253,7 +253,7 @@ def test_missing_participant_receipt_is_unverified() -> None:
     receipt = replace(run.receipt, operations=run.receipt.operations[:1])
     evidence = sim.derive_actual(req.base, run.state, receipt, sim.correlations(req))
     assert not evidence.complete and evidence.actual is not None
-    assert d.verify_diff(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.UNVERIFIED
+    assert d._verify_legacy_semantics(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.UNVERIFIED
 
 
 def test_safety_pass_is_not_approval() -> None:
@@ -290,7 +290,7 @@ def test_actual_topology_change_is_observed_and_mismatches() -> None:
     post = replace(run.state, tracks=(*run.state.tracks, ("V2", TrackType.VIDEO)))
     evidence = sim.derive_actual(req.base, post, run.receipt, sim.correlations(req))
     assert evidence.actual is not None and evidence.actual.topology_change_refs
-    assert d.verify_diff(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MISMATCH
+    assert d._verify_legacy_semantics(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MISMATCH
 
 
 def test_post_publication_human_change_cannot_commit_or_promote() -> None:
@@ -312,10 +312,10 @@ def test_unlisted_scoped_object_preserved_and_unexpected_mutation_detected() -> 
     assert before == after
     evidence = sim.derive_actual(req.base, run.state, run.receipt, sim.correlations(req))
     assert evidence.actual is not None
-    assert d.verify_diff(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MATCH
+    assert d._verify_legacy_semantics(req.diff, evidence.actual, POST).status == d.DiffVerificationStatus.MATCH
     damaged = replace(run.state, objects=tuple(
         replace(o, timeline_range=R(799, 899)) if o.object_id == before.object_id else o
         for o in run.state.objects))
     actual = sim.derive_actual(req.base, damaged, run.receipt, sim.correlations(req)).actual
     assert actual is not None
-    assert d.verify_diff(req.diff, actual, POST).status == d.DiffVerificationStatus.MISMATCH
+    assert d._verify_legacy_semantics(req.diff, actual, POST).status == d.DiffVerificationStatus.MISMATCH

@@ -522,6 +522,7 @@ def test_no_upstream_or_execution_calls(monkeypatch):
         "native_snapshot",
         "safety_preflight",
         "temporal_mapping",
+        "trust_evidence",
         "transaction",
     }
     assert {n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)} <= allowed

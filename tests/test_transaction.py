@@ -799,6 +799,7 @@ def test_no_runtime_imports_or_native_commands():
         "native_snapshot",
         "safety_preflight",
         "temporal_mapping",
+        "trust_evidence",
     }
     assert not any(isinstance(node, ast.Import) for node in ast.walk(tree))
     assert not hasattr(DEF, "commands")
