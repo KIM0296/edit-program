@@ -16,10 +16,18 @@ from test_orchestration import (
     runtime_admission,
 )
 
+from davinci_ai_editor import execution_ir as ir
 from davinci_ai_editor import expected_diff as d
 from davinci_ai_editor import orchestration as o
-from davinci_ai_editor.domain import ClipId, FrameRange, TimelineId, TimelineObjectId
-from davinci_ai_editor.temporal_mapping import NativeSnapshotRef
+from davinci_ai_editor.domain import (
+    ClipId,
+    FrameRange,
+    MediaId,
+    TimelineId,
+    TimelineObjectId,
+    TrackId,
+)
+from davinci_ai_editor.temporal_mapping import MappingKind, NativeSnapshotRef
 from davinci_ai_editor.trust_evidence import (
     IndependentReadEvidence,
     PreparedArtifactRevision,
@@ -223,6 +231,148 @@ def test_semantic_revision_propagates_through_existing_binding() -> None:
         target.binding.artifact_revision == revision
         for target in runtime.validation_inputs.execution_ir.targets
     )
+
+
+@pytest.mark.parametrize("side", ["semantic", "execution"])
+@pytest.mark.parametrize("field", ["media", "source", "timeline", "track", "retime", "object"])
+def test_admission_rejects_different_strong_placement(side: str, field: str) -> None:
+    auth, work = authorized()
+    runtime = runtime_admission(auth)
+    validation = runtime.validation_inputs
+    target, *remaining = validation.execution_ir.targets
+    correspondence = target.correspondence
+    assert correspondence is not None
+    before = target.before
+    alternatives = {
+        "media": replace(before, media_id=MediaId("other-media")),
+        "source": replace(before, source_range=FrameRange(10000, 11000)),
+        "timeline": replace(before, timeline_range=FrameRange(10000, 11000)),
+        "track": replace(before, track_id=TrackId("other-track")),
+        "retime": replace(before, retime=MappingKind.REVERSE),
+        "object": replace(
+            before, object_id=TimelineObjectId(before.track_id, ClipId("other-native-object"))
+        ),
+    }
+    other = f.read((alternatives[field],), correspondence.semantic_snapshot, "other-pre-read")
+    # Membership, strong identity, approved revision and target_ref all still pass.
+    if side == "semantic":
+        changed_correspondence = replace(
+            correspondence,
+            semantic_read=other,
+            semantic_placement=other.capture.placements[0],
+            lineage_captures=(other.capture, correspondence.execution_read.capture),
+        )
+    else:
+        changed_correspondence = replace(
+            correspondence,
+            execution_read=other,
+            execution_placement=other.capture.placements[0],
+            lineage_captures=(correspondence.semantic_read.capture, other.capture),
+        )
+    assert changed_correspondence.admission_bound()
+    changed = replace(
+        validation,
+        execution_ir=replace(
+            validation.execution_ir,
+            targets=(replace(target, correspondence=changed_correspondence), *remaining),
+        ),
+    )
+    assert (
+        ir.validate_execution_ir(changed).status
+        != ir.ExecutionIRValidationStatus.READY_FOR_EXECUTION
+    )
+    result = o.admit_execution(auth, replace(runtime, validation_inputs=changed), work)
+    assert result.status == o.CompositionStatus.BLOCKED
+    assert result.transaction is None
+
+
+@pytest.mark.parametrize(
+    "case", ["exact", "source", "timeline", "track", "media", "retime", "no-lineage"]
+)
+def test_staging_prestate_requires_exact_semantics_and_lineage(case: str) -> None:
+    auth, work = authorized()
+    runtime = runtime_admission(auth)
+    validation = runtime.validation_inputs
+    target, *remaining = validation.execution_ir.targets
+    c = target.correspondence
+    assert c is not None
+    before = target.before
+    staging_state = replace(
+        before, object_id=TimelineObjectId(before.track_id, ClipId("staging-object"))
+    )
+    if case == "source":
+        staging_state = replace(staging_state, source_range=FrameRange(10000, 11000))
+    elif case == "timeline":
+        staging_state = replace(staging_state, timeline_range=FrameRange(10000, 11000))
+    elif case == "track":
+        staging_state = replace(staging_state, track_id=TrackId("other-track"))
+    elif case == "media":
+        staging_state = replace(staging_state, media_id=MediaId("other-media"))
+    elif case == "retime":
+        staging_state = replace(staging_state, retime=MappingKind.REVERSE)
+    staging_snapshot = replace(c.semantic_snapshot, timeline_id=TimelineId("staging-timeline"))
+    staging = f.read((staging_state,), staging_snapshot, "staging-pre-read")
+    correspondence = replace(
+        c,
+        execution_read=staging,
+        execution_placement=staging.capture.placements[0],
+        lineage_captures=(c.semantic_read.capture,)
+        if case == "no-lineage"
+        else (c.semantic_read.capture, staging.capture),
+    )
+    changed = replace(
+        validation,
+        execution_ir=replace(
+            validation.execution_ir,
+            targets=(replace(target, correspondence=correspondence), *remaining),
+        ),
+    )
+    ready = (
+        ir.validate_execution_ir(changed).status
+        == ir.ExecutionIRValidationStatus.READY_FOR_EXECUTION
+    )
+    result = o.admit_execution(auth, replace(runtime, validation_inputs=changed), work)
+    assert ready == (case == "exact")
+    if case == "exact":
+        assert result.status == o.CompositionStatus.READY
+        assert result.transaction is not None
+    else:
+        assert result.status == o.CompositionStatus.BLOCKED
+        assert result.transaction is None
+
+
+def test_equal_native_prestates_cannot_replace_approved_prestate() -> None:
+    auth, work = authorized()
+    runtime = runtime_admission(auth)
+    validation = runtime.validation_inputs
+    target, *remaining = validation.execution_ir.targets
+    c = target.correspondence
+    assert c is not None
+    wrong = replace(target.before, source_range=FrameRange(10000, 11000))
+    read = f.read((wrong,), c.semantic_snapshot, "equal-but-wrong-pre-read")
+    c = replace(
+        c,
+        semantic_read=read,
+        execution_read=read,
+        semantic_placement=read.capture.placements[0],
+        execution_placement=read.capture.placements[0],
+        lineage_captures=(read.capture,),
+    )
+    assert c.admission_bound()
+    changed = replace(
+        validation,
+        execution_ir=replace(
+            validation.execution_ir,
+            targets=(replace(target, correspondence=c), *remaining),
+        ),
+    )
+    assert (
+        ir.validate_execution_ir(changed).status
+        != ir.ExecutionIRValidationStatus.READY_FOR_EXECUTION
+    )
+    result = o.admit_execution(auth, replace(runtime, validation_inputs=changed), work)
+    assert result.status == o.CompositionStatus.BLOCKED
+    assert result.transaction is None
 
 
 def test_same_revision_tampered_geometry_fails_and_new_revision_differs() -> None:

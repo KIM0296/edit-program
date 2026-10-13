@@ -194,3 +194,49 @@ Review candidate: GO for code/contract review with the disclosed legacy strict-t
 baseline; native/live use remains HOLD. Next step is Chat Gate review, not OBS-001
 or merge. The expanded strict-test baseline remains an explicit validation blocker
 to claiming every requested check green.
+
+## PR #57 review correction: exact pre-state before destructive admission
+
+This follow-up changes only `src/davinci_ai_editor/execution_ir.py`,
+`tests/test_trust001.py`, and this document. No new public type, lifecycle,
+native operation, or OBS-001 work is introduced.
+
+The existing correspondence checks could accept a strong native identity in a
+valid capture without comparing its placement to the approved semantic pre-state.
+Twelve new adversarial cases reproduced READY_FOR_EXECUTION before the fix while
+retaining the approved revision, candidate, target reference, and valid capture
+membership. They now fail closed before a transaction can become eligible.
+
+The pure IR helper compares BOTH semantic and execution placements against
+`ExecutionTargetBinding.before`: media identity, exact source/timeline ranges,
+track, and retime. The supported domain is exact 1x mapping with retained frame
+rates; missing ranges/rates, unsupported retime, or identity mismatch block readiness.
+Native media identity and rates must also agree across both reads. Within the
+same timeline, native object identities must agree. A different staging timeline
+and object identity are eligible only through the existing explicit
+TargetCorrespondence with both original/staging lineage captures retained; no
+semantic range/media/track/retime relaxation is made for staging. This validates
+supplied correspondence, not the native authenticity of a staging copy.
+
+Twenty added cases cover each pre-state field on both sides, same-geometry wrong
+native objects, equal-but-unapproved pre-states, and staging eligibility versus
+missing lineage or changed semantics. Rejections assert IR not READY, admission
+BLOCKED, and no returned Transaction. The exact staging fixture can still admit.
+All evidence remains TEST_ONLY_SUPPORT.
+
+Validation after this correction:
+
+- TRUST + execution_ir + orchestration + runtime_integration + expected_diff +
+  runtime_ports: **440 passed** (including **54 TRUST cases**).
+- Full regression: **1,793 passed / 1 existing opt-in skipped**.
+- Ruff: passed. Repository mypy: passed, **39 source files**.
+- Existing explicit strict set: passed, **14 source/test/support files**.
+- Expanded 17-file strict: **840 errors in the same four legacy test modules**,
+  exit 1; zero changed normalized diagnostics against the unchanged base. This
+  remains the previously disclosed baseline, not a passing expanded check.
+- Whitespace and exact three-file follow-up allowlist checked before commit.
+- CI is checked against the pushed follow-up head and reported separately.
+
+No change to approval identity, transaction semantics, postflight, or authority
+promotion. Live read/mutation qualification and observation-to-execution atomicity
+remain unqualified/open. STOP at PR review; do not merge or start OBS-001.

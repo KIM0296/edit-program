@@ -9,7 +9,7 @@ from .domain import TimelineObjectId
 from .expected_diff import ExpectedDiff, PlacementState, RangeRemovalEffect, TemporalDisplacement
 from .native_snapshot import IdentityScope, ObservedValue
 from .safety_preflight import PreflightStatus, SafetyPreflightResult, SafetyVerdict
-from .temporal_mapping import NativeSnapshotRef
+from .temporal_mapping import MappingKind, NativeSnapshotRef
 from .transaction import ArtifactBinding, ExecutionAuthorization, RollbackCapability
 from .trust_evidence import TargetCorrespondence
 
@@ -447,6 +447,46 @@ class ValidationFinding:
             raise ValueError("Finding must block readiness")
 
 
+def _approved_prestate_matches(before: PlacementState, c: TargetCorrespondence) -> bool:
+    """Correlate supplied reads; never infer identity from matching geometry.
+
+    The supported mapping preserves exact track/media refs and 1x frame ranges.
+    Staging may change native object/timeline identity only through the retained
+    correspondence and both lineage captures checked by admission_bound().
+    This does not authenticate a producer or qualify a live staging copy.
+    """
+    if not c.admission_bound() or before.retime != MappingKind.IDENTITY_1X:
+        return False
+    semantic, execution = c.semantic_placement, c.execution_placement
+    for placement in (semantic, execution):
+        if (
+            placement.media_ref.ref != before.media_id
+            or placement.media_ref.scope
+            not in (IdentityScope.SESSION_LOCAL_VERIFIED, IdentityScope.PERSISTENT_VERIFIED)
+            or placement.track_ref != before.track_id
+            or placement.timeline_range is None
+            or placement.timeline_range.frames != before.timeline_range
+            or placement.source_range is None
+            or placement.source_range.frames != before.source_range
+            or placement.retime_kind != before.retime
+            or placement.timeline_rate is None
+            or placement.source_rate is None
+            or placement.timeline_rate != placement.source_rate
+        ):
+            return False
+    if (
+        semantic.media_ref != execution.media_ref
+        or semantic.timeline_rate != execution.timeline_rate
+        or semantic.source_rate != execution.source_rate
+    ):
+        return False
+    if c.semantic_read.snapshot.timeline_id == c.execution_read.snapshot.timeline_id:
+        return semantic.object_ref == execution.object_ref
+    # Different timeline identities are not interchangeable: admission_bound()
+    # must retain the explicit original -> staging correspondence and captures.
+    return c.semantic_read.capture != c.execution_read.capture
+
+
 def _findings(v: ExecutionIRValidationInput) -> tuple[ValidationFinding, ...]:
     S, R = ExecutionIRValidationStatus, ExecutionIRValidationReason
     findings: list[ValidationFinding] = []
@@ -466,7 +506,7 @@ def _findings(v: ExecutionIRValidationInput) -> tuple[ValidationFinding, ...]:
             correspondence = target.correspondence
             if (
                 correspondence is None
-                or not correspondence.admission_bound()
+                or not _approved_prestate_matches(target.before, correspondence)
                 or correspondence.artifact_revision != revision
                 or correspondence.semantic_object != target.before.object_id
                 or correspondence.target_ref != target.target_ref
