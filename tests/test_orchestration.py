@@ -9,6 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+from support import trust001_fixtures as trust
 from support import vs001_simulation as sim
 from test_vs001_vertical_slice import POST, fixture
 
@@ -135,6 +136,7 @@ def runtime_admission(auth: o.AuthorizedEdit) -> o.RuntimeAdmissionEvidence:
         *diff.primary_changes,
         *diff.displacements,
     )
+    assert auth.prepared.artifact_revision is not None
     targets = tuple(
         ir.ExecutionTargetBinding(
             f"target-{i}",
@@ -148,6 +150,13 @@ def runtime_admission(auth: o.AuthorizedEdit) -> o.RuntimeAdmissionEvidence:
             "test-locator-proof",
             "test-mutation-proof",
             "test-post-proof",
+            correspondence=trust.target(
+                auth.prepared.artifact_revision,
+                effect.before,
+                binding.base_snapshot,
+                f"target-{i}",
+                diff.inputs.scope.objects,
+            ),
         )
         for i, effect in enumerate(effects)
     )
@@ -258,6 +267,17 @@ def completion() -> tuple[o.AuthorizedEdit, o.RuntimeFinalizationEvidence, a.Can
     produced = sim.derive_actual(request.base, run.state, run.receipt, sim.correlations(request))
     actual = produced.actual
     assert actual is not None and actual.identity_evidence_ref is not None
+    assert auth.prepared.artifact_revision is not None
+    target = admission.evidence.validation_inputs.execution_ir.targets[0].correspondence
+    assert target is not None
+    actual = trust.observed_actual(
+        actual,
+        auth.prepared.artifact_revision,
+        request.base.objects,
+        run.state.objects,
+        target,
+        request.diff.primary_changes[0].change_id,
+    )
     post = t.CurrentAuthorityFacts(
         auth.prepared.binding,
         auth.authorization.authorization_ref,
@@ -266,6 +286,7 @@ def completion() -> tuple[o.AuthorizedEdit, o.RuntimeFinalizationEvidence, a.Can
         ObservedValue.TRUE,
         False,
     )
+    assert actual.identity_evidence_ref is not None
     record = a.ApplicationRecord(
         work.candidate.candidate_id,
         work.candidate.base,
@@ -353,7 +374,7 @@ def test_authority_approval_without_exact_bound_approval_rejected(field: str) ->
         changed = o.prepare_edit(
             replace(value.inputs, compiler_provenance=d.CompilerProvenance("different", "1"))
         ).prepared
-        assert changed is not None and changed.binding == value.binding
+        assert changed is not None and changed.binding != value.binding
         bound = replace(bound, prepared=changed)
     assert o.authorize_edit(value, bound, approved_state(value)).authorized is None
 
@@ -364,7 +385,7 @@ def test_same_ref_different_artifacts_rejected_at_admission() -> None:
     changed = o.prepare_edit(
         replace(auth.prepared.inputs, compiler_provenance=d.CompilerProvenance("other", "1"))
     ).prepared
-    assert changed is not None and changed.binding == auth.prepared.binding
+    assert changed is not None and changed.binding != auth.prepared.binding
     runtime = replace(
         runtime,
         validation_inputs=replace(runtime.validation_inputs, expected_diff=changed.expected_diff),
@@ -453,11 +474,7 @@ def test_actual_match_to_semantic_promotion_only() -> None:
 def test_actual_mismatch_never_commits() -> None:
     auth, runtime, work = completion()
     assert runtime.actual_diff is not None
-    effect = runtime.actual_diff.primary_changes[0]
-    actual = replace(
-        runtime.actual_diff,
-        primary_changes=(replace(effect, removed_timeline_range=FrameRange(347, 420)),),
-    )
+    actual = trust.zero_result(runtime.actual_diff)
     result = o.finalize_edit(auth, replace(runtime, actual_diff=actual), work)
     assert (
         result.verification is not None

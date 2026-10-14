@@ -1,7 +1,8 @@
 """Pure shared composition. No native access, execution, or durable authority store.
 
 Runtime facts are assertions supplied by qualified ports, not facts certified here.
-In-process structural equality binds artifacts; it is not a security/currentness token.
+Canonical content-addressed revisions bind semantic approval; they do not
+authenticate an approver or establish native currentness.
 """
 
 from dataclasses import dataclass, field
@@ -17,6 +18,7 @@ from . import pause_planning as pp
 from . import safety_preflight as s
 from . import transaction as t
 from .temporal_mapping import NativeSnapshotRef
+from .trust_evidence import PreparedArtifactRevision, artifact_revision
 
 
 class CompositionStatus(str, Enum):
@@ -61,6 +63,38 @@ class PreparedEdit:
     planning: pp.PausePlanningResult
     compilation: d.DiffCompilationResult
     safety: s.SafetyPreflightResult
+    artifact_revision: PreparedArtifactRevision | None = None
+
+    def __post_init__(self) -> None:
+        if self.artifact_revision is None:
+            object.__setattr__(
+                self,
+                "artifact_revision",
+                artifact_revision(
+                    "prepared-edit",
+                    self.inputs.authority_candidate.candidate_id,
+                    self.semantic_manifest(),
+                ),
+            )
+
+    def semantic_manifest(self) -> object:
+        """Fixed semantic content, no runtime locator/readiness/future result.
+
+        Safety carries immutable evidence evaluated at preparation, not a fresh
+        assertion of currentness. Runtime currentness remains separately acquired.
+        """
+        candidate = self.inputs.authority_candidate
+        return {
+            "candidate": (candidate.candidate_id, candidate.base, candidate.lineage),
+            "proposal_revision": self.inputs.proposal_ref,
+            "base": self.expected_diff.base_snapshot,
+            "scope": self.inputs.scope,
+            "geometry": self.geometry,
+            "proposal": self.planning.proposal,
+            "expected_diff": self.expected_diff,
+            "safety_ref": self.inputs.safety_result_ref,
+            "safety": self.safety,
+        }
 
     @property
     def expected_diff(self) -> d.ExpectedDiff:
@@ -75,6 +109,7 @@ class PreparedEdit:
             self.expected_diff.expected_diff_ref,
             self.inputs.safety_result_ref,
             self.expected_diff.base_snapshot,
+            self.artifact_revision,
         )
 
 
@@ -215,10 +250,13 @@ class BoundApproval:
     candidate_id: a.CandidateId
     base: a.CandidateBase
     binding: t.ArtifactBinding
+    artifact_revision: PreparedArtifactRevision | None = None
 
     def __post_init__(self) -> None:
         if not self.approval_ref.strip():
             raise ValueError("Explicit human approval reference required")
+        if self.artifact_revision is None:
+            object.__setattr__(self, "artifact_revision", self.prepared.artifact_revision)
 
 
 @dataclass(frozen=True)
@@ -252,13 +290,22 @@ def _authority_stale(state: a.CandidateWorkState) -> bool:
 
 
 def _prepared_valid(prepared: PreparedEdit) -> bool:
-    return prepare_edit(prepared.inputs).prepared == prepared
+    revision = prepared.artifact_revision
+    return (
+        revision is not None
+        and revision.matches(prepared.semantic_manifest())
+        and prepare_edit(prepared.inputs).prepared == prepared
+    )
 
 
 def _approval_bound(prepared: PreparedEdit, approval: BoundApproval) -> bool:
     candidate = prepared.inputs.authority_candidate
     return (
-        approval.prepared == prepared
+        prepared.artifact_revision is not None
+        and approval.artifact_revision == prepared.artifact_revision
+        and approval.prepared.artifact_revision == approval.artifact_revision
+        and approval.artifact_revision.matches(approval.prepared.semantic_manifest())
+        and prepared.artifact_revision.matches(prepared.semantic_manifest())
         and approval.candidate_id == candidate.candidate_id
         and approval.base == candidate.base
         and approval.binding == prepared.binding
@@ -510,6 +557,36 @@ def finalize_edit(
     actual = runtime.actual_diff
     if actual is None:
         return stop("ACTUAL_DIFF_MISSING")
+    # The admitted target, read, and real journal must remain linked to each result.
+    for primary_result in actual.primary_results:
+        correspondence = primary_result.correspondence
+        target = next(
+            (
+                target
+                for target in admission.evidence.validation_inputs.execution_ir.targets
+                if correspondence is not None and target.target_ref == correspondence.target_ref
+            ),
+            None,
+        )
+        if (
+            target is None
+            or target.correspondence is None
+            or correspondence is None
+            or correspondence.execution_read != target.correspondence.execution_read
+            or correspondence.execution_placement != target.correspondence.execution_placement
+            or primary_result.post_read.transaction_ref != tx.definition.transaction_ref
+            or primary_result.post_read.after_sequence is None
+            or primary_result.post_read.after_sequence
+            < max(
+                (
+                    event.sequence_no
+                    for event in tx.journal.events
+                    if event.kind == t.TransactionEventKind.STEP_SUCCEEDED
+                ),
+                default=0,
+            )
+        ):
+            return stop("PRIMARY_EXECUTION_CORRESPONDENCE_MISMATCH")
     if tx.state.postflight is not None:
         prior = runtime.prior_postflight
         if (
@@ -519,7 +596,10 @@ def finalize_edit(
             or prior.evidence != tx.state.postflight
             or prior.verification
             != d.verify_diff(
-                prior.expected_diff, prior.actual_diff, prior.evidence.current.current_snapshot
+                prior.expected_diff,
+                prior.actual_diff,
+                prior.evidence.current.current_snapshot,
+                authorized.prepared.artifact_revision,
             )
             or prior.verification.status != prior.evidence.status
         ):
@@ -527,7 +607,10 @@ def finalize_edit(
     elif runtime.prior_postflight is not None:
         return stop("UNEXPECTED_PRIOR_POSTFLIGHT")
     verification = d.verify_diff(
-        authorized.prepared.expected_diff, actual, runtime.current_post_snapshot
+        authorized.prepared.expected_diff,
+        actual,
+        runtime.current_post_snapshot,
+        authorized.prepared.artifact_revision,
     )
     post_facts = runtime.postflight_facts
     if post_facts is None or not runtime.postflight_observation_ref or not runtime.verification_ref:

@@ -362,7 +362,7 @@ def finish_transaction(request: Request, run: Run, evidence: Evidence,
     independently_derived = derive_actual(request.base, run.state, run.receipt, correlations(request))
     if independently_derived != evidence:
         raise ValueError("Evidence does not belong to actual run")
-    status = (d.verify_diff(request.diff, evidence.actual, current.snapshot).status
+    status = (d._verify_legacy_semantics(request.diff, evidence.actual, current.snapshot).status
               if evidence.actual is not None else d.DiffVerificationStatus.UNVERIFIED)
     if current != run.state:
         status = d.DiffVerificationStatus.STALE

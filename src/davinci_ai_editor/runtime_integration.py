@@ -491,12 +491,16 @@ def finalize_postflight(
         return _stop(evidence, "First postflight requires all steps SUCCEEDED")
     auth = evidence.authorized
     observed = observations.observe_postflight(
-        auth.prepared.binding, auth.prepared.inputs.scope, before
+        auth.prepared.binding,
+        auth.prepared.inputs.scope,
+        before,
+        targets=admission.evidence.validation_inputs.execution_ir.targets,
+        transaction=tx,
     )
     e = _record(
         evidence,
         "observations.observe_postflight",
-        (auth.prepared.binding, auth.prepared.inputs.scope, before),
+        (auth.prepared.binding, auth.prepared.inputs.scope, before, admission.evidence, tx),
         observed,
     )
     if isinstance(observed, p.PortIssue):
@@ -525,6 +529,12 @@ def finalize_postflight(
         or before.receipt.receipt_ref not in observed.receipt.source_refs
     ):
         return _stop(e, "Missing postflight observation provenance", p.PortIssueKind.UNKNOWN)
+    if (
+        actual.post_read is None
+        or actual.post_read.capture != snapshot
+        or actual.post_read.capture.capture_id != observed.receipt.acquisition_ref
+    ):
+        return _stop(e, "Postflight read capture/receipt mismatch", p.PortIssueKind.UNKNOWN)
     inputs = o.RuntimeFinalizationEvidence(
         admission,
         tx,

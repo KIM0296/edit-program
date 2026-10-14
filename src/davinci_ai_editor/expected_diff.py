@@ -2,11 +2,25 @@
 
 from dataclasses import dataclass, replace
 from enum import Enum
-from typing import TypeVar
+from typing import Literal, TypeVar
 
 from .domain import FrameRange, MediaId, TimelineObjectId, TrackId
+from .native_snapshot import (
+    CapabilityKind,
+    CapabilityState,
+    CaptureConsistency,
+    IdentityScope,
+    NativePlacementSnapshot,
+    SnapshotCompleteness,
+)
 from .pause_planning import PauseEditProposal, PlanningBinding
 from .temporal_mapping import MappingKind, NativeSnapshotRef
+from .trust_evidence import (
+    IndependentReadEvidence,
+    ObservationCompleteness,
+    PreparedArtifactRevision,
+    TargetCorrespondence,
+)
 
 T = TypeVar("T")
 
@@ -431,6 +445,39 @@ class ActualObjectObservation:
 
 
 @dataclass(frozen=True)
+class PrimaryResultObservation:
+    """Actual primary result from independent reads; never an expected removal effect."""
+
+    change_ref: str
+    artifact_revision: PreparedArtifactRevision
+    semantic_before: PlacementState
+    execution_before: NativePlacementSnapshot
+    post_placements: tuple[NativePlacementSnapshot, ...]
+    correspondence: TargetCorrespondence | None
+    pre_read: IndependentReadEvidence
+    post_read: IndependentReadEvidence
+    completeness: ObservationCompleteness
+    limitations: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        _text(self.change_ref)
+        for value, kind in (
+            (self.artifact_revision, PreparedArtifactRevision),
+            (self.semantic_before, PlacementState),
+            (self.execution_before, NativePlacementSnapshot),
+            (self.pre_read, IndependentReadEvidence),
+            (self.post_read, IndependentReadEvidence),
+            (self.completeness, ObservationCompleteness),
+        ):
+            _typed(value, kind)
+        placements = tuple(self.post_placements)
+        for placement in placements:
+            _typed(placement, NativePlacementSnapshot)
+        object.__setattr__(self, "post_placements", placements)
+        object.__setattr__(self, "limitations", _values(self.limitations, str))
+
+
+@dataclass(frozen=True)
 class ActualDiff:
     actual_diff_ref: str
     expected_diff_ref: str
@@ -442,6 +489,14 @@ class ActualDiff:
     post_relation_evidence_ref: str | None = None
     identity_evidence_ref: str | None = None
     topology_change_refs: tuple[str, ...] = ()
+    contract_version: str = "v1"
+    artifact_revision: PreparedArtifactRevision | None = None
+    execution_pre_snapshot: NativeSnapshotRef | None = None
+    primary_results: tuple[PrimaryResultObservation, ...] = ()
+    completeness: ObservationCompleteness = ObservationCompleteness.UNKNOWN
+    pre_read: IndependentReadEvidence | None = None
+    post_read: IndependentReadEvidence | None = None
+    object_correspondences: tuple[TargetCorrespondence, ...] = ()
 
     def __post_init__(self) -> None:
         _text(self.actual_diff_ref)
@@ -463,6 +518,11 @@ class ActualDiff:
         object.__setattr__(self, "primary_changes", primary)
         object.__setattr__(self, "observations", observations)
         object.__setattr__(self, "topology_change_refs", topology)
+        object.__setattr__(
+            self, "primary_results", _values(self.primary_results, PrimaryResultObservation)
+        )
+        _typed(self.completeness, ObservationCompleteness)
+        object.__setattr__(self, "object_correspondences", tuple(self.object_correspondences))
 
 
 class DiffVerificationStatus(str, Enum):
@@ -489,6 +549,10 @@ class DiffVerificationReason(str, Enum):
     POST_RELATION_UNVERIFIED = "POST_RELATION_UNVERIFIED"
     POST_SNAPSHOT_STALE = "POST_SNAPSHOT_STALE"
     SCOPE_OBSERVATION_INCOMPLETE = "SCOPE_OBSERVATION_INCOMPLETE"
+    PRIMARY_READ_MISSING = "PRIMARY_READ_MISSING"
+    ARTIFACT_REVISION_MISMATCH = "ARTIFACT_REVISION_MISMATCH"
+    CORRESPONDENCE_UNVERIFIED = "CORRESPONDENCE_UNVERIFIED"
+    READ_NOT_INDEPENDENT = "READ_NOT_INDEPENDENT"
 
 
 @dataclass(frozen=True)
@@ -498,6 +562,9 @@ class DiffVerificationResult:
     status: DiffVerificationStatus
     reasons: tuple[DiffVerificationReason, ...]
     affected_object_ids: tuple[TimelineObjectId, ...] = ()
+    evidence_domain: Literal["UNQUALIFIED", "PRODUCER_ASSERTION", "TEST_ONLY_SUPPORT"] = (
+        "UNQUALIFIED"
+    )
 
     def __post_init__(self) -> None:
         _text(self.expected_diff_ref)
@@ -518,10 +585,320 @@ class DiffVerificationResult:
         )
 
 
+def _read_complete(read: IndependentReadEvidence) -> bool:
+    return (
+        read.bound()
+        and read.completeness == ObservationCompleteness.COMPLETE
+        and read.capture.capture_consistency == CaptureConsistency.CONSISTENT
+        and read.capture.completeness == SnapshotCompleteness.COMPLETE_FOR_DECLARED_CAPABILITIES
+        and all(
+            read.capture.capabilities.state(kind) == CapabilityState.SUPPORTED
+            for kind in (
+                CapabilityKind.TIMELINE_IDENTITY,
+                CapabilityKind.TRACK_IDENTITY,
+                CapabilityKind.PLACEMENT_IDENTITY,
+                CapabilityKind.MEDIA_IDENTITY,
+                CapabilityKind.TIMELINE_RANGE,
+                CapabilityKind.SOURCE_RANGE,
+                CapabilityKind.FRAME_RATE,
+                CapabilityKind.RETIME,
+            )
+        )
+    )
+
+
+def _native_matches(state: PlacementState, placement: NativePlacementSnapshot) -> bool:
+    return (
+        placement.media_ref.ref == state.media_id
+        and placement.timeline_range is not None
+        and placement.timeline_range.frames == state.timeline_range
+        and placement.source_range is not None
+        and placement.source_range.frames == state.source_range
+        and placement.retime_kind == state.retime
+    )
+
+
 def verify_diff(
+    expected: ExpectedDiff,
+    actual: ActualDiff,
+    current_post_snapshot: NativeSnapshotRef,
+    approved_revision: PreparedArtifactRevision | None = None,
+) -> DiffVerificationResult:
+    """vNext compares actual reads, not expected-shaped primary effects.
+
+    MATCH is an evidence-scoped comparison, not live qualification. Producers own
+    authenticity. No expected value is inserted into an actual observation.
+    """
+    R, S = DiffVerificationReason, DiffVerificationStatus
+    reasons: set[DiffVerificationReason] = set()
+    affected: set[TimelineObjectId] = set()
+
+    def flag(reason: DiffVerificationReason, oid: TimelineObjectId) -> None:
+        reasons.add(reason)
+        affected.add(oid)
+
+    if (
+        actual.base_snapshot != expected.base_snapshot
+        or actual.post_snapshot != current_post_snapshot
+        or actual.expected_diff_ref != expected.expected_diff_ref
+        or actual.post_relation_status == PostRelationStatus.STALE
+    ):
+        reasons.add(R.POST_SNAPSHOT_STALE)
+    if approved_revision is None or actual.artifact_revision is None:
+        reasons.add(R.PRIMARY_READ_MISSING)
+    elif actual.artifact_revision != approved_revision:
+        reasons.add(R.ARTIFACT_REVISION_MISMATCH)
+    if actual.contract_version != "v2" or not actual.primary_results:
+        reasons.add(R.PRIMARY_READ_MISSING)
+    if actual.identity_evidence_ref is None:
+        reasons.add(R.IDENTITY_UNVERIFIABLE)
+    if (
+        actual.post_relation_status != PostRelationStatus.VERIFIED
+        or not actual.post_relation_evidence_ref
+    ):
+        reasons.add(R.POST_RELATION_UNVERIFIED)
+    if actual.completeness != ObservationCompleteness.COMPLETE:
+        reasons.add(R.SCOPE_OBSERVATION_INCOMPLETE)
+    pre, post = actual.pre_read, actual.post_read
+    domain: Literal["UNQUALIFIED", "PRODUCER_ASSERTION", "TEST_ONLY_SUPPORT"] = "UNQUALIFIED"
+    if pre is None or post is None:
+        reasons.add(R.PRIMARY_READ_MISSING)
+    elif pre.evidence_domain != post.evidence_domain or (
+        not _read_complete(pre)
+        or not _read_complete(post)
+        or pre.phase != "PRE"
+        or post.phase != "POST"
+        or pre.capture.capture_id == post.capture.capture_id
+        or post.sequence <= pre.sequence
+        or post.after_sequence is None
+        or post.order_domain_ref is None
+        or post.order_domain_ref != pre.order_domain_ref
+        or not post.transaction_ref
+        or post.snapshot.timeline_id != pre.snapshot.timeline_id
+        or post.snapshot != actual.post_snapshot
+        or pre.snapshot != actual.execution_pre_snapshot
+    ):
+        reasons.add(R.READ_NOT_INDEPENDENT)
+    else:
+        domain = post.evidence_domain
+    primary = {effect.change_id: effect for effect in expected.primary_changes}
+    seen: set[str] = set()
+    result_ids: set[str] = set()
+    for result in actual.primary_results:
+        effect = primary.get(result.change_ref)
+        oid = result.semantic_before.object_id
+        if effect is None or result.change_ref in seen:
+            flag(R.UNEXPECTED_CHANGE, oid)
+            continue
+        seen.add(result.change_ref)
+        if result.artifact_revision != approved_revision:
+            flag(R.ARTIFACT_REVISION_MISMATCH, oid)
+        if result.semantic_before != effect.before:
+            flag(R.BEFORE_STATE_MISMATCH, oid)
+        if result.pre_read != pre or result.post_read != post:
+            flag(R.READ_NOT_INDEPENDENT, oid)
+        if result.completeness != ObservationCompleteness.COMPLETE:
+            flag(R.SCOPE_OBSERVATION_INCOMPLETE, oid)
+        c = result.correspondence
+        if (
+            c is None
+            or not c.admission_bound()
+            or c.artifact_revision != approved_revision
+            or c.semantic_object != oid
+            or c.semantic_snapshot != expected.base_snapshot
+            or c.execution_read != result.pre_read
+            or c.result_read != result.post_read
+            or c.execution_placement != result.execution_before
+            or c.result_placements != result.post_placements
+        ):
+            flag(R.CORRESPONDENCE_UNVERIFIED, oid)
+            continue
+        if len(c.result_sources) != len(result.post_placements):
+            flag(R.CORRESPONDENCE_UNVERIFIED, oid)
+        elif any(origin != result.execution_before for origin in c.result_sources):
+            flag(R.PLACEMENT_IDENTITY_CHANGED, oid)
+        if not _native_matches(effect.before, c.semantic_placement) or not _native_matches(
+            effect.before, result.execution_before
+        ):
+            flag(R.BEFORE_STATE_MISMATCH, oid)
+        if result.execution_before not in result.pre_read.capture.placements:
+            flag(R.IDENTITY_UNVERIFIABLE, oid)
+        # Narrow executable semantics: exact 1x source/timeline interval preservation.
+        before, cut = effect.before, effect.removed_timeline_range
+        if (
+            before.retime != MappingKind.IDENTITY_1X
+            or before.source_range.duration != before.timeline_range.duration
+        ):
+            flag(R.CORRESPONDENCE_UNVERIFIED, oid)
+            continue
+        offset = before.source_range.start - before.timeline_range.start
+        wanted: list[tuple[int, int, int, int]] = []
+        if before.timeline_range.start < cut.start:
+            wanted.append(
+                (
+                    before.source_range.start,
+                    cut.start + offset,
+                    before.timeline_range.start,
+                    cut.start,
+                )
+            )
+        if cut.end < before.timeline_range.end:
+            wanted.append(
+                (
+                    cut.end + offset,
+                    before.source_range.end,
+                    cut.start,
+                    before.timeline_range.end - cut.duration,
+                )
+            )
+        got: list[tuple[int, int, int, int]] = []
+        for placement in result.post_placements:
+            if placement.object_ref.ref in result_ids:
+                flag(R.PLACEMENT_IDENTITY_CHANGED, oid)
+            result_ids.add(placement.object_ref.ref)
+            if placement not in result.post_read.capture.placements:
+                flag(R.IDENTITY_UNVERIFIABLE, oid)
+            if placement.object_ref.scope not in (
+                IdentityScope.SESSION_LOCAL_VERIFIED,
+                IdentityScope.PERSISTENT_VERIFIED,
+            ):
+                flag(R.IDENTITY_UNVERIFIABLE, oid)
+            if placement.media_ref.scope not in (
+                IdentityScope.SESSION_LOCAL_VERIFIED,
+                IdentityScope.PERSISTENT_VERIFIED,
+            ):
+                flag(R.IDENTITY_UNVERIFIABLE, oid)
+            if placement.media_ref != result.execution_before.media_ref:
+                flag(R.MEDIA_IDENTITY_CHANGED, oid)
+            if placement.track_ref != result.execution_before.track_ref:
+                flag(R.TRACK_MEMBERSHIP_CHANGED, oid)
+            if placement.retime_kind != MappingKind.IDENTITY_1X:
+                flag(R.RETIME_CHANGED, oid)
+            if (
+                placement.timeline_rate is None
+                or placement.source_rate != placement.timeline_rate
+                or placement.timeline_rate != result.execution_before.timeline_rate
+                or result.execution_before.source_rate != placement.source_rate
+            ):
+                flag(R.RETIME_CHANGED, oid)
+            source, timeline = placement.source_range, placement.timeline_range
+            if source is None or timeline is None:
+                flag(R.SCOPE_OBSERVATION_INCOMPLETE, oid)
+                continue
+            got.append(
+                (source.frames.start, source.frames.end, timeline.frames.start, timeline.frames.end)
+            )
+        # Coalesce only independently observed adjacent source AND timeline intervals.
+        merged: list[tuple[int, int, int, int]] = []
+        for segment in got:
+            if merged and merged[-1][1] == segment[0] and merged[-1][3] == segment[2]:
+                old = merged.pop()
+                merged.append((old[0], segment[1], old[2], segment[3]))
+            else:
+                merged.append(segment)
+        if merged != wanted:
+            flag(R.WRONG_PRIMARY_RANGE, oid)
+    if set(primary) != seen:
+        reasons.add(R.PRIMARY_READ_MISSING)
+    # Existing non-primary checks, with actual observations required for every scope member.
+    primary_ids = {effect.before.object_id for effect in expected.primary_changes}
+    observations = {obs.object_id: obs for obs in actual.observations}
+    moves = {move.before.object_id: move.after for move in expected.displacements}
+    for before in expected.inputs.scope.objects:
+        oid = before.object_id
+        if oid in primary_ids:
+            # Primary evidence is above; optional duplicate observation must agree, not be ignored.
+            obs = observations.get(oid)
+            if obs is not None:
+                duplicate_result = next(
+                    (r for r in actual.primary_results if r.semantic_before.object_id == oid), None
+                )
+                if (
+                    duplicate_result is None
+                    or obs.before != before
+                    or obs.after is None
+                    or len(duplicate_result.post_placements) != 1
+                    or not _native_matches(obs.after, duplicate_result.post_placements[0])
+                ):
+                    flag(R.UNEXPECTED_CHANGE, oid)
+            continue
+        obs = observations.get(oid)
+        if obs is None:
+            flag(R.SCOPE_OBSERVATION_INCOMPLETE, oid)
+        elif obs.before != before or obs.after != moves.get(oid, before):
+            flag(R.WRONG_DISPLACEMENT if oid in moves else R.UNEXPECTED_CHANGE, oid)
+        # Observed semantic states must be supported by retained capture members.
+        if obs is not None and pre is not None and post is not None:
+            links = tuple(c for c in actual.object_correspondences if c.semantic_object == oid)
+            if len(links) != 1:
+                flag(R.CORRESPONDENCE_UNVERIFIED, oid)
+                continue
+            link = links[0]
+            if (
+                not link.admission_bound()
+                or link.artifact_revision != approved_revision
+                or link.execution_read != pre
+                or link.result_read != post
+                or len(link.result_placements) != 1
+                or link.result_sources != (link.execution_placement,)
+            ):
+                flag(R.CORRESPONDENCE_UNVERIFIED, oid)
+                continue
+            placement = link.result_placements[0]
+            result_ids.add(placement.object_ref.ref)
+            if (
+                obs.before is None
+                or obs.after is None
+                or not _native_matches(obs.before, link.execution_placement)
+                or not _native_matches(obs.after, placement)
+                or placement not in post.capture.placements
+            ):
+                flag(R.IDENTITY_UNVERIFIABLE, oid)
+            if placement.track_ref != link.execution_placement.track_ref:
+                flag(R.TRACK_MEMBERSHIP_CHANGED, oid)
+    scope_ids = {obj.object_id for obj in expected.inputs.scope.objects}
+    for oid, obs in observations.items():
+        if oid not in scope_ids and obs.before != obs.after:
+            flag(R.UNEXPECTED_CHANGE, oid)
+    if (
+        pre is not None
+        and post is not None
+        and ({p.object_ref.ref for p in post.capture.placements} - result_ids)
+    ):
+        reasons.add(R.UNEXPECTED_CHANGE)
+    if actual.topology_change_refs:
+        reasons.add(R.TRACK_MEMBERSHIP_CHANGED)
+    uncertain = {
+        R.PRIMARY_READ_MISSING,
+        R.CORRESPONDENCE_UNVERIFIED,
+        R.READ_NOT_INDEPENDENT,
+        R.IDENTITY_UNVERIFIABLE,
+        R.POST_RELATION_UNVERIFIED,
+        R.SCOPE_OBSERVATION_INCOMPLETE,
+    }
+    if R.POST_SNAPSHOT_STALE in reasons or R.ARTIFACT_REVISION_MISMATCH in reasons:
+        status = S.STALE
+    elif reasons & uncertain:
+        status = S.UNVERIFIED
+    elif reasons:
+        status = S.MISMATCH
+    else:
+        status = S.MATCH
+        reasons.add(R.MATCHED)
+    return DiffVerificationResult(
+        expected.expected_diff_ref,
+        actual.actual_diff_ref,
+        status,
+        tuple(reasons),
+        tuple(affected),
+        domain,
+    )
+
+
+def _verify_legacy_semantics(
     expected: ExpectedDiff, actual: ActualDiff, current_post_snapshot: NativeSnapshotRef
 ) -> DiffVerificationResult:
-    """Compare synthetic semantic evidence. MATCH is scoped, not native certification."""
+    """Historical TEST_ONLY_SUPPORT comparison. Never used by production finalization."""
     _typed(expected, ExpectedDiff)
     _typed(actual, ActualDiff)
     _typed(current_post_snapshot, NativeSnapshotRef)

@@ -17,6 +17,7 @@ from test_orchestration import append_event, authorized, completion, runtime_adm
 from test_vs001_vertical_slice import POST, fixture
 
 from davinci_ai_editor import authority as a
+from davinci_ai_editor import execution_ir as ir
 from davinci_ai_editor import expected_diff as d
 from davinci_ai_editor import native_snapshot as n
 from davinci_ai_editor import orchestration as o
@@ -107,6 +108,9 @@ class SyntheticObserver:
         binding: t.ArtifactBinding,
         scope: d.PreservationScope,
         before: rp.PortValue[rp.CurrentnessPayload],
+        *,
+        targets: tuple[ir.ExecutionTargetBinding, ...] = (),
+        transaction: t.Transaction | None = None,
     ) -> rp.PortResult[rp.PostflightPayload]:
         if self.simulation is None:
             return issue(K.UNAVAILABLE, "No synthetic runtime observation")
@@ -637,6 +641,8 @@ def test_actual_diff_independent_of_changed_expected_effects() -> None:
     changed = d.compile_expected_diff(changed_inputs).expected_diff
     assert changed is not None and changed.displacements != original.displacements
     actuals = []
+    history = admission().transaction
+    assert history is not None
     for expected in (original, changed):
         result = observer.observe_postflight(
             t.ArtifactBinding(
@@ -644,12 +650,20 @@ def test_actual_diff_independent_of_changed_expected_effects() -> None:
             ),
             expected.inputs.scope,
             before,
+            targets=(),
+            transaction=history,
         )
         assert isinstance(result, rp.PortValue)
         actuals.append(result.value[1])
     assert actuals[0] == actuals[1]
-    assert d.verify_diff(original, actuals[0], POST).status == d.DiffVerificationStatus.MATCH
-    assert d.verify_diff(changed, actuals[1], POST).status == d.DiffVerificationStatus.MISMATCH
+    assert (
+        d._verify_legacy_semantics(original, actuals[0], POST).status
+        == d.DiffVerificationStatus.MATCH
+    )
+    assert (
+        d._verify_legacy_semantics(changed, actuals[1], POST).status
+        == d.DiffVerificationStatus.MISMATCH
+    )
 
 
 @pytest.mark.parametrize("relabel", ["none", "receipt", "receipt_and_acquisition"])

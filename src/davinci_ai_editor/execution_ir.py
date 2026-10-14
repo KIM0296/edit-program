@@ -9,8 +9,9 @@ from .domain import TimelineObjectId
 from .expected_diff import ExpectedDiff, PlacementState, RangeRemovalEffect, TemporalDisplacement
 from .native_snapshot import IdentityScope, ObservedValue
 from .safety_preflight import PreflightStatus, SafetyPreflightResult, SafetyVerdict
-from .temporal_mapping import NativeSnapshotRef
+from .temporal_mapping import MappingKind, NativeSnapshotRef
 from .transaction import ArtifactBinding, ExecutionAuthorization, RollbackCapability
+from .trust_evidence import TargetCorrespondence
 
 T = TypeVar("T")
 SemanticEffect: TypeAlias = RangeRemovalEffect | TemporalDisplacement
@@ -178,6 +179,7 @@ class ExecutionTargetBinding:
     mutation_stability_ref: str | None = None
     postflight_correspondence_ref: str | None = None
     contract_version: str = "v1"
+    correspondence: TargetCorrespondence | None = None
 
     def __post_init__(self) -> None:
         for v in (self.target_ref, self.session_ref, self.contract_version):
@@ -445,6 +447,46 @@ class ValidationFinding:
             raise ValueError("Finding must block readiness")
 
 
+def _approved_prestate_matches(before: PlacementState, c: TargetCorrespondence) -> bool:
+    """Correlate supplied reads; never infer identity from matching geometry.
+
+    The supported mapping preserves exact track/media refs and 1x frame ranges.
+    Staging may change native object/timeline identity only through the retained
+    correspondence and both lineage captures checked by admission_bound().
+    This does not authenticate a producer or qualify a live staging copy.
+    """
+    if not c.admission_bound() or before.retime != MappingKind.IDENTITY_1X:
+        return False
+    semantic, execution = c.semantic_placement, c.execution_placement
+    for placement in (semantic, execution):
+        if (
+            placement.media_ref.ref != before.media_id
+            or placement.media_ref.scope
+            not in (IdentityScope.SESSION_LOCAL_VERIFIED, IdentityScope.PERSISTENT_VERIFIED)
+            or placement.track_ref != before.track_id
+            or placement.timeline_range is None
+            or placement.timeline_range.frames != before.timeline_range
+            or placement.source_range is None
+            or placement.source_range.frames != before.source_range
+            or placement.retime_kind != before.retime
+            or placement.timeline_rate is None
+            or placement.source_rate is None
+            or placement.timeline_rate != placement.source_rate
+        ):
+            return False
+    if (
+        semantic.media_ref != execution.media_ref
+        or semantic.timeline_rate != execution.timeline_rate
+        or semantic.source_rate != execution.source_rate
+    ):
+        return False
+    if c.semantic_read.snapshot.timeline_id == c.execution_read.snapshot.timeline_id:
+        return semantic.object_ref == execution.object_ref
+    # Different timeline identities are not interchangeable: admission_bound()
+    # must retain the explicit original -> staging correspondence and captures.
+    return c.semantic_read.capture != c.execution_read.capture
+
+
 def _findings(v: ExecutionIRValidationInput) -> tuple[ValidationFinding, ...]:
     S, R = ExecutionIRValidationStatus, ExecutionIRValidationReason
     findings: list[ValidationFinding] = []
@@ -455,7 +497,22 @@ def _findings(v: ExecutionIRValidationInput) -> tuple[ValidationFinding, ...]:
         findings.append(ValidationFinding(status, reason, ref))
 
     diff, logical, plan, manifest = v.expected_diff, v.execution_ir, v.lowering, v.manifest
-    binding = ArtifactBinding(diff.expected_diff_ref, v.safety_result_ref, diff.base_snapshot)
+    revision = logical.authorization.binding.artifact_revision
+    binding = ArtifactBinding(
+        diff.expected_diff_ref, v.safety_result_ref, diff.base_snapshot, revision
+    )
+    if revision is not None:
+        for target in logical.targets:
+            correspondence = target.correspondence
+            if (
+                correspondence is None
+                or not _approved_prestate_matches(target.before, correspondence)
+                or correspondence.artifact_revision != revision
+                or correspondence.semantic_object != target.before.object_id
+                or correspondence.target_ref != target.target_ref
+                or correspondence.semantic_snapshot != binding.base_snapshot
+            ):
+                add(S.INCOMPLETE, R.ARTIFACT_BINDING, target.target_ref)
 
     def bound(b: ArtifactBinding, profile: RuntimeProfile | None, ref: str) -> None:
         if b.base_snapshot != binding.base_snapshot:
