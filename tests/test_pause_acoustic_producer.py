@@ -438,6 +438,53 @@ def test_source_window_offset_uses_existing_mapping() -> None:
     assert result.preparation.coverage.covered_range == FrameRange(140, 142)
 
 
+@pytest.mark.parametrize(
+    "case", ["not-evaluated", "unavailable", "format", "channel", "rate", "config"]
+)
+def test_partial_requested_window_is_retained_on_early_stop(case: str) -> None:
+    native, _, _ = inputs()
+    value = replace(levels([0, 0]), source_range=SourceFrameRange(FrameRange(40, 42)))
+    policy = config()
+    if case == "unavailable":
+        value = replace(value, data=None)
+    elif case == "format":
+        value = replace(value, sample_format="FLOAT32")
+    elif case == "channel":
+        value = replace(value, selected_channel=9)
+    elif case == "rate":
+        value = replace(value, sample_rate=0)
+    elif case == "config":
+        policy = replace(policy, version="future")
+    result = p.produce_pause_evidence(value, policy, native, REF, analyze=case != "not-evaluated")
+    assert result.preparation.coverage_status == (
+        obs.CoverageStatus.NOT_EVALUATED
+        if case == "not-evaluated"
+        else obs.CoverageStatus.UNAVAILABLE
+    )
+    assert result.preparation.coverage is not None
+    assert result.preparation.coverage.covered_range == FrameRange(140, 142)
+    assert result.mappings[0].status == MappingStatus.EXACT
+    assert result.records == () and result.preparation.subjects == ()
+
+
+@pytest.mark.parametrize("analyze_requested", [False, True])
+def test_unmappable_requested_window_is_explicit_not_full_placement_request(
+    analyze_requested: bool,
+) -> None:
+    native, _, _ = inputs()
+    value = replace(levels([0, 0]), data=None, source_range=SourceFrameRange(FrameRange(200, 202)))
+    result = p.produce_pause_evidence(value, config(), native, REF, analyze=analyze_requested)
+    assert result.diagnostics == (p.PcmDiagnostic.MAPPING_NOT_EXACT,)
+    assert result.preparation.coverage_status == obs.CoverageStatus.UNAVAILABLE
+    assert result.preparation.coverage is not None
+    assert any(
+        "not the requested window" in text for text in result.preparation.coverage.limitations
+    )
+    assert result.source_range == value.source_range
+    assert result.mappings[0].status == MappingStatus.OUT_OF_RANGE
+    assert result.records == ()
+
+
 def test_source_outside_placement_or_nonexact_affine_never_emits_evidence() -> None:
     outside = replace(levels([0, 0]), source_range=SourceFrameRange(FrameRange(200, 202)))
     assert analyze(outside).diagnostics == (p.PcmDiagnostic.MAPPING_NOT_EXACT,)

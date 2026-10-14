@@ -219,6 +219,10 @@ def produce_pause_evidence(
         ]
     )
     covered = b.timeline_range.frames
+    coverage_meaning = (
+        "Placement envelope only, not the requested window or analyzed frames; "
+        "no exact requested-window mapping has been established."
+    )
     mappings: list[TemporalMappingResult] = []
 
     def finish(
@@ -241,7 +245,7 @@ def produce_pause_evidence(
             status,
             (
                 "Acoustic threshold baseline only; no semantic inference or acquisition authentication.",
-                "Unavailable/not-evaluated coverage range is a requested scope, not analyzed frames.",
+                coverage_meaning,
             ),
         )
         prepared = prepare_pause_candidates_from_native(
@@ -275,6 +279,22 @@ def produce_pause_evidence(
             CoverageStatus.STALE if stale else CoverageStatus.NOT_EVALUATED,
             (PcmDiagnostic.STALE if stale else PcmDiagnostic.OBS_BLOCKED,),
         )
+
+    def mapped(source: SourceFrameRange) -> TemporalMappingResult:
+        result = map_range(
+            MappingRequest(b.snapshot_ref, b.object_id, b.media_id, source), (b,), current_snapshot
+        )
+        mappings.append(result)
+        return result
+
+    window = mapped(pcm.source_range)
+    if window.status != MappingStatus.EXACT or window.timeline_range is None:
+        return finish(CoverageStatus.UNAVAILABLE, (PcmDiagnostic.MAPPING_NOT_EXACT,))
+    covered = window.timeline_range.frames
+    coverage_meaning = (
+        "Exact mapped requested PCM window; unavailable/not-evaluated status "
+        "does not claim these frames were analyzed."
+    )
     if not analyze:
         return finish(CoverageStatus.NOT_EVALUATED, (PcmDiagnostic.NOT_EVALUATED,))
     if pcm.data is None:
@@ -301,17 +321,6 @@ def produce_pause_evidence(
     if len(pcm.data) != pcm.source_range.frames.duration * samples_per_frame * pcm.channels * 2:
         return finish(CoverageStatus.UNAVAILABLE, (PcmDiagnostic.SAMPLE_COUNT_MISMATCH,))
 
-    def mapped(source: SourceFrameRange) -> TemporalMappingResult:
-        result = map_range(
-            MappingRequest(b.snapshot_ref, b.object_id, b.media_id, source), (b,), current_snapshot
-        )
-        mappings.append(result)
-        return result
-
-    window = mapped(pcm.source_range)
-    if window.status != MappingStatus.EXACT or window.timeline_range is None:
-        return finish(CoverageStatus.UNAVAILABLE, (PcmDiagnostic.MAPPING_NOT_EXACT,))
-    covered = window.timeline_range.frames
     if b.timeline_range.frames.duration != b.source_range.frames.duration:
         return finish(CoverageStatus.UNAVAILABLE, (PcmDiagnostic.MAPPING_UNSUPPORTED,))
 

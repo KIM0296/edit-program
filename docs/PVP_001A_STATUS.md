@@ -161,9 +161,16 @@ Reuse the five OBS coverage statuses without another enum:
 - Snapshot/link/currentness mismatch: existing OBS stale result, no new evidence
   or candidate. No old approval carry-forward or silent rebase.
 
-Before exact window mapping, an unavailable/not-evaluated coverage range denotes
-requested placement scope only; limitations state that it is not analyzed coverage.
-After mapping, retain the exact mapped window. Producer authenticity remains open.
+Immediately after native/link readiness succeeds, map the requested source window
+through existing map_range, before analyze=False, PCM availability, format, channel,
+sample-rate or config checks. Every EXACT result supplies the exact requested
+timeline window to coverage, including early NOT_EVALUATED/UNAVAILABLE results.
+If readiness prevents mapping or the requested range cannot map EXACT, the retained
+placement envelope is explicitly labeled as neither the requested window nor
+analyzed frames. The original source request and attempted mapping result remain
+retained; non-EXACT mapping returns the existing typed MAPPING_NOT_EXACT failure.
+No fallback inference, rounding, or second mapping algorithm. Producer authenticity
+remains open.
 
 ## Validation receipt
 
@@ -216,3 +223,18 @@ all real-media/editor/native qualification remains unproven/HOLD. Recommended ne
 step after Chat Gate: an independently reviewed, bounded real-PCM calibration and
 acquisition-evidence exercise before broader producers. Do not begin it here.
 STOP after PR and CI receipt. Do not merge or begin another milestone.
+
+## PR #59 coverage-truthfulness correction
+
+The original early-stop paths incorrectly reported full-placement coverage for a
+partial PCM request. Eight red-first regressions reproduced this: six early-stop
+paths (not evaluated, PCM unavailable, format, channel, rate, config) and two
+unmappable-request cases. The mapping-order change fixes the early ranges and
+explicitly labels the unmapped placement envelope. Scope remains the same three
+files; no existing contracts, acoustic algorithm or timing policy changed.
+
+Updated validation: PVP **68 passed**; related regression **530 passed**; full
+pytest **1,904 passed / 1 existing skip**; Ruff PASS; repository mypy PASS (41 files);
+explicit strict PASS (2 files). Whitespace/allowlist checked before commit; remote
+CI receipt recorded in the PR. The previously disclosed legacy expanded strict
+baseline is not claimed green.
