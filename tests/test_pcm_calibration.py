@@ -5,6 +5,7 @@ import inspect
 import json
 from dataclasses import FrozenInstanceError, replace
 from fractions import Fraction
+from functools import cache
 from itertools import permutations
 from pathlib import Path
 from struct import pack
@@ -68,6 +69,8 @@ def acquisition() -> c.AcquisitionManifest:
         replace(first, operator_ref="reviewer-b"),
         "synthetic-review",
         "BYTE_IDENTICAL",
+        "2026-09-01T00:00:00+09:00",
+        "reviewer-b",
     )
 
 
@@ -106,30 +109,39 @@ def annotation(reviewer: str = "r1", regions: tuple[c.Region, ...] | None = None
     )
 
 
+@cache
 def freeze() -> c.Freeze:
-    return c.Freeze(
-        "synthetic-experiment",
-        H,
-        J,
-        "rubric-v1",
-        "exclusions-none",
-        c.policy_digest(),
-        ("holdout-lineage",),
-        H,
-        J,
+    sessions = dataset()
+    annotations = tuple(
+        c.Annotation(
+            w.window_ref,
+            c.digest(w),
+            reviewer,
+            "v1",
+            "rubric-v1",
+            "blind",
+            (c.Region(w.sample_start, w.sample_end, c.Label.QUIET),),
+        )
+        for session in sessions
+        for w in session.windows
+        for reviewer in ("r1", "r2")
     )
+    return c.freeze_inputs("synthetic-experiment", sessions, annotations, "rubric-v1", "none", H, J)
 
 
 def scores(
     config: AcousticConfig, split: c.Split, counts: c.Counts = GOOD_COUNTS
 ) -> c.ConfigEvaluation:
+    frozen = freeze()
+    selected = tuple(s for s in frozen.sessions if s.split == split)
+    windows = {w.window_ref for s in selected for w in s.windows}
     return c.ConfigEvaluation(
         config,
         split,
-        tuple(
-            c.SessionScore(f"synthetic-{split.value}-{s.value}", s, split, counts)
-            for s in c.Stratum
-        ),
+        tuple(c.SessionScore(s.session_ref, s.stratum, s.split, counts) for s in selected),
+        frozen,
+        selected,
+        tuple(a for a in frozen.annotations if a.window_ref in windows),
     )
 
 
@@ -150,7 +162,9 @@ def holdout_use(report: c.CalibrationReport) -> c.HoldoutUse:
 
 
 def test_acquisition_synthetic_valid_unknown_processing_is_explicit() -> None:
-    assert c.validate_acquisition(acquisition()) == ()
+    assert (
+        c.validate_acquisition(acquisition(), experiment_use_at="2026-10-14T12:00:00+09:00") == ()
+    )
     with pytest.raises(FrozenInstanceError):
         field_name = "selected_channel"
         setattr(acquisition(), field_name, 1)
@@ -195,7 +209,9 @@ def test_acquisition_synthetic_valid_unknown_processing_is_explicit() -> None:
     ],
 )
 def test_acquisition_fail_closed(bad: c.AcquisitionManifest, code: str) -> None:
-    assert code in {f.code for f in c.validate_acquisition(bad)}
+    assert code in {
+        f.code for f in c.validate_acquisition(bad, experiment_use_at="2026-10-14T12:00:00+09:00")
+    }
 
 
 @pytest.mark.parametrize("fps,k", [(24, 2000), (25, 1920), (30, 1600)])
@@ -612,7 +628,9 @@ def test_architecture_no_media_read_native_network_or_production_modification() 
 
 def test_acquisition_independent_review_must_be_explicit() -> None:
     bad = replace(acquisition(), independent_review_result="UNKNOWN")
-    assert "INDEPENDENT_REVIEW_UNQUALIFIED" in {f.code for f in c.validate_acquisition(bad)}
+    assert "INDEPENDENT_REVIEW_UNQUALIFIED" in {
+        f.code for f in c.validate_acquisition(bad, experiment_use_at="2026-10-14T12:00:00+09:00")
+    }
 
 
 def test_validation_inclusive_thresholds_and_precision_failure() -> None:
@@ -699,3 +717,108 @@ def test_independent_synthetic_metric_recomputation_not_report_copy() -> None:
         sum(t == c.Label.AMBIGUOUS for t in truth),
     )
     assert reproduced == original
+
+
+@pytest.mark.parametrize(
+    "used",
+    [
+        "2026-12-01T00:00:00+09:00",
+        "2027-01-01T00:00:00+09:00",
+        "2026-09-30T00:00:00+09:00",
+        "2026-10-14T12:00:00",
+        "UNKNOWN",
+    ],
+)
+def test_permission_requires_valid_declared_experiment_time(used: str) -> None:
+    assert c.validate_acquisition(acquisition(), experiment_use_at=used)
+
+
+def test_permission_timezone_equivalence_and_not_yet_valid() -> None:
+    assert not c.validate_acquisition(acquisition(), experiment_use_at="2026-10-14T03:00:00+00:00")
+    bad = replace(acquisition(), permission_valid_from="2026-11-01T00:00:00+09:00")
+    assert c.validate_acquisition(bad, experiment_use_at="2026-10-14T12:00:00+09:00")
+
+
+@pytest.mark.parametrize("reviewer", ["operator-a", "different-reviewer", "UNKNOWN", ""])
+def test_independent_review_identity_must_match_second_extractor(reviewer: str) -> None:
+    bad = replace(acquisition(), independent_reviewer_ref=reviewer)
+    issues = c.validate_acquisition(bad, experiment_use_at="2026-10-14T12:00:00+09:00")
+    assert "INDEPENDENT_REVIEWER_MISMATCH" in {i.code for i in issues}
+
+
+def test_freeze_rejects_reviewer_substitution_and_forged_digests() -> None:
+    frozen = freeze()
+    changed = (
+        replace(frozen.annotations[0], reviewer_ref="third-reviewer"),
+        *frozen.annotations[1:],
+    )
+    with pytest.raises(c.Refusal, match="INCONSISTENT_INDEPENDENT_REVIEWERS"):
+        c.freeze_inputs("other", frozen.sessions, changed, frozen.rubric_ref, "none", H, J)
+    with pytest.raises(c.Refusal, match="FREEZE_INPUT_DIGEST_MISMATCH"):
+        replace(frozen, split_digest=H)
+    with pytest.raises(c.Refusal, match="FREEZE_INPUT_DIGEST_MISMATCH"):
+        replace(frozen, annotation_digest=J)
+
+
+@pytest.mark.parametrize("split", list(c.Split))
+@pytest.mark.parametrize(
+    "tamper", ["foreign-session", "channel", "pcm", "annotation", "omission", "freeze"]
+)
+def test_every_evaluation_gate_checks_exact_frozen_inputs(split: c.Split, tamper: str) -> None:
+    report = calibrated()
+    assert report.selected is not None
+    cfg = c.calibration_grid()[0] if split == c.Split.CALIBRATION else report.selected
+    result = scores(cfg, split)
+    if tamper == "foreign-session":
+        result = replace(
+            result,
+            sessions=(
+                replace(result.sessions[0], session_ref="foreign-session"),
+                *result.sessions[1:],
+            ),
+        )
+    elif tamper == "channel":
+        session = result.input_sessions[0]
+        changed = replace(
+            session, windows=(replace(session.windows[0], selected_channel=1), *session.windows[1:])
+        )
+        result = replace(result, input_sessions=(changed, *result.input_sessions[1:]))
+    elif tamper in ("pcm", "annotation"):
+        first = result.input_annotations[0]
+        changed_annotation = (
+            replace(first, pcm_sha256=H) if tamper == "pcm" else replace(first, version="changed")
+        )
+        result = replace(
+            result, input_annotations=(changed_annotation, *result.input_annotations[1:])
+        )
+    elif tamper == "omission":
+        result = replace(result, input_sessions=result.input_sessions[:-1])
+    else:
+        result = replace(result, freeze=replace(freeze(), experiment_ref="other-experiment"))
+    with pytest.raises(c.Refusal, match="FROZEN_INPUT_MISMATCH"):
+        if split == c.Split.CALIBRATION:
+            c.evaluate_calibration(
+                freeze(), lambda config, requested: replace(result, config=config)
+            )
+        elif split == c.Split.VALIDATION:
+            c.evaluate_validation(report, result)
+        else:
+            c.evaluate_holdout(result, holdout_use(report))
+
+
+def test_freeze_roundtrip_ordering_remains_valid_not_object_identity() -> None:
+    frozen = freeze()
+    rebuilt = c.freeze_inputs(
+        frozen.experiment_ref,
+        tuple(reversed(frozen.sessions)),
+        tuple(reversed(frozen.annotations)),
+        frozen.rubric_ref,
+        frozen.exclusion_ref,
+        frozen.rubric_sha256,
+        frozen.exclusion_sha256,
+    )
+    assert rebuilt is not frozen and c.digest(rebuilt) == c.digest(frozen)
+    report = c.evaluate_calibration(rebuilt, scores)
+    assert report.selected is not None
+    result = replace(scores(report.selected, c.Split.VALIDATION), freeze=rebuilt)
+    assert c.evaluate_validation(report, result) == "VALIDATION_CRITERIA_MET"

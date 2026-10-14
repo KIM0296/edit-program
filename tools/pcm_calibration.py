@@ -153,13 +153,15 @@ class AcquisitionManifest:
     independent_extraction: Extraction | None
     independent_review_ref: str
     independent_review_result: str
+    permission_valid_from: str
+    independent_reviewer_ref: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "processing", tuple(self.processing))
         object.__setattr__(self, "channel_order", tuple(self.channel_order))
 
 
-def validate_acquisition(m: AcquisitionManifest) -> tuple[Finding, ...]:
+def validate_acquisition(m: AcquisitionManifest, *, experiment_use_at: str) -> tuple[Finding, ...]:
     issues: list[Finding] = []
 
     def fail(code: str) -> None:
@@ -179,7 +181,12 @@ def validate_acquisition(m: AcquisitionManifest) -> tuple[Finding, ...]:
     if any(not _pseudo(v) or v == "UNKNOWN" for v in critical):
         fail("PROVENANCE_QUARANTINE")
     timestamps: list[datetime] = []
-    for timestamp in (m.acquired_at, m.permission_expiry):
+    for timestamp in (
+        m.acquired_at,
+        m.permission_expiry,
+        m.permission_valid_from,
+        experiment_use_at,
+    ):
         try:
             stamp = datetime.fromisoformat(timestamp)
             if stamp.utcoffset() is None:
@@ -188,8 +195,12 @@ def validate_acquisition(m: AcquisitionManifest) -> tuple[Finding, ...]:
                 timestamps.append(stamp)
         except ValueError:
             fail("TIMESTAMP_INVALID")
-    if len(timestamps) == 2 and timestamps[1] <= timestamps[0]:
-        fail("PERMISSION_EXPIRED_AT_ACQUISITION")
+    if len(timestamps) == 4:
+        acquired, expiry, valid_from, used = timestamps
+        if expiry <= acquired:
+            fail("PERMISSION_EXPIRED_AT_ACQUISITION")
+        if not valid_from <= acquired <= used < expiry:
+            fail("PERMISSION_INVALID_AT_EXPERIMENT_USE")
     if not m.device_app_version or not m.processing:
         fail("PROCESSING_PROVENANCE_MISSING")
     if not _sha(m.original_sha256) or m.original_bytes <= 0:
@@ -219,6 +230,14 @@ def validate_acquisition(m: AcquisitionManifest) -> tuple[Finding, ...]:
     except Refusal as exc:
         fail(exc.code)
     first, second = m.extraction, m.independent_extraction
+    if (
+        not _pseudo(m.independent_reviewer_ref)
+        or m.independent_reviewer_ref == "UNKNOWN"
+        or second is None
+        or m.independent_reviewer_ref != second.operator_ref
+        or m.independent_reviewer_ref in (first.operator_ref, m.recorder_ref)
+    ):
+        fail("INDEPENDENT_REVIEWER_MISMATCH")
     if not _pseudo(m.independent_review_ref) or m.independent_review_result != "BYTE_IDENTICAL":
         fail("INDEPENDENT_REVIEW_UNQUALIFIED")
     for extraction in (first,) if second is None else (first, second):
@@ -691,8 +710,18 @@ class Freeze:
     holdout_lineages: tuple[str, ...]
     rubric_sha256: str
     exclusion_sha256: str
+    sessions: tuple[Session, ...]
+    annotations: tuple[Annotation, ...]
 
     def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "sessions", tuple(sorted(self.sessions, key=lambda s: s.session_ref))
+        )
+        object.__setattr__(
+            self,
+            "annotations",
+            tuple(sorted(self.annotations, key=lambda a: (a.window_ref, a.reviewer_ref))),
+        )
         object.__setattr__(self, "holdout_lineages", tuple(sorted(self.holdout_lineages)))
         if (
             not all(
@@ -712,6 +741,52 @@ class Freeze:
             or any(not _pseudo(v) for v in self.holdout_lineages)
         ):
             raise Refusal("FREEZE_SCHEMA_INVALID")
+        _validate_dataset_annotations(self.sessions, self.annotations, self.rubric_ref)
+        if (
+            self.split_digest != digest(self.sessions)
+            or self.annotation_digest != digest(self.annotations)
+            or self.holdout_lineages != _holdout_lineages(self.sessions)
+        ):
+            raise Refusal("FREEZE_INPUT_DIGEST_MISMATCH")
+
+
+def _holdout_lineages(sessions: tuple[Session, ...]) -> tuple[str, ...]:
+    return tuple(
+        sorted(
+            {
+                x
+                for s in sessions
+                if s.split == Split.HOLDOUT
+                for x in (*s.lineage_refs, s.session_ref, *(w.original_sha256 for w in s.windows))
+            }
+        )
+    )
+
+
+def _validate_dataset_annotations(
+    sessions: tuple[Session, ...], annotations: tuple[Annotation, ...], rubric_ref: str
+) -> None:
+    if validate_splits(sessions):
+        raise Refusal("FREEZE_INPUTS_INVALID")
+    reviewers = {a.reviewer_ref for a in annotations}
+    if len(reviewers) != 2 or "UNKNOWN" in reviewers:
+        raise Refusal("INCONSISTENT_INDEPENDENT_REVIEWERS")
+    windows = {w.window_ref: w for s in sessions for w in s.windows}
+    if any(a.window_ref not in windows for a in annotations):
+        raise Refusal("ANNOTATION_UNKNOWN_WINDOW")
+    for ref, w in windows.items():
+        pair = tuple(a for a in annotations if a.window_ref == ref)
+        if (
+            len(pair) != 2
+            or {a.reviewer_ref for a in pair} != reviewers
+            or any(
+                a.rubric_ref != rubric_ref or validate_annotation(a, w.sample_start, w.sample_end)
+                for a in pair
+            )
+        ):
+            raise Refusal("FREEZE_REQUIRES_TWO_VALID_BLIND_ANNOTATIONS")
+        if pair[0].pcm_sha256 != pair[1].pcm_sha256 or pair[0].version != pair[1].version:
+            raise Refusal("ANNOTATION_PAIR_MISMATCH")
 
 
 def freeze_inputs(
@@ -730,22 +805,7 @@ def freeze_inputs(
         or not _pseudo(exclusion_ref)
     ):
         raise Refusal("FREEZE_INPUTS_INVALID")
-    windows = {w.window_ref: w for s in sessions for w in s.windows}
-    if any(a.window_ref not in windows for a in annotations):
-        raise Refusal("ANNOTATION_UNKNOWN_WINDOW")
-    for ref, w in windows.items():
-        pair = tuple(a for a in annotations if a.window_ref == ref)
-        if (
-            len(pair) != 2
-            or pair[0].reviewer_ref == pair[1].reviewer_ref
-            or any(
-                a.rubric_ref != rubric_ref or validate_annotation(a, w.sample_start, w.sample_end)
-                for a in pair
-            )
-        ):
-            raise Refusal("FREEZE_REQUIRES_TWO_VALID_BLIND_ANNOTATIONS")
-        if pair[0].pcm_sha256 != pair[1].pcm_sha256 or pair[0].version != pair[1].version:
-            raise Refusal("ANNOTATION_PAIR_MISMATCH")
+    _validate_dataset_annotations(sessions, annotations, rubric_ref)
     return Freeze(
         experiment_ref,
         digest(tuple(sorted(sessions, key=lambda s: s.session_ref))),
@@ -753,22 +813,11 @@ def freeze_inputs(
         rubric_ref,
         exclusion_ref,
         policy_digest(),
-        tuple(
-            sorted(
-                {
-                    x
-                    for s in sessions
-                    if s.split == Split.HOLDOUT
-                    for x in (
-                        *s.lineage_refs,
-                        s.session_ref,
-                        *(w.original_sha256 for w in s.windows),
-                    )
-                }
-            )
-        ),
+        _holdout_lineages(sessions),
         rubric_sha256,
         exclusion_sha256,
+        sessions,
+        annotations,
     )
 
 
@@ -777,8 +826,19 @@ class ConfigEvaluation:
     config: AcousticConfig
     split: Split
     sessions: tuple[SessionScore, ...]
+    freeze: Freeze
+    input_sessions: tuple[Session, ...]
+    input_annotations: tuple[Annotation, ...]
 
     def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "input_sessions", tuple(sorted(self.input_sessions, key=lambda s: s.session_ref))
+        )
+        object.__setattr__(
+            self,
+            "input_annotations",
+            tuple(sorted(self.input_annotations, key=lambda a: (a.window_ref, a.reviewer_ref))),
+        )
         object.__setattr__(
             self, "sessions", tuple(sorted(self.sessions, key=lambda r: r.session_ref))
         )
@@ -797,6 +857,7 @@ class CalibrationReport:
     evaluations: tuple[ConfigEvaluation, ...]
     selected: AcousticConfig | None
     result: str
+    freeze: Freeze
 
 
 def _eligible(counts: Counts, *, recall: bool) -> bool:
@@ -811,8 +872,19 @@ def _eligible(counts: Counts, *, recall: bool) -> bool:
     )
 
 
-def _experiment_scores(result: ConfigEvaluation) -> None:
+def _experiment_scores(result: ConfigEvaluation, freeze: Freeze) -> None:
     """The registered experiment has four 120-second sessions per split at 25 fps."""
+    expected_sessions = tuple(s for s in freeze.sessions if s.split == result.split)
+    windows = {w.window_ref for s in expected_sessions for w in s.windows}
+    expected_annotations = tuple(a for a in freeze.annotations if a.window_ref in windows)
+    if (
+        digest(result.freeze) != digest(freeze)
+        or result.input_sessions != expected_sessions
+        or result.input_annotations != expected_annotations
+        or tuple((s.session_ref, s.stratum, s.split) for s in result.sessions)
+        != tuple((s.session_ref, s.stratum, s.split) for s in expected_sessions)
+    ):
+        raise Refusal("EVALUATION_FROZEN_INPUT_MISMATCH")
     if (
         len(result.sessions) != 4
         or any(sum(r.stratum == s for r in result.sessions) != 1 for s in Stratum)
@@ -828,7 +900,7 @@ def evaluate_calibration(
         raise Refusal("POLICY_CHANGED_NEW_EXPERIMENT_REQUIRED")
     evaluations = tuple(evaluator(config, Split.CALIBRATION) for config in calibration_grid())
     for config, evaluation in zip(calibration_grid(), evaluations):
-        _experiment_scores(evaluation)
+        _experiment_scores(evaluation, freeze)
         if evaluation.config != config or evaluation.split != Split.CALIBRATION:
             raise Refusal("CALIBRATION_EVALUATOR_MISMATCH")
     eligible = [r for r in evaluations if _eligible(r.counts, recall=False)]
@@ -846,12 +918,18 @@ def evaluate_calibration(
         else None
     )
     return CalibrationReport(
-        digest(freeze), evaluations, selected, "SELECTED" if selected else "NO_ACCEPTABLE_CONFIG"
+        digest(freeze),
+        evaluations,
+        selected,
+        "SELECTED" if selected else "NO_ACCEPTABLE_CONFIG",
+        freeze,
     )
 
 
 def evaluate_validation(report: CalibrationReport, result: ConfigEvaluation) -> str:
-    _experiment_scores(result)
+    if report.freeze_sha256 != digest(report.freeze):
+        raise Refusal("REPORT_FREEZE_MISMATCH")
+    _experiment_scores(result, report.freeze)
     if (
         report.selected is None
         or result.config != report.selected
@@ -916,7 +994,9 @@ def evaluate_holdout(result: ConfigEvaluation, use: HoldoutUse) -> str:
     Caller must retain the attempted use even on failure. This does not provide
     a trusted ledger, cross-process lock or protection against omitted history.
     """
-    _experiment_scores(result)
+    if use.freeze_sha256 != digest(result.freeze):
+        raise Refusal("HOLDOUT_FROZEN_INPUT_MISMATCH")
+    _experiment_scores(result, result.freeze)
     if result.split != Split.HOLDOUT or result.config.config_ref != use.selected_config_ref:
         raise Refusal("HOLDOUT_CONFIG_MISMATCH")
     _, _, strata = aggregate(result.sessions)

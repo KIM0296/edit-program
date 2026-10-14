@@ -146,9 +146,9 @@ No new dependency or suppression was added.
 
 | Check | Result |
 | --- | --- |
-| `pytest tests/test_pcm_calibration.py -q -p no:cacheprovider` | 75 passed |
+| `pytest tests/test_pcm_calibration.py -q -p no:cacheprovider` | 105 passed after PR #60 correction (original submission: 75) |
 | Related PVP/OBS/Evidence/mapping/native/pause/planning/TRUST/orchestration | 584 passed |
-| `pytest -q -p no:cacheprovider` | 1979 passed, 1 existing intentional-red opt-in skip |
+| `pytest -q -p no:cacheprovider` | 2009 passed, 1 existing intentional-red opt-in skip after correction (original: 1979 / 1) |
 | `ruff check .` | PASS |
 | repository `mypy` | PASS, 41 source files |
 | `mypy --strict --explicit-package-bases tools/pcm_calibration.py tests/test_pcm_calibration.py` | PASS, 2 files |
@@ -192,3 +192,89 @@ EDITOR_QUALITY_QUALIFIED or VERIFIED_LIVE claim is made.
 
 Next action: independent Chat Gate code review, then an approved real-data input packet.
 After PR submission and CI receipt, STOP; do not merge or start G2/another milestone.
+
+## PR #60 narrow correction
+
+Only this status document and the existing harness/test module change in this correction.
+
+1. Freeze now retains exact immutable session/window manifests and annotation inputs,
+   and recomputes their canonical digests. Each ConfigEvaluation retains its freeze,
+   exact split input manifests and annotations. Calibration, validation and holdout
+   verify the same frozen content, session IDs/strata, original hashes, windows,
+   selected channels, PCM digests, annotation versions and records. Matching totals
+   alone cannot bind a foreign dataset. Identical canonical reconstruction is allowed;
+   Python object identity is not required. These are input-correlation checks, not
+   authentication or proof that a supplied evaluator honestly computed its counts.
+2. Acquisition validation requires explicit timezone-aware `experiment_use_at` and
+   `permission_valid_from`; valid acquisition in the past is insufficient. Require
+   valid_from <= acquisition <= declared use < expiry. Missing/invalid/naive times
+   fail closed; no wall-clock default or silently assumed permission extension.
+3. An explicit independent reviewer identity must equal the second extraction operator
+   and differ from the first operator and recorder. The review receipt reference is
+   not an identity. Dataset annotations must consistently use the declared two
+   reviewer identities throughout, with both present for every window. This detects
+   inconsistent supplied identities, not aliases or dishonest independence claims.
+
+Thirty added synthetic regressions cover all three evaluation gates with substituted
+sessions/channels/PCM/annotations, missing input and foreign freeze, immutable digest
+tampering, permission-use boundaries/timezones and reviewer consistency. No real
+acquisition or annotation was performed. Legacy expanded strict remains 840 / delta 0.
+
+## Separate future amendment proposal — NOT APPROVED / NOT IMPLEMENTED
+
+Proposed scope: **bounded compressed-source acquisition -> canonical PCM16LE**.
+This is a design proposal for a later Chat Gate, not permission to decode or run ffprobe.
+No decoder, subprocess path, FFmpeg dependency or media access is implemented here.
+
+Inventory facts below are user-supplied and accepted as inventory only, not independently
+inspected or qualified by this correction:
+
+- Conditional long sources: 02, 05, 06, 07, 09, 10, 11.
+- Too short for four 30-second windows: 01, 04, 12, 13, 14, 15.
+- Suspected duplicate/re-export pairs: 03/04 and 08/09.
+- Independence of 10/11 unresolved; compressed inputs currently have no approved decode path.
+- This inventory does not establish 12 independent eligible sessions. G2-G7 remain HOLD.
+
+Proposed future procedure, only after separate approval:
+
+1. Obtain explicit source/permission references, scope, expiry and declared use time.
+   Keep originals immutable in restricted external storage. Record pseudonymous asset,
+   byte length and SHA-256, then re-read/hash the original after extraction to detect
+   changes. A hash demonstrates byte consistency only, not origin/authenticity.
+2. Retain a bounded ffprobe metadata receipt: pinned executable/build hash and version,
+   container, exact stream index/ID, codec, sample rate, channel layout/order, time base,
+   start timestamps, duration and available priming/padding/edit-list information.
+   Unknown origin metadata stays unknown. No filename/title/first-audio-stream selection.
+3. Pin decoder/build/library versions, build options and relevant platform behavior.
+   Record exact extraction parameters and a preregistered deterministic PCM16LE conversion
+   policy, including sample quantization/dither behavior. Do not normalize, filter, resample,
+   time-stretch, downmix or silently discard channels. Keep the declared channel order;
+   select the analysis channel explicitly and separately. Non-48-kHz primary-profile
+   sources remain unsupported under this proposal unless separately approved.
+4. Decode only an approved bounded source/stream/window procedure. Establish codec delay,
+   priming, padding and source-to-decoded-sample origin before accepting a window. Fast seek
+   timestamps alone do not prove sample origin. If exact bounded decoding requires an
+   unapproved larger decode or origin cannot be proven, STOP. Never round/clamp/repair an
+   offset. Use exact sample counts and the existing frame/profile mapping checks.
+5. Retain original input hash, canonical PCM output hash, output bytes, sample-frame count,
+   stream/channel facts and exact sample interval/origin. Required PCM length is exactly
+   frames * samples_per_frame * channels * 2. Canonical PCM remains external, never in
+   Git, CI, EvidenceRecord, candidate or public logs. Public receipts contain pseudonymous
+   references and digests only. Originals are not modified.
+6. A genuinely independent reviewer/process re-extracts from the same immutable original
+   with the pinned procedure, then compares bytes/digests/counts/channel/origin. It must
+   not copy the first PCM or first report. Retain both pre-comparison receipts and any
+   mismatch; seal only after independent review. Cross-platform divergence is HOLD,
+   not permission to accept tolerance or choose the convenient result.
+
+Proposed STOP conditions: unclear/expired permission; uncertain source lineage or stream/
+channel; malformed/encrypted/unsupported codec; unknown priming/origin; nonintegral frame
+alignment; non-48-kHz primary input; byte/sample/digest mismatch; source mutation;
+unapproved processing or decode expansion; reviewer inconsistency; independent reproduction
+failure; privacy leak; resource-cap breach; or need for Resolve/native access. A failed
+extraction is retained as failure evidence, not retried with a changed policy to obtain PASS.
+
+Before implementation the amendment must approve exact bounded decode limits, supported
+codec/container profiles, canonical conversion rules, sample-origin evidence and fixture
+tests. It does not authorize acquisition now, establish session independence, open any
+validation/holdout, grant G2 qualification, or change production detector configuration.
