@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PRE-G2 TEST_ONLY_SUPPORT receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "receipt", "sha256"],
+  "properties": {
+    "schema": {"const": "pcm-calibration-pre-g2-v1"},
+    "sha256": {"$ref": "#/$defs/sha"},
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate", "receipt_ref", "input_digests", "metrics", "findings", "qualification"],
+      "properties": {
+        "gate": {"enum": ["G1", "G2", "G3", "G4", "G5", "G6", "FAILURE_CASES"]},
+        "receipt_ref": {"$ref": "#/$defs/ref"},
+        "qualification": {"const": "TEST_ONLY_SUPPORT"},
+        "input_digests": {
+          "type": "array",
+          "items": {"type": "array", "minItems": 2, "maxItems": 2,
+            "prefixItems": [{"$ref": "#/$defs/ref"}, {"$ref": "#/$defs/sha"}], "items": false}
+        },
+        "metrics": {
+          "type": "array",
+          "items": {"type": "array", "minItems": 2, "maxItems": 2,
+            "prefixItems": [{"$ref": "#/$defs/ref"}, {"$ref": "#/$defs/metric"}], "items": false}
+        },
+        "findings": {
+          "type": "array",
+          "items": {"type": "object", "additionalProperties": false,
+            "required": ["code", "subject"],
+            "properties": {"code": {"$ref": "#/$defs/ref"}, "subject": {"$ref": "#/$defs/ref"}}}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ref": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "metric": {"oneOf": [
+      {"type": "integer"}, {"type": "null"},
+      {"type": "object", "additionalProperties": false, "required": ["numerator", "denominator"],
+        "properties": {"numerator": {"type": "integer"}, "denominator": {"type": "integer", "minimum": 1}}}
+    ]}
+  }
+}
