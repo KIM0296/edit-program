@@ -822,3 +822,103 @@ def test_freeze_roundtrip_ordering_remains_valid_not_object_identity() -> None:
     assert report.selected is not None
     result = replace(scores(report.selected, c.Split.VALIDATION), freeze=rebuilt)
     assert c.evaluate_validation(report, result) == "VALIDATION_CRITERIA_MET"
+
+
+@pytest.mark.parametrize("field", ["independent_review_ref", "independent_reviewer_ref"])
+@pytest.mark.parametrize("identity", ["recorder-only", "operator-a"])
+def test_review_rejects_recorder_and_first_extractor_separately(field: str, identity: str) -> None:
+    manifest = replace(acquisition(), recorder_ref="recorder-only")
+    bad = (
+        replace(manifest, independent_review_ref=identity)
+        if field == "independent_review_ref"
+        else replace(manifest, independent_reviewer_ref=identity)
+    )
+    assert "INDEPENDENT_REVIEWER_MISMATCH" in {
+        f.code for f in c.validate_acquisition(bad, experiment_use_at="2026-10-14T12:00:00+09:00")
+    }
+
+
+@pytest.mark.parametrize("split", [c.Split.CALIBRATION, c.Split.HOLDOUT])
+def test_unrelated_complete_dataset_with_perfect_scores_is_refused(split: c.Split) -> None:
+    report = calibrated()
+    assert report.selected is not None
+    foreign_sessions = tuple(
+        replace(
+            s,
+            session_ref="foreign-" + s.session_ref,
+            lineage_refs=tuple("foreign-" + ref for ref in s.lineage_refs),
+            windows=tuple(
+                replace(w, window_ref="foreign-" + w.window_ref, original_sha256=c.digest(w))
+                for w in s.windows
+            ),
+        )
+        for s in freeze().sessions
+    )
+    foreign_annotations = tuple(
+        replace(a, window_ref="foreign-" + a.window_ref, pcm_sha256=c.digest(a))
+        for a in freeze().annotations
+    )
+    # Both reviewers must refer to the same foreign PCM; their identities remain distinct.
+    foreign_annotations = tuple(
+        replace(a, pcm_sha256=c.digest(a.window_ref)) for a in foreign_annotations
+    )
+    foreign = c.freeze_inputs(
+        "foreign-experiment", foreign_sessions, foreign_annotations, "rubric-v1", "none", H, J
+    )
+    selected = tuple(s for s in foreign.sessions if s.split == split)
+    windows = {w.window_ref for s in selected for w in s.windows}
+    result = c.ConfigEvaluation(
+        report.selected,
+        split,
+        tuple(c.SessionScore(s.session_ref, s.stratum, split, GOOD_COUNTS) for s in selected),
+        foreign,
+        selected,
+        tuple(a for a in foreign.annotations if a.window_ref in windows),
+    )
+    with pytest.raises(c.Refusal, match="FROZEN_INPUT_MISMATCH|HOLDOUT_USE_MISMATCH"):
+        if split == c.Split.CALIBRATION:
+            c.evaluate_calibration(freeze(), lambda config, requested: replace(result, config=config))
+        else:
+            c.evaluate_holdout(result, holdout_use(report))
+
+
+def test_validation_rejects_calibration_membership_even_with_relabelled_scores() -> None:
+    report = calibrated()
+    assert report.selected is not None
+    calibration = scores(report.selected, c.Split.CALIBRATION)
+    relabelled = replace(
+        calibration,
+        split=c.Split.VALIDATION,
+        sessions=tuple(replace(s, split=c.Split.VALIDATION) for s in calibration.sessions),
+    )
+    with pytest.raises(c.Refusal, match="FROZEN_INPUT_MISMATCH"):
+        c.evaluate_validation(report, relabelled)
+
+
+@pytest.mark.parametrize("split", list(c.Split))
+@pytest.mark.parametrize("changed", ["source-digest", "window-bounds"])
+def test_same_session_ids_changed_window_content_is_refused(split: c.Split, changed: str) -> None:
+    report = calibrated()
+    assert report.selected is not None
+    result = scores(report.selected, split)
+    session = result.input_sessions[0]
+    window = session.windows[0]
+    altered = (
+        replace(window, original_sha256=H)
+        if changed == "source-digest"
+        else replace(window, sample_start=window.sample_start + 1920, sample_end=window.sample_end + 1920)
+    )
+    result = replace(
+        result,
+        input_sessions=(
+            replace(session, windows=(altered, *session.windows[1:])),
+            *result.input_sessions[1:],
+        ),
+    )
+    with pytest.raises(c.Refusal, match="FROZEN_INPUT_MISMATCH"):
+        if split == c.Split.CALIBRATION:
+            c.evaluate_calibration(freeze(), lambda config, requested: replace(result, config=config))
+        elif split == c.Split.VALIDATION:
+            c.evaluate_validation(report, result)
+        else:
+            c.evaluate_holdout(result, holdout_use(report))

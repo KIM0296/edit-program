@@ -236,6 +236,7 @@ def validate_acquisition(m: AcquisitionManifest, *, experiment_use_at: str) -> t
         or second is None
         or m.independent_reviewer_ref != second.operator_ref
         or m.independent_reviewer_ref in (first.operator_ref, m.recorder_ref)
+        or m.independent_review_ref in (first.operator_ref, m.recorder_ref)
     ):
         fail("INDEPENDENT_REVIEWER_MISMATCH")
     if not _pseudo(m.independent_review_ref) or m.independent_review_result != "BYTE_IDENTICAL":

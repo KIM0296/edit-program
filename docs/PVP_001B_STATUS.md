@@ -211,7 +211,8 @@ Only this status document and the existing harness/test module change in this co
    fail closed; no wall-clock default or silently assumed permission extension.
 3. An explicit independent reviewer identity must equal the second extraction operator
    and differ from the first operator and recorder. The review receipt reference is
-   not an identity. Dataset annotations must consistently use the declared two
+   not an authenticated identity; it must also not collide with either the recorder
+   or first extraction operator reference. Dataset annotations must consistently use the declared two
    reviewer identities throughout, with both present for every window. This detects
    inconsistent supplied identities, not aliases or dishonest independence claims.
 
@@ -219,6 +220,44 @@ Thirty added synthetic regressions cover all three evaluation gates with substit
 sessions/channels/PCM/annotations, missing input and foreign freeze, immutable digest
 tampering, permission-use boundaries/timezones and reviewer consistency. No real
 acquisition or annotation was performed. Legacy expanded strict remains 840 / delta 0.
+
+### Follow-up narrow regression receipt (2026-10-14)
+
+Starting remote head: `15af3bc1a2f5432583e0c539decfcac4ed6b1889`, tree
+`90450e21ad89fe9b94f92ef76a25ee8f2ef1f890`. Remote main still matches the G1 base
+`0e727cb16af5538cc2bff977e4a495c603571699`. Its existing PR CI run 38525076829
+was independently rechecked as completed/success before this follow-up.
+
+The requested `independent_review_ref` collision check is now explicit in addition
+to the existing `independent_reviewer_ref` identity check. Two new regressions
+failed on the starting head and pass with the check; distinct recorder and first
+extractor identities are tested independently. These are supplied-reference
+consistency checks only, never authentication or proof of human independence.
+
+Thirteen additional synthetic cases exercise both reviewer fields, complete foreign
+datasets with perfect calibration/holdout scores, calibration membership relabelled
+as validation, and unchanged session IDs with changed source digest/window bounds
+at all three gates. Existing cases retain canonical PCM digest substitution and
+permission valid-at-acquisition but expired-at-declared-use refusal coverage.
+
+Fresh local verification: targeted **118 passed**, related **584 passed**, full
+**2022 passed / 1 existing intentional-red opt-in skip**. Ruff, repository strict
+mypy (41 files), and explicit strict (2 files) PASS. Expanded strict against the
+exact main base: **840 before / 840 after**, zero new or removed normalized
+diagnostics, both exit 1 (NOT green). This run explicitly includes the legacy
+safety-preflight test module: 22 base files / 24 current files, compared with the
+previous receipt's 21 / 23. The same four legacy modules account for all errors:
+execution_ir 164, expected_diff 178, safety_preflight 273, transaction 225.
+Environment: Python 3.11, pytest 9.1.1, Ruff 0.17.0, mypy 2.4.0;
+`PYTHONPATH=.;src;tests`, `MYPYPATH=src;tests`. No configuration or suppression changes.
+
+The correction changes only this document, the harness and its tests within the
+original six-file PR allowlist. No production modules or real media were accessed
+for modification; all test PCM is synthetic. The expanded 23-source acquisition
+proposal is a separate Chat Gate deliverable, not implemented in this PR. The
+older 15-source proposal below is historical and does not qualify the new inventory.
+Exact follow-up head/tree and CI are retained in the external correction receipt.
+G2-G7 HOLD; no merge, acquisition, real window selection or qualification.
 
 ## Separate future amendment proposal — NOT APPROVED / NOT IMPLEMENTED
 
