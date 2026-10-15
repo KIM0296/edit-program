@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RECEIPT = ROOT / "tests/fixtures/csa_toolchain/ci_reference_receipt.json"
@@ -97,7 +97,7 @@ def binary_pin(name: str) -> dict[str, Any]:
 
 
 def load_receipt(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
     if payload.get("schema") != "csa-002-ci-reference-receipt-v1":
         raise QualificationError("RECEIPT_SCHEMA_MISMATCH")
     if payload.get("qualification") != "CI_REFERENCE_SYNTHETIC_PIN_CANDIDATE":
