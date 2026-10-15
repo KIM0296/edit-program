@@ -1,0 +1,23 @@
+{
+  "schema": "csa-001-known-answer-manifest-v1",
+  "qualification": "TEST_ONLY_SUPPORT",
+  "note": "Synthetic vector metadata only. Hashes are placeholders for contract tests, not installed-toolchain evidence.",
+  "vectors": [
+    {
+      "vector_ref": "zero-mono",
+      "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected_output_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "expected_output_bytes": 4,
+      "expected_sample_frames": 2,
+      "channels": 1
+    },
+    {
+      "vector_ref": "stereo-order",
+      "input_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "expected_output_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "expected_output_bytes": 8,
+      "expected_sample_frames": 2,
+      "channels": 2
+    }
+  ]
+}

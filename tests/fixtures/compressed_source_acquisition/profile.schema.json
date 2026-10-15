@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CSA-001 TEST_ONLY_SUPPORT profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile_ref",
+    "container_family",
+    "codec",
+    "sample_rate",
+    "channels",
+    "output",
+    "forbidden_processing",
+    "qualification"
+  ],
+  "properties": {
+    "schema": {"const": "csa-001-profile-v1"},
+    "profile_ref": {"const": "csa-aac48-pcm16le-v1"},
+    "container_family": {"const": "M4A_MOV"},
+    "codec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "profile"],
+      "properties": {
+        "name": {"const": "aac"},
+        "profile": {"const": "LC"}
+      }
+    },
+    "sample_rate": {"const": 48000},
+    "channels": {
+      "type": "array",
+      "prefixItems": [{"const": 1}, {"const": 2}],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "signed", "bit_depth", "endianness", "interleaved"],
+      "properties": {
+        "format": {"const": "PCM16LE"},
+        "signed": {"const": true},
+        "bit_depth": {"const": 16},
+        "endianness": {"const": "LE"},
+        "interleaved": {"const": true}
+      }
+    },
+    "forbidden_processing": {
+      "type": "array",
+      "contains": {"const": "resample"}
+    },
+    "qualification": {"const": "TEST_ONLY_SUPPORT"}
+  }
+}
