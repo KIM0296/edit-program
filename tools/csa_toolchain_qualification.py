@@ -178,7 +178,7 @@ def verify(receipt_path: Path, fixture_path: Path) -> dict[str, Any]:
         decode_template = receipt["command_contract"]["decode_args"]
         for output in (out_a, out_b):
             args = [ffmpeg["path"], *materialize_args(decode_template, source=source, output=output)]
-            subprocess.run(args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(args, check=True, capture_output=True)
 
         first = out_a.read_bytes()
         second = out_b.read_bytes()
