@@ -4,6 +4,7 @@ import ast
 import inspect
 import json
 from dataclasses import FrozenInstanceError, replace
+from itertools import pairwise
 
 import pytest
 
@@ -206,7 +207,8 @@ def test_immutable_and_canonical_digest_is_stable() -> None:
     second = replace(first, libraries=tuple(reversed(first.libraries)))
     assert c.digest(first) == c.digest(second)
     with pytest.raises(FrozenInstanceError):
-        setattr(first, "threads", 2)
+        field_name = "threads"
+        setattr(first, field_name, 2)
 
 
 @pytest.mark.parametrize(
@@ -440,7 +442,7 @@ def test_window_policy_spreads_long_source_and_aligns_to_frame_lattice() -> None
     windows = c.plan_windows(total, channels=2)
     assert len(windows) == 4
     assert all(w.start_sample % c.SAMPLES_PER_FRAME == 0 for w in windows)
-    assert all(a.end_sample <= b.start_sample for a, b in zip(windows, windows[1:]))
+    assert all(a.end_sample <= b.start_sample for a, b in pairwise(windows))
     assert windows[-1].end_sample <= total
     assert all(w.byte_offset == 4 * w.start_sample for w in windows)
 
