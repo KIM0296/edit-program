@@ -1,0 +1,135 @@
+# CSA-002 — Pinned FFmpeg/ffprobe Synthetic Qualification
+
+Status: **CI REFERENCE QUALIFICATION IN PROGRESS / G2–G7 HOLD**.
+
+## Base
+
+- Repository: KIM0296/edit-program
+- Authoritative main: `7949c8b7fcb1a17fa612a6cd4279de6f3b245031`
+- Main tree: `283b5c248d3bbcb0f2c9faba98bbf2d4a6fe5951`
+- Main CI: Domain safety CI `38696421293` — SUCCESS
+- CSA-001 / PR #61 is merged into this base.
+
+## Purpose
+
+CSA-002 proves that a specifically pinned FFmpeg/ffprobe toolchain can decode one
+fixed synthetic AAC-LC 48 kHz fixture deterministically under the CSA-001 command
+contract.
+
+This is **not** a real-media qualification. It is a host/toolchain known-answer
+qualification harness.
+
+## Reference environment
+
+The first execution target is intentionally a disposable GitHub-hosted Ubuntu
+runner. The reference package is:
+
+`ffmpeg 7:6.1.1-3ubuntu5`
+
+The receipt pins:
+
+- FFmpeg executable SHA-256;
+- ffprobe executable SHA-256;
+- complete `-version` output digest;
+- `-buildconf` output digest;
+- hashes of the eight FFmpeg core linked libraries;
+- exact probe/decode argument contracts;
+- fixed synthetic compressed-source and expected PCM digests/counts.
+
+Pinning only the eight FFmpeg core libraries is deliberate. An earlier probe
+attempted to bind all 214 transitive system libraries and proved too broad for a
+decoder-toolchain identity: unrelated hosted-runner dependencies changed while
+the exact FFmpeg package/binaries stayed pinned. The narrowed set is the bounded
+FFmpeg runtime surface for this reference receipt.
+
+## Synthetic fixture
+
+The fixture is generated data only, then frozen as base64 bytes in Git:
+
+- AAC-LC
+- 48,000 Hz
+- stereo
+- one audio stream
+- no user/project content
+
+Known reference facts from the initial probe:
+
+- compressed SHA-256:
+  `ead1fe9beaff5010eaf4b9adde660b389dc8d90dd422ab2b0124874d4795e12a`
+- compressed bytes: 6,819
+- decoded PCM SHA-256:
+  `39dc39bef5e87dd3e8b324257899f44bfaf7f5c54db9829873dcbfc6c01d1c47`
+- PCM bytes: 49,152
+- sample frames: 12,288
+- second decode: byte-identical
+
+## Fail-closed verification
+
+The final runner requires all of the following:
+
+1. exact ffmpeg and ffprobe binary pins;
+2. exact version/build-configuration digests;
+3. exact FFmpeg core-library hashes;
+4. exact fixed compressed fixture SHA/size;
+5. exactly one AAC-LC 48 kHz stereo audio stream;
+6. exact global stream index;
+7. exact no-seek/no-resample/no-downmix PCM16LE decode command;
+8. two independent subprocess decodes of the fixed fixture;
+9. byte-identical outputs;
+10. exact expected PCM SHA, bytes and sample-frame count.
+
+Any mismatch fails qualification.
+
+## Development receipts
+
+The failures are retained as evidence, not erased:
+
+- CI `38696746802`: **FFMPEG_NOT_FOUND**. The stock `ubuntu-latest` runner did
+  not provide ffmpeg on PATH. This established that a toolchain must be explicitly
+  provisioned rather than assumed.
+- A later temporary branch-only CI step installed exact package
+  `ffmpeg=7:6.1.1-3ubuntu5` and produced the initial synthetic probe receipt.
+- CI `38697183890`: verification with all transitive `ldd` libraries pinned
+  failed with **FFMPEG_LIBRARIES_DRIFT**. The scope was narrowed to the eight
+  FFmpeg core libraries; no tolerance or convenient result selection was used.
+- CI `38697325137`: the narrowed pin and known-answer qualification step
+  succeeded, but repository Ruff then found three style diagnostics in the new
+  runner. Qualification evidence was not promoted from that failed full CI run.
+  The style defects were corrected without weakening the qualification checks.
+
+The final qualification run ID/head is recorded only after the complete branch
+passes qualification, pytest, Ruff, repository mypy and explicit strict mypy.
+
+## Qualification language
+
+A successful run may claim only:
+
+`CI_REFERENCE_TOOLCHAIN_SYNTHETIC_QUALIFIED`
+
+It must also state:
+
+- scope = `GITHUB_HOSTED_UBUNTU_REFERENCE_ONLY`
+- `g2_authorized=false`
+- `windows_host_qualified=false`
+
+It does **not** imply:
+
+- Windows toolchain qualification;
+- real media acquisition qualification;
+- permission/session authenticity;
+- REAL_MEDIA_PRODUCER_QUALIFIED;
+- NATIVE_READ_QUALIFIED;
+- NATIVE_MUTATION_QUALIFIED;
+- EDITOR_QUALITY_QUALIFIED;
+- VERIFIED_LIVE.
+
+## Next gate
+
+After this CI reference harness is Chat Gate approved and merged, the same
+known-answer principle must be applied to the actual Windows acquisition host
+with a separately pinned Windows FFmpeg/ffprobe distribution.
+
+Only the **Windows host qualification receipt**, plus the existing
+source/session/permission prerequisites, can contribute to opening G2.
+
+G2–G7 remain HOLD throughout CSA-002.

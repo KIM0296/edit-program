@@ -21,3 +21,4 @@ jobs:
       - run: python -m pytest -q
       - run: python -m ruff check src tests tools
       - run: python -m mypy
+      - run: python -m mypy --strict --explicit-package-bases tools/csa_toolchain_qualification.py tests/test_csa_toolchain_qualification.py
