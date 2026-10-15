@@ -1,0 +1,378 @@
+{
+  "candidates": [
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1556,
+      "method": "GetProjectManager",
+      "object_kind": "Resolve",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetProjectManager(self) -> ProjectManager"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1565,
+      "method": "GetCurrentProject",
+      "object_kind": "Resolve",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetCurrentProject(self) -> Project"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1568,
+      "method": "GetCurrentTimeline",
+      "object_kind": "Resolve",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetCurrentTimeline(self) -> Timeline"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1586,
+      "method": "GetVersion",
+      "object_kind": "Resolve",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetVersion(self) -> list[int | str]"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1589,
+      "method": "GetVersionString",
+      "object_kind": "Resolve",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetVersionString(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1592,
+      "method": "GetProductName",
+      "object_kind": "Resolve",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetProductName(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1709,
+      "method": "GetCurrentProject",
+      "object_kind": "ProjectManager",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetCurrentProject(self) -> Project"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1757,
+      "method": "GetCurrentDatabase",
+      "object_kind": "ProjectManager",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetCurrentDatabase(self) -> DatabaseInfo"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1784,
+      "method": "GetCurrentTimeline",
+      "object_kind": "Project",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetCurrentTimeline(self) -> Timeline"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1799,
+      "method": "GetName",
+      "object_kind": "Project",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetName(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1871,
+      "method": "GetSettings",
+      "object_kind": "Project",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetSettings(self) -> ProjectSettings"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 1916,
+      "method": "GetUniqueId",
+      "object_kind": "Project",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetUniqueId(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2051,
+      "method": "GetName",
+      "object_kind": "MediaPoolItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetName(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2072,
+      "method": "GetMediaId",
+      "object_kind": "MediaPoolItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetMediaId(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2087,
+      "method": "GetMarkers",
+      "object_kind": "MediaPoolItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetMarkers(self) -> dict[int, MarkerInfo]"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2132,
+      "method": "GetClipProperty",
+      "object_kind": "MediaPoolItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetClipProperty(self, propertyName: str | None=None) -> str | ClipProperties"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2138,
+      "method": "GetUniqueId",
+      "object_kind": "MediaPoolItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetUniqueId(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2186,
+      "method": "GetName",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetName(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2192,
+      "method": "GetStartFrame",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetStartFrame(self) -> int"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2195,
+      "method": "GetEndFrame",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetEndFrame(self) -> int"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2198,
+      "method": "GetTrackCount",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetTrackCount(self, trackType: TrackType) -> int"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2201,
+      "method": "GetItemListInTrack",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetItemListInTrack(self, trackType: TrackType, index: int) -> list[TimelineItem]"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2228,
+      "method": "GetMarkers",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetMarkers(self) -> dict[int, MarkerInfo]"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2249,
+      "method": "GetTrackSubType",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetTrackSubType(self, trackType: TrackType, trackIndex: int) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2255,
+      "method": "GetIsTrackEnabled",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetIsTrackEnabled(self, trackType: TrackType, trackIndex: int) -> bool"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2261,
+      "method": "GetIsTrackLocked",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetIsTrackLocked(self, trackType: TrackType, trackIndex: int) -> bool"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2279,
+      "method": "GetTrackName",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetTrackName(self, trackType: TrackType, trackIndex: int) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2303,
+      "method": "GetSettings",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetSettings(self) -> TimelineSettings | ProjectSettings"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2309,
+      "method": "GetStartTimecode",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetStartTimecode(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2339,
+      "method": "GetUniqueId",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetUniqueId(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2354,
+      "method": "GetMediaPoolItem",
+      "object_kind": "Timeline",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetMediaPoolItem(self) -> MediaPoolItem | None"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2381,
+      "method": "GetType",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetType(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2387,
+      "method": "GetName",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetName(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2393,
+      "method": "GetStart",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetStart(self, subframePrecision=False) -> float"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2396,
+      "method": "GetEnd",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetEnd(self, subframePrecision=False) -> float"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2399,
+      "method": "GetSourceStartFrame",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetSourceStartFrame(self) -> int"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2402,
+      "method": "GetSourceEndFrame",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetSourceEndFrame(self) -> int"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2411,
+      "method": "GetDuration",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetDuration(self, subframePrecision=False) -> float"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2435,
+      "method": "GetMediaPoolItem",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetMediaPoolItem(self) -> MediaPoolItem | None"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2450,
+      "method": "GetMarkers",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetMarkers(self) -> dict[int, MarkerInfo]"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2558,
+      "method": "GetClipEnabled",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetClipEnabled(self) -> bool"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2570,
+      "method": "GetUniqueId",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetUniqueId(self) -> str"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2603,
+      "method": "GetLinkedItems",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetLinkedItems(self) -> list[TimelineItem]"
+    },
+    {
+      "discovery": "CANDIDATE_PRESENT",
+      "line": 2606,
+      "method": "GetTrackTypeAndIndex",
+      "object_kind": "TimelineItem",
+      "runtime_status": "UNKNOWN",
+      "signature": "def GetTrackTypeAndIndex(self) -> list[str | int]"
+    }
+  ],
+  "documentation": {
+    "DaVinciResolveScript.pyi": {
+      "path": "C:\\ProgramData\\Blackmagic Design\\DaVinci Resolve\\Support\\Developer\\Scripting\\DaVinciResolveScript.pyi",
+      "sha256": "b91b53b86a946e1902789ea898eedf00cb7dd6107aba6f1276ca77fe508816ea"
+    },
+    "Modules/DaVinciResolveScript.py": {
+      "path": "C:\\ProgramData\\Blackmagic Design\\DaVinci Resolve\\Support\\Developer\\Scripting\\Modules\\DaVinciResolveScript.py",
+      "sha256": "0e78f374e452ced64c3d570ef620c310bcbb7685e836bfc3bcbd7599a0d4509d"
+    },
+    "README.md": {
+      "path": "C:\\ProgramData\\Blackmagic Design\\DaVinci Resolve\\Support\\Developer\\Scripting\\README.md",
+      "sha256": "5e12a637aa8db77d8110ea8c05397e89dff1d3b2ecb33d2e96122d3c87502bfc"
+    }
+  },
+  "installed_file_version": "21.1.1.10",
+  "limitations": [
+    "Documented candidates only; runtime unavailable",
+    "GetStart/GetEnd/GetDuration stub annotation float; do not coerce",
+    "No native end-coordinate convention established"
+  ],
+  "resolve_running_at_discovery": false,
+  "runtime_product_version": null
+}

@@ -465,3 +465,24 @@ unsafe → reject
 - OPEN-021 awaits first-package Chat approval. Resolve import/read/materialization remains unverified,
   and OPEN-020 native authenticity is unchanged. Generator success does not mean Resolve support.
 - TASK-020/021 were not started.
+
+## TASK-020 runtime qualification limitations
+
+- The installed binary file is 21.1.1.10; actual running Resolve product/build was not observed.
+  External Python 3.11 loaded the official bridge but scriptapp returned no root. The shipped isolated
+  ResolvePython interpreter could not import this editable package; installed configuration unchanged.
+- No prepared registered disposable F0–F4 inputs were provided. Native S1/S2 were not run. Mock success
+  is not native support; all 44 runtime requirements remain UNKNOWN in the actual diagnostic reports.
+- A capture fence detects observed drift but is not an atomic native snapshot. Explicit operator
+  interference is retained; undetected human actions cannot be ruled out by this implementation alone.
+- Canonical asset-to-MediaPool binding and integer half-open coordinate evidence are external inputs.
+  Float frame values are UNKNOWN. No import, fixture creation, repair, conversion or ID synthesis.
+- F3 item-marker host must be supplied explicitly; the adapter does not choose video/audio by order.
+  Tier C risks remain unknown and any explicitly required risk blocks fixture MATCH without proof.
+- Native handles are retained as opaque typed placeholders, not repr addresses or invented identities.
+  Tier B is diagnostic-only and not collected; opaque values never qualify as valid semantic maps.
+- OPEN-023 blocks aggregate all-project qualification: independent runs are not spliced. Report task
+  gate is HOLD even if an individual scope passes. S3/S4, persistent identity and native attestation
+  are not claimed. Checksums detect evidence changes, not authenticity or cryptographic authorship.
+- Resolve activation/preferences and external fixture preparation remain operator prerequisites;
+  the adapter does not change them. TASK-021 and destructive capabilities remain out of scope.

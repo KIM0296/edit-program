@@ -921,6 +921,32 @@ Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
 
 Detailed contract: docs/NATIVE_PROBE_ENVIRONMENT_AUTHENTICITY.md.
 
+
+
+## ADR-040 - TASK-020 Qualification Campaign Aggregation v1
+Status: ACCEPTED - Chat Product/Architecture Review, 2026-10-07
+
+1. ADR-038 one validation_run_id = one exact project generation remains unchanged.
+2. A complete TASK-020 campaign contains exactly five selected sealed runs: F0, F1, F2, F3 and one
+   F4 run containing both F4-A/F4-B plus 3 S2 round trips.
+3. Campaign aggregation references member evidence/checksums; it never splices raw captures or
+   synthesizes one project generation across F0-F4.
+4. All selected runs must share the exact compatible Resolve ReadProfile/adapter/stub/normalization,
+   canonical package, fixture catalog and runtime-policy contracts.
+5. F0-F3 each remain single-context runs; F4 is the only two-context run.
+6. Every selected S1 context must independently qualify with 10/10 pairs; F4 must independently pass
+   all three S2 round trips.
+7. RV-001..044 campaign statuses use the versioned contributor contexts from ADR-033's matrix and
+   conservative aggregation: UNSTABLE > UNKNOWN > uniform STABLE/UNSUPPORTED; mixed stable/unsupported
+   is UNKNOWN unless explicitly defined later.
+8. Capability support and fixture correctness remain separate.
+9. Campaign aggregation never broadens identity lifetime; F4 S2 remains same-project evidence only.
+10. Failed runs remain historical evidence. A replacement run requires a new run ID and explicit
+    campaign member selection; no latest-wins behavior.
+11. Campaign aggregation is pure evidence processing and performs no Resolve calls or fixture repair.
+
+Detailed contract: docs/TASK_020_QUALIFICATION_CAMPAIGN.md.
+
 # Open Decisions
 
 
@@ -1619,3 +1645,11 @@ OPEN-020 is unchanged. No new architecture decision was required.
 Real FFmpeg integration required explicit decoded-frame progressive proof when stream field_order is
 absent, canonical WAV header proof when channel_layout is absent, and current passthrough decode syntax.
 These retain the required profile and do not infer missing observations as success.
+
+## OPEN-023 - TASK-020 cross-project qualification report grouping
+Status: RESOLVED FOR v1 by ADR-040 (2026-10-07)
+
+F0/F1/F2/F3 remain independent project-generation-bound sealed runs. F4 remains one sealed run with
+A/B contexts and S2. A pure QualificationCampaign references exactly those five selected runs and
+derives campaign summaries without splicing raw observations or rewriting project generation.
+

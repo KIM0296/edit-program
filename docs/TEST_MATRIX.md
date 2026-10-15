@@ -459,3 +459,27 @@ Python 3.11.16 CI PASS: [run 37578746926](https://github.com/KIM0296/edit-progra
 71 new cases: 70 passed / 1 Windows symlink privilege skip. Existing naive INV-001 opt-in red demo also
 skipped in full regression. Ordinary CI excludes full media generation; the explicit real integration
 command and sealed output are recorded in docs/reports/TASK_022_COMPLETION.md. No Resolve tests ran.
+
+## TASK-020 — read-only adapter and qualification protocol
+
+55 tests across test_read_probe_values.py, test_read_probe_adapter.py, test_read_probe_runner.py.
+
+| Requirement | Test coverage |
+| --- | --- |
+| Immutable nested evidence / defensive copy / bool-not-int | values, adapter |
+| Fixed installed read allowlist / no mutation imports or calls | adapter surface AST + fake call records |
+| Profile, project, generation, timeline binding / fresh root fence | adapter + runner |
+| Raw vs semantic / None,false,empty / floats UNKNOWN | values + adapter + writer |
+| Unique, zero, ambiguous role / repeated-media no collapse | adapter |
+| Native ordering only / no ID or filename fallback | adapter |
+| F0 links, F2 track state, F3 markers/subtitle, timeline geometry | adapter |
+| Stable capability vs wrong fixture / Tier C not absent | adapter + qualification |
+| Ten pairs, no retry, preserved failure, operator interference | runner |
+| Three external F4 roundtrips / S1 identity baseline retained | runner |
+| Evidence append-only / missing or changed bytes / seal verification | runner |
+| All 44 RV rows / six pair tables / three S2 rows | writer + unavailable discovery |
+| Actual runtime qualification | NOT EXECUTED; actual diagnostic RUNTIME_UNAVAILABLE / HOLD |
+
+Red observed: initial missing modules; wrong native timeline end and missing F0 links accepted;
+F3 missing host misclassified; mutable payload accepted; missing persisted capture not rejected.
+Each was corrected before green. Actual native evidence remains separate from these mocks.

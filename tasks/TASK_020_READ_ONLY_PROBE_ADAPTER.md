@@ -1,6 +1,6 @@
 # TASK-020 — Read-only Probe Adapter Foundation
 
-Status: **PREPARED, NOT AUTHORIZED UNTIL TASK-019 IS APPROVED/MERGED**
+Status: **Phase A implemented; Phase B HOLD (not qualified); Chat Gate requested**
 
 Basis: ADR-022, ADR-029, ADR-030, ADR-031, ADR-032, ADR-033, ADR-034, ADR-038.
 
@@ -216,3 +216,38 @@ TASK-020 does **not** derive destructive authorization or claim SESSION_BOUND_VE
 
 If a mandatory authenticity candidate is unsupported/ambiguous, preserve UNSUPPORTED/UNKNOWN and
 leave ADR-039 fail-closed. Do not substitute project names or sentinels.
+
+## TASK-020 implementation notes (before code)
+
+- Read-only native calls live behind a fixed installed-method allowlist; no public method-name/script
+  dispatch, timeline activation, materialization or mutation entry point.
+- Immutable typed raw values retain Python type, None/false/empty distinctions and nested values.
+  Semantic normalization only sorts unordered maps and explicitly unordered identity-keyed collections.
+- Runtime read results use the four ADR-033 statuses. Discovery/type validity is a separate axis.
+- A run is bound to one supplied environment/project generation; S1 runs without operator callbacks
+  between captures. F4 S2 advances in explicit operator-supplied stages, with no adapter switch call.
+- Installed API discovery: docs/evidence/task020-installed/api_inventory.json. Installed binary file
+  version 21.1.1.10 is not yet a runtime product/version observation.
+- Native frame getters must return exact int (not bool). Stub float annotations do not authorize
+  conversion. Native coordinate conventions require explicit runtime evidence.
+- OPEN-023 records cross-project reporting/run aggregation ambiguity; no multi-project mega-run or
+  splicing implementation. Phase A supports separately bound sessions and F4 A/B within one project.
+
+
+## Cross-project qualification campaign
+
+ADR-040 / `docs/TASK_020_QUALIFICATION_CAMPAIGN.md` resolves OPEN-023.
+
+Full Phase B uses exactly five sealed project-bound runs:
+
+- F0
+- F1
+- F2
+- F3
+- F4 containing F4-A/F4-B and three S2 round trips
+
+The final campaign aggregator is pure evidence processing. It references/verifies member evidence and
+derives campaign RV/fixture summaries; it must never splice raw captures or synthesize a shared project
+generation.
+
+Phase A adapter approval does not imply Phase B completion.
