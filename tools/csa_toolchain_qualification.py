@@ -17,7 +17,6 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RECEIPT = ROOT / "tests/fixtures/csa_toolchain/ci_reference_receipt.json"
 DEFAULT_FIXTURE = ROOT / "tests/fixtures/csa_toolchain/synthetic_aac48_stereo.m4a.b64"
@@ -36,7 +35,7 @@ def sha256_file(path: Path) -> str:
 
 
 def run_text(args: list[str]) -> str:
-    proc = subprocess.run(args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.run(args, check=True, capture_output=True)
     return proc.stdout.decode("utf-8", errors="strict")
 
 
