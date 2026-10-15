@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import re
 from pathlib import Path
@@ -23,7 +24,7 @@ def load_receipt() -> dict[str, Any]:
 
 def test_synthetic_fixture_is_exactly_pinned() -> None:
     receipt = load_receipt()
-    raw = q.base64.b64decode(FIXTURE.read_text(encoding="utf-8").strip(), validate=True)
+    raw = base64.b64decode(FIXTURE.read_text(encoding="utf-8").strip(), validate=True)
     expected = receipt["synthetic_fixture"]
     assert q.sha256_bytes(raw) == expected["decoded_source_sha256"]
     assert len(raw) == expected["decoded_source_bytes"] == 6819
