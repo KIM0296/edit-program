@@ -368,7 +368,7 @@ def test_extraction_receipt_exact_counts_and_binding() -> None:
 @pytest.mark.parametrize(
     "field,value,code",
     [
-        ("source_post_sha256", J, "SOURCE_HASH_DRIFT"),
+        ("source_post_sha256", H, "SOURCE_HASH_DRIFT"),
         ("output_bytes", 3, "DECODE_LENGTH_MISMATCH"),
         ("scalar_samples", 1, "DECODE_LENGTH_MISMATCH"),
         ("sample_rate", 44_100, "PCM_FORMAT_MISMATCH"),
