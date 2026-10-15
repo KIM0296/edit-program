@@ -1,6 +1,6 @@
 # CSA-002 — Pinned FFmpeg/ffprobe Synthetic Qualification
 
-Status: **CI REFERENCE QUALIFICATION IN PROGRESS / G2–G7 HOLD**.
+Status: **CI_REFERENCE_TOOLCHAIN_SYNTHETIC_QUALIFIED / G2–G7 HOLD**.
 
 ## Base
 
@@ -97,8 +97,36 @@ The failures are retained as evidence, not erased:
   runner. Qualification evidence was not promoted from that failed full CI run.
   The style defects were corrected without weakening the qualification checks.
 
-The final qualification run ID/head is recorded only after the complete branch
-passes qualification, pytest, Ruff, repository mypy and explicit strict mypy.
+Final CI reference qualification receipt:
+
+- qualified head: `e14e5e2dd2fdd9e771bbb9ad02820f23c9a2b193`
+- workflow run: `38698069106`
+- job: `116299281802`
+- qualification result: `CI_REFERENCE_TOOLCHAIN_SYNTHETIC_QUALIFIED`
+- scope: `GITHUB_HOSTED_UBUNTU_REFERENCE_ONLY`
+- receipt SHA-256:
+  `38f844c392bf4a5f5fab5f703536579c4fb9a443b901aaff38d846ff6c27b7ec`
+- ffmpeg SHA-256:
+  `ed16af623947494a72e284b6eb8ff225f2da22b38b5d5069c2fd4b4ba3384e41`
+- ffprobe SHA-256:
+  `272f6ebc634a63d9c8b4ca68e964119d980f25154e5aa2c35e5487da48e9a58f`
+- synthetic fixture SHA-256:
+  `ead1fe9beaff5010eaf4b9adde660b389dc8d90dd422ab2b0124874d4795e12a`
+- PCM SHA-256:
+  `39dc39bef5e87dd3e8b324257899f44bfaf7f5c54db9829873dcbfc6c01d1c47`
+- PCM bytes / sample frames: `49152 / 12288`
+- second decode: byte-identical
+- full pytest: `2120 passed / 1 existing skip`
+- Ruff: PASS
+- repository mypy: PASS
+- explicit strict mypy on tool + test: PASS (2 files)
+- `g2_authorized=false`
+- `windows_host_qualified=false`
+
+The temporary branch-only CI provisioning/qualification steps are intentionally
+removed from the final PR diff. The committed runner, synthetic fixture, receipt,
+tests and status remain; ordinary repository CI therefore does not depend on
+apt/FFmpeg availability or silently requalify a changed hosted runner.
 
 ## Qualification language
 
