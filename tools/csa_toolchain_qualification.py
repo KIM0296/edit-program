@@ -40,6 +40,18 @@ def run_text(args: list[str]) -> str:
     return proc.stdout.decode("utf-8", errors="strict")
 
 
+CORE_LIBRARY_PREFIXES = (
+    "libavutil",
+    "libavcodec",
+    "libavformat",
+    "libavdevice",
+    "libavfilter",
+    "libswscale",
+    "libswresample",
+    "libpostproc",
+)
+
+
 def linked_library_pins(executable: Path) -> list[dict[str, str]]:
     text = run_text(["ldd", str(executable)])
     pins: list[dict[str, str]] = []
@@ -54,7 +66,7 @@ def linked_library_pins(executable: Path) -> list[dict[str, str]]:
         elif line.startswith("/"):
             candidate = line.split(" ", 1)[0]
             name = Path(candidate).name
-        if candidate.startswith("/"):
+        if candidate.startswith("/") and any(name.startswith(p) for p in CORE_LIBRARY_PREFIXES):
             path = Path(candidate)
             if path.is_file():
                 pins.append(
