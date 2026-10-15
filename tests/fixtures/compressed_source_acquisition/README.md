@@ -21,6 +21,14 @@ profile.schema.json is a documentation schema for the fixed TEST_ONLY_SUPPORT
 profile surface. known_answer_manifest.json contains synthetic vector metadata
 only; the listed hashes are not evidence about an installed FFmpeg build.
 
+The profile schema uses `supported_channels: [1, 2]` for the supported set, not
+an ambiguous per-stream channel count. A stream itself has one integer count.
+The known-answer manifest pins `suite_ref` and `suite_sha256`. The digest is the
+existing canonical SHA-256 over KnownAnswerSuite (suite_ref plus the ordered
+vector tuple, every vector field included). Order is significant; reordering,
+addition, removal or content changes require a new profile pin. The synthetic
+suite digest is `5ceaea6e830ac3a26cc325d5ed38775625eef26d04428d49857b366439403f77`.
+
 The module does **not**:
 
 - run ffmpeg or ffprobe;

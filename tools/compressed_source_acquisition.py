@@ -268,10 +268,7 @@ class StreamFingerprint:
             or (self.stream_id is not None and not _pseudo(self.stream_id))
             or not self.codec_name
             or not self.codec_profile
-            or (
-                self.codec_extradata_sha256 is not None
-                and not _sha(self.codec_extradata_sha256)
-            )
+            or (self.codec_extradata_sha256 is not None and not _sha(self.codec_extradata_sha256))
             or type(self.sample_rate) is not int
             or type(self.channels) is not int
             or self.channels <= 0
@@ -384,6 +381,7 @@ class ProbeReceipt:
             or not _sha(self.ffprobe_pin_sha256)
             or type(self.audio_stream_count) is not int
             or self.audio_stream_count <= 0
+            or self.stream.audio_ordinal >= self.audio_stream_count
             or not _sha(self.probe_receipt_sha256)
         ):
             raise Refusal("PROBE_RECEIPT_INVALID")
@@ -414,7 +412,7 @@ class SampleOriginEvidence:
         values = (self.priming_samples, self.skip_samples, self.end_padding_samples)
         if (
             self.status != OriginStatus.ESTABLISHED
-            or self.presentation_start_pts is None
+            or type(self.presentation_start_pts) is not int
             or any(type(v) is not int or v < 0 for v in values)
             or not isinstance(self.edit_list_state, EditListState)
         ):
@@ -524,7 +522,9 @@ def validate_extraction_receipt(
     stream = request.probe.stream
     if receipt.request_sha256 != digest(request):
         fail("REQUEST_BINDING_MISMATCH")
-    if any(not _pseudo(x) for x in (receipt.operator_ref, receipt.process_ref, receipt.attempt_ref)):
+    if any(
+        not _pseudo(x) for x in (receipt.operator_ref, receipt.process_ref, receipt.attempt_ref)
+    ):
         fail("EXTRACTION_IDENTITY_INVALID")
     if (
         receipt.source_pre_sha256 != request.source.source_sha256
@@ -574,11 +574,15 @@ class ComparisonReceipt:
 
 
 def validate_independent_comparison(
-    source: SourcePin,
+    request: ExtractionRequest,
     first: ExtractionReceipt,
     second: ExtractionReceipt,
     comparison: ComparisonReceipt,
 ) -> tuple[Finding, ...]:
+    first_issues = validate_extraction_receipt(request, first)
+    second_issues = validate_extraction_receipt(request, second)
+    if first_issues or second_issues:
+        return (Finding("INDEPENDENT_EXTRACTION_UNQUALIFIED", comparison.comparator_ref),)
     issues: list[Finding] = []
 
     def fail(code: str) -> None:
@@ -593,7 +597,7 @@ def validate_independent_comparison(
         fail("COMPARISON_RECEIPT_INVALID")
     if (
         first.operator_ref == second.operator_ref
-        or second.operator_ref == source.recorder_ref
+        or second.operator_ref == request.source.recorder_ref
         or first.process_ref == second.process_ref
         or first.attempt_ref == second.attempt_ref
     ):
@@ -691,6 +695,51 @@ class WindowManifest:
             raise Refusal("WINDOW_MANIFEST_INVALID")
 
 
+def validate_window_manifests(
+    request: ExtractionRequest,
+    extraction: ExtractionReceipt,
+    policy_sha256: str,
+    manifests: tuple[WindowManifest, ...],
+) -> tuple[Finding, ...]:
+    """Correlate supplied window claims, not actual bytes; order follows index."""
+    if validate_extraction_receipt(request, extraction):
+        return (Finding("WINDOW_EXTRACTION_UNQUALIFIED", extraction.attempt_ref),)
+    if not _sha(policy_sha256):
+        return (Finding("WINDOW_POLICY_INVALID", extraction.attempt_ref),)
+    try:
+        planned = plan_windows(extraction.sample_frames, channels=extraction.channels)
+    except Refusal as exc:
+        return (Finding(exc.code, extraction.attempt_ref),)
+    if (
+        len(manifests) != 4
+        or len({m.window_ref for m in manifests}) != 4
+        or any(type(m.window.index) is not int for m in manifests)
+        or {m.window.index for m in manifests} != set(range(4))
+    ):
+        return (Finding("WINDOW_SET_MISMATCH", extraction.attempt_ref),)
+    issues: list[Finding] = []
+    for m in manifests:
+        window_values = (
+            m.window.index,
+            m.window.start_sample,
+            m.window.end_sample,
+            m.window.byte_offset,
+            m.window.byte_count,
+        )
+        if (
+            m.policy_sha256 != policy_sha256
+            or m.source_sha256 != request.source.source_sha256
+            or m.full_pcm_sha256 != extraction.output_sha256
+            or type(m.selected_channel) is not int
+            or m.selected_channel != request.selected_channel
+            or any(type(v) is not int for v in window_values)
+            or m.window != planned[m.window.index]
+            or m.tail_excluded_sample_frames != extraction.sample_frames % SAMPLES_PER_FRAME
+        ):
+            issues.append(Finding("WINDOW_BINDING_MISMATCH", m.window_ref))
+    return tuple(issues)
+
+
 @dataclass(frozen=True)
 class KnownAnswerVector:
     vector_ref: str
@@ -724,12 +773,35 @@ class KnownAnswerRun:
     result: str
 
 
+@dataclass(frozen=True)
+class KnownAnswerSuite:
+    """Ordered immutable vectors; digest binds suite_ref and every vector field."""
+
+    suite_ref: str
+    vectors: tuple[KnownAnswerVector, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "vectors", tuple(self.vectors))
+        if (
+            not _pseudo(self.suite_ref)
+            or not self.vectors
+            or len({v.vector_ref for v in self.vectors}) != len(self.vectors)
+        ):
+            raise Refusal("KNOWN_ANSWER_SUITE_INVALID")
+
+
 def validate_known_answer_suite(
-    vectors: tuple[KnownAnswerVector, ...],
+    suite: KnownAnswerSuite,
     runs: tuple[KnownAnswerRun, ...],
     toolchain: ToolchainPin,
     profile: DecodeProfile,
 ) -> tuple[Finding, ...]:
+    if (
+        suite.suite_ref != profile.known_answer_suite_ref
+        or digest(suite) != profile.known_answer_suite_sha256
+    ):
+        return (Finding("KNOWN_ANSWER_SUITE_PIN_MISMATCH", profile.profile_ref),)
+    vectors = suite.vectors
     vector_map = {v.vector_ref: v for v in vectors}
     run_map = {r.vector_ref: r for r in runs}
     if (

@@ -19,5 +19,8 @@
       "expected_sample_frames": 2,
       "channels": 2
     }
-  ]
+  ],
+  "suite_ref": "known-answer-suite-v1",
+  "ordering": "ORDER_SENSITIVE",
+  "suite_sha256": "5ceaea6e830ac3a26cc325d5ed38775625eef26d04428d49857b366439403f77"
 }

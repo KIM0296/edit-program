@@ -178,6 +178,9 @@ No raw PCM is stored in public receipts.
 
 validate_independent_comparison requires:
 
+- the exact ExtractionRequest and zero validation findings for each extraction
+  against that request before comparison eligibility; two equally invalid receipts
+  return INDEPENDENT_EXTRACTION_UNQUALIFIED even if their bytes/hashes agree
 - distinct first/second operators
 - second operator distinct from source recorder
 - distinct process and attempt IDs
@@ -208,6 +211,11 @@ No detector, listening or annotation result can move the windows.
 
 KnownAnswerVector / KnownAnswerRun / validate_known_answer_suite bind expected
 PCM hashes and counts to the exact ToolchainPin and DecodeProfile digests.
+
+KnownAnswerSuite retains an immutable ordered vector tuple and suite_ref. Before
+evaluating runs, suite_ref and the canonical SHA-256 of the entire suite must match
+the profile's pin. Every vector field and ordering participates. Matching runs cannot
+rescue a changed vector/hash/count or an added/removed/reordered vector.
 
 The committed manifest is synthetic metadata only and is not proof that any
 installed FFmpeg build passed the vectors.
@@ -266,3 +274,50 @@ Do not begin G2.
 Do not start another milestone.
 
 Request Chat Gate review first.
+
+## PR #61 correction receipt
+
+Reviewed input head: `1f10e417362c253c22c7066c58f058472a6969a3`.
+The correction stays inside the exact six-file allowlist above. No production src,
+dependency, CI/config, subprocess, decoder, real-media or native-access change.
+
+Additional integrity checks:
+
+- Established presentation_start_pts must have exact Python int type, as must
+  priming/skip/end-padding counts. Strings, floats and bools are not normalized.
+- ProbeReceipt rejects audio_ordinal >= audio_stream_count; ExtractionRequest can
+  therefore only consume a consistent supplied ordinal/count relationship.
+- validate_window_manifests first validates the extraction against the exact request.
+  It requires four unique references and indices exactly 0..3, matching source hash,
+  full PCM hash, selected channel, and supplied preregistered policy digest. Every
+  PlannedWindow must equal the existing plan_windows result at its index, including
+  exact integer byte offsets/counts. Tail exclusion equals N % 1920. Input manifest
+  enumeration order is immaterial; window index binds the plan. No repositioning.
+- Profile documentation schema now explicitly names the supported channel set
+  `supported_channels`; actual stream.channels remains one integer count.
+
+The validators check supplied evidence consistency. They do not independently read
+bytes, authenticate provenance or turn a matching receipt into native qualification.
+Policy digest pinning does not certify its authenticity. G2-G7 remain HOLD.
+
+Development failure receipts (retained, not qualification runs):
+
+- Red-first adversarial tests: 25 failed / 60 passed. These reproduced missing
+  comparison qualification, suite/window contracts, PTS typing and schema semantics.
+- First implementation pass: 85 passed. Ruff found one fixable import-order issue;
+  fixed without configuration changes.
+- Initial explicit strict: 22 diagnostics in the CSA test file from dynamic
+  dataclass replacement dictionaries (existing and newly added cases). Fixtures
+  now use explicit typed branches; intentionally malformed PTS values are injected
+  without runtime coercion. No ignores, lint/type suppression or config weakening.
+- Final targeted CSA: **89 passed**.
+- Related PVP-001B/PVP-001A: **186 passed**.
+- Full pytest: **2111 passed / 1 existing intentional-red opt-in skip**.
+- Ruff: PASS. Repository mypy: PASS (41 files). Explicit strict CSA tool/test:
+  PASS (2 files). These are not expanded legacy strict claims.
+- Whitespace and exact six-file allowlist checked before commit.
+- Exact correction head/tree and remote CI receipt are recorded in PR #61.
+
+Qualification remains **CODE_COMPLETE CANDIDATE / TEST_ONLY_SUPPORT**.
+No real source was accessed or decoded. No acquisition, window selection on real
+data, annotation, calibration or holdout execution occurred. Stop after push/CI.

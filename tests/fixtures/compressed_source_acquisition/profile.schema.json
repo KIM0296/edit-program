@@ -9,7 +9,7 @@
     "container_family",
     "codec",
     "sample_rate",
-    "channels",
+    "supported_channels",
     "output",
     "forbidden_processing",
     "qualification"
@@ -28,7 +28,7 @@
       }
     },
     "sample_rate": {"const": 48000},
-    "channels": {
+    "supported_channels": {
       "type": "array",
       "prefixItems": [{"const": 1}, {"const": 2}],
       "items": false,
