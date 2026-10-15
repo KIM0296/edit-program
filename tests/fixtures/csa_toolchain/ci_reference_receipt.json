@@ -9,7 +9,10 @@
   "environment": {
     "os_family": "linux",
     "runner": "github-hosted-ubuntu-latest",
-    "note": "Reference CI environment only; not a Windows/G2 acquisition qualification."
+    "note": "Reference CI environment only; not a Windows/G2 acquisition qualification.",
+    "apt_package": "ffmpeg",
+    "apt_package_version": "7:6.1.1-3ubuntu5",
+    "install_policy": "TEMPORARY_CI_REFERENCE_ONLY"
   },
   "ffmpeg": {
     "path": "/usr/bin/ffmpeg",
