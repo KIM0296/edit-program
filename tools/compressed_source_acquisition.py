@@ -12,22 +12,20 @@ import re
 from dataclasses import dataclass, fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Final
 
-
-SCHEMA: Final = "csa-001-test-only-v1"
-PROFILE_REF: Final = "csa-aac48-pcm16le-v1"
-SOURCE_BYTE_CAP: Final = 128 * 1024 * 1024
-DECODED_DURATION_CAP_SECONDS: Final = 3600
-MAX_OUTPUT_BYTES: Final = 691_200_000
-SCRATCH_CAP_BYTES: Final = 1 * 1024 * 1024 * 1024
-MEMORY_CAP_BYTES: Final = 1 * 1024 * 1024 * 1024
-WALL_TIME_CAP_SECONDS: Final = 15 * 60
-SAMPLE_RATE: Final = 48_000
-FRAME_RATE: Final = 25
-SAMPLES_PER_FRAME: Final = 1_920
-WINDOW_SECONDS: Final = 30
-WINDOW_SAMPLE_FRAMES: Final = SAMPLE_RATE * WINDOW_SECONDS
+SCHEMA = "csa-001-test-only-v1"
+PROFILE_REF = "csa-aac48-pcm16le-v1"
+SOURCE_BYTE_CAP = 128 * 1024 * 1024
+DECODED_DURATION_CAP_SECONDS = 3600
+MAX_OUTPUT_BYTES = 691_200_000
+SCRATCH_CAP_BYTES = 1 * 1024 * 1024 * 1024
+MEMORY_CAP_BYTES = 1 * 1024 * 1024 * 1024
+WALL_TIME_CAP_SECONDS = 15 * 60
+SAMPLE_RATE = 48_000
+FRAME_RATE = 25
+SAMPLES_PER_FRAME = 1_920
+WINDOW_SECONDS = 30
+WINDOW_SAMPLE_FRAMES = SAMPLE_RATE * WINDOW_SECONDS
 
 
 class Refusal(ValueError):
@@ -141,7 +139,7 @@ class ToolchainPin:
     procedure_sha256: str
 
     def __post_init__(self) -> None:
-        libraries = tuple(sorted(tuple(self.libraries), key=lambda x: x.name))
+        libraries = tuple(sorted(self.libraries, key=lambda x: x.name))
         object.__setattr__(self, "libraries", libraries)
         if (
             not libraries
