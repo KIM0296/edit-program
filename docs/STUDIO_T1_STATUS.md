@@ -248,6 +248,11 @@ Bindings and other checks:
 
 ## Core changes needed (not made here; LAYER-001 owns those files)
 
+> **INT-002 update:** all four items below are done in `wip/integration-v2`
+> (evidence class `STUDIO_API_READ`, RT-001 `expected_splits` / `NEUTRAL_SPLIT`,
+> LAYER-001 Expected with Studio CUT/SHIFT in place, colour-neutral digest).
+> See docs/INT_002_STATUS.md.
+
 - **Evidence class.** `roundtrip_diff` / `roundtrip_verification` hard-code
   `FILE_ROUNDTRIP`. A non-file class (for example `STUDIO_API_READ`, or a
   generic `NON_NATIVE_REREAD`) would make `StudioEvidence`'s "superseded"
