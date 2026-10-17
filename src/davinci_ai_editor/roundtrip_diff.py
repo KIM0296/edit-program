@@ -62,6 +62,9 @@ class RoundTripFormat(str, Enum):
     UNKNOWN = "UNKNOWN"
     XMEML = "XMEML"
     OTIO_JSON = "OTIO_JSON"
+    # STUDIO-T0: a getter-only read of a Resolve-like object graph (TEST_ONLY_SUPPORT,
+    # fake only). Media is named by display name + path, like FCP7 xmeml.
+    STUDIO_API_READ = "STUDIO_API_READ"
 
 
 class MediaIdentityBasis(str, Enum):
@@ -80,6 +83,7 @@ class MediaIdentityBasis(str, Enum):
 _BASIS_BY_FORMAT = {
     RoundTripFormat.XMEML: MediaIdentityBasis.DISPLAY_NAME,
     RoundTripFormat.OTIO_JSON: MediaIdentityBasis.METADATA,
+    RoundTripFormat.STUDIO_API_READ: MediaIdentityBasis.DISPLAY_NAME,
     RoundTripFormat.UNKNOWN: MediaIdentityBasis.UNKNOWN,
 }
 
