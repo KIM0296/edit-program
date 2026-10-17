@@ -50,6 +50,7 @@ from davinci_ai_editor.roundtrip_verification import (
     verify_roundtrip,
 )
 from davinci_ai_editor.runtime_ports import PortIssueKind
+from davinci_ai_editor.studio_apply_planner import ApplyTier, PlanStatus
 from davinci_ai_editor.studio_capabilities import (
     STUDIO_CAPABILITY_MATRIX,
     CapabilityGrant,
@@ -60,6 +61,7 @@ from davinci_ai_editor.studio_capabilities import (
     capability_entry,
     documented_profile,
 )
+from davinci_ai_editor.studio_tiered_apply import TieredApplyPort
 from davinci_ai_editor.studio_transport import (
     MUTATION_METHODS,
     READ_METHODS,
@@ -693,3 +695,82 @@ def test_transport_allowlist_has_no_rebuild_track_or_native_calls() -> None:
     ).read_text(encoding="utf-8")
     assert "hasattr(" not in source
     assert "import DaVinciResolveScript" not in source
+
+
+# --- INT-002: parity against the LAYER-001 apply semantics (music bed) ---------------
+
+MUSIC = HandoffMediaRef("music.wav", "C:/media/music.wav", FrameRange(0, 1000), 0)
+
+
+def music_fixture() -> HandoffTimeline:
+    base = fixture()
+    music = HandoffTrack(
+        "Audio 2", HandoffTrackKind.AUDIO, (HandoffClip("Music", MUSIC, FrameRange(0, 400)),)
+    )
+    return replace(base, tracks=(*base.tracks, music))
+
+
+MUSIC_CUT = (TrackPolicyOverride("Audio 2", TrackCutPolicy.CUT_WITH_SOURCE),)
+
+
+def test_music_bed_conflicts_identically_on_both_transports() -> None:
+    _, _, conf_a, _ = file_path(timeline=music_fixture())
+    studio = Studio(timeline=music_fixture())
+    handoff = studio.handoff()
+    studio.decide()
+    _, conf_b = studio.confirm(handoff)
+    assert conf_a.confirmation_digest == conf_b.confirmation_digest
+    assert not conf_b.approved_cuts
+    reasons = {s.candidate_id: s.reason for s in conf_b.skipped}
+    assert reasons["AIE-0001"] is SkipReason.LAYER_CONFLICT
+    assert reasons["AIE-0002"] is SkipReason.LAYER_CONFLICT
+    assert [e.effect.value for e in conf_b.track_effects][3] == "CONFLICT"
+
+
+def test_music_override_parity_import_tier_and_test_only_split(tmp_path: Path) -> None:
+    _, _, conf_a, applied_a = file_path(timeline=music_fixture(), overrides=MUSIC_CUT)
+    assert [e.effect.value for e in conf_a.track_effects] == ["CUT", "SHIFTED", "CUT", "CUT"]
+    assert file_verification(applied_a) is VerificationStatus.MATCH
+    # in place without a split API: the music item spans the cut -> UNSUPPORTED (file path)
+    studio = Studio(timeline=music_fixture())
+    handoff = studio.handoff()
+    studio.decide()
+    _, conf_b = studio.confirm(handoff, MUSIC_CUT)
+    assert conf_b.confirmation_digest == conf_a.confirmation_digest
+    no_split = studio.mutation.apply_confirmed_cuts(
+        conf_b, confirmed_digest=conf_b.confirmation_digest
+    )
+    assert no_split.status is MutationStatus.UNSUPPORTED and "Audio 2@100" in no_split.detail
+    # tier 1 (import a new version) carries the same LAYER-001 Expected
+    port = TieredApplyPort(studio.project, studio.read_port, work_dir=tmp_path)
+    plan = port.plan(conf_b)
+    assert plan.status is PlanStatus.READY and plan.tier is ApplyTier.TIER_1_IMPORT_NEW_VERSION
+    outcome = port.execute(
+        plan,
+        conf_b,
+        confirmed_digest=conf_b.confirmation_digest,
+        confirmed_plan_digest=plan.plan_digest,
+    )
+    assert outcome.status is MutationStatus.PERFORMED, outcome.detail
+    assert outcome.readback is VerificationStatus.MATCH
+    assert outcome.readback_read is not None and outcome.readback_read.actual is not None
+    assert cut_geometry(outcome.readback_read.actual) == cut_geometry(applied_a.timeline)
+    # the test-only split flag reaches the same geometry in place
+    split = Studio(profile(split=True), fr.FakeBehavior(split_enabled=True), music_fixture())
+    handoff_s = split.handoff()
+    split.decide()
+    _, conf_s = split.confirm(handoff_s, MUSIC_CUT)
+    in_place = split.mutation.apply_confirmed_cuts(
+        conf_s, confirmed_digest=conf_s.confirmation_digest
+    )
+    assert in_place.status is MutationStatus.PERFORMED, in_place.detail
+    assert in_place.readback is VerificationStatus.MATCH
+    assert in_place.report is not None and in_place.report.evidence_class == "STUDIO_API_READ"
+    assert in_place.readback_read is not None and in_place.readback_read.actual is not None
+    geometry = cut_geometry(in_place.readback_read.actual)
+    assert geometry == cut_geometry(applied_a.timeline)
+    assert geometry[3] == (
+        "AUDIO",
+        2,
+        ((0, "music.wav", 0, 100), (100, "music.wav", 120, 250), (230, "music.wav", 262, 400)),
+    )
