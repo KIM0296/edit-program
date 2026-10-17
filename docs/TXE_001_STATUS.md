@@ -116,11 +116,22 @@ behavior was verified by reading (never executing) extracted sources:
   `interpolate_nans` (→ INTERPOLATED); failed segment alignment keeps
   `"words": []` (→ ALIGNMENT_FAILED).
 
+## Decision: float-noise grid snapping (option C, user decision 2026-10-17)
+
+Producer floats can carry binary noise after post-rounding arithmetic (e.g.
+`time_offset + k*0.02`, VAD time restoration): `0.30000000000000004`. Options
+considered: (A) refuse all off-grid values — real tool output may be rejected
+wholesale; (B) round everything to the resolution — hides genuinely off-grid
+values by up to half a resolution step; (C) snap only noise.
+
+Chosen: **C**. A value is snapped to the nearest resolution multiple only when
+it lies within `GRID_SNAP_EPSILON_MS = 0.001` ms (1 µs) of it; float noise is
+~1e-11 ms. Anything farther is still refused with `NOT_ON_RESOLUTION_GRID`.
+Every snapped input location is recorded in `TranscriptEvidence.grid_snaps`
+so the snap is auditable. Effect on frame projection: none (1 µs is far below
+one frame and below the mandatory ≥1-frame tolerance). No gate change.
+
 ## Open questions
 
-- Real faster-whisper segment floats without VAD are `time_offset + k*0.02` and
-  can carry binary noise (e.g. `0.30000000000000004`); they are refused
-  (`NOT_ON_RESOLUTION_GRID`). The serializer must emit exact decimal values;
-  whether a documented quantizing serializer is allowed is a Chat decision.
 - Return type is `TranscriptProjection` (snapshot + diagnostics) rather than a
   bare `TranscriptSnapshot`, so the overlap/zero-length timings stay auditable.

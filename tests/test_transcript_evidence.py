@@ -2,6 +2,7 @@
 
 import copy
 import unicodedata
+from dataclasses import replace
 from fractions import Fraction
 
 import pytest
@@ -267,7 +268,7 @@ def test_empty_segments_is_evaluated_empty_result() -> None:
         (("segments", 0, "words", 0, "probability"), False, IngestErrorCode.INVALID_TYPE),
         (("segments", 0, "start"), "0.0", IngestErrorCode.INVALID_TYPE),
         (("segments", 0, "start"), -0.01, IngestErrorCode.NEGATIVE),
-        (("segments", 0, "words", 1, "start"), 0.1 + 0.2, IngestErrorCode.NOT_ON_RESOLUTION_GRID),
+        (("segments", 0, "words", 1, "start"), 0.60001, IngestErrorCode.NOT_ON_RESOLUTION_GRID),
         (("segments", 0, "words", 1, "start"), 0.605, IngestErrorCode.NOT_ON_RESOLUTION_GRID),
         (("segments", 0, "words", 1, "end"), 1.5, IngestErrorCode.CONTRACT_VIOLATION),
         (("segments", 0, "id"), 1.0, IngestErrorCode.INVALID_TYPE),
@@ -540,3 +541,50 @@ def test_determinism() -> None:
         "transcript_id": "tx",
     }
     assert project_to_source_frames(a, **kwargs) == project_to_source_frames(b, **kwargs)  # type: ignore[arg-type]
+
+
+def test_float_noise_is_snapped_to_grid_and_recorded() -> None:
+    payload = fw_payload()
+    noisy_start, noisy_end = 0.1 * 6, 0.4 * 3
+    assert repr(noisy_start) != "0.6" and repr(noisy_end) != "1.2"
+    segment = payload["segments"][0]  # type: ignore[index]
+    segment["words"][1]["start"] = noisy_start
+    segment["end"] = noisy_end
+    segment["words"][1]["end"] = noisy_end
+    ev = fw(payload)
+    word = ev.segments[0].words[1]
+    assert (word.start_ms, word.end_ms, ev.segments[0].end_ms) == (600, 1200, 1200)
+    assert ev.grid_snaps == (
+        "segments[0].words[1].start",
+        "segments[0].words[1].end",
+        "segments[0].end",
+    )
+
+
+def test_exact_payload_records_no_snaps() -> None:
+    assert fw(fw_payload()).grid_snaps == ()
+    assert wx(wx_payload()).grid_snaps == ()
+
+
+@pytest.mark.parametrize("offset_s", [0.0000011, -0.0000011, 0.000005])
+def test_off_grid_beyond_noise_epsilon_is_refused(offset_s: float) -> None:
+    payload = fw_payload()
+    payload["segments"][0]["words"][1]["start"] = 0.6 + offset_s  # type: ignore[index]
+    with pytest.raises(TranscriptIngestError) as exc:
+        fw(payload)
+    assert code_of(exc) == IngestErrorCode.NOT_ON_RESOLUTION_GRID
+
+
+def test_whisperx_noise_is_snapped_at_1ms_resolution() -> None:
+    payload = wx_payload()
+    segment = payload["segments"][0]  # type: ignore[index]
+    original = segment["start"]
+    segment["start"] = original + 0.1 * 3 - 0.30000000000000004 + 1e-15
+    ev = wx(payload)
+    assert ev.segments[0].start_ms == round(original * 1000)
+
+
+def test_grid_snaps_must_be_nonblank_strings() -> None:
+    ev = fw(fw_payload())
+    with pytest.raises(ValueError, match="Grid snap"):
+        replace(ev, grid_snaps=(" ",))

@@ -277,9 +277,15 @@ class TranscriptEvidence:
     resolution_ms: int
     segments: tuple[TranscriptEvidenceSegment, ...]
     coverage: tuple[CoverageSpan, ...] | None
+    # Input locations whose float value was snapped to the resolution grid
+    # (noise within GRID_SNAP_EPSILON_MS only). Kept so the snap is auditable.
+    grid_snaps: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _nonblank(self.evidence_id, "Explicit evidence ID required")
+        object.__setattr__(self, "grid_snaps", tuple(self.grid_snaps))
+        if any(not isinstance(g, str) or not g.strip() for g in self.grid_snaps):
+            raise ValueError("Grid snap locations must be nonblank strings")
         _nonblank(self.source_ref, "Explicit source reference required")
         if not isinstance(self.producer, TranscriptProducerRef):
             raise TypeError("Typed producer reference required")
@@ -387,17 +393,28 @@ def _fraction(value: object, where: str) -> Fraction | None:
     return Fraction(_decimal(value, where))
 
 
-def _time_ms(value: object, resolution_ms: int, where: str) -> int:
+# Binary floating-point noise tolerance for grid snapping (1 microsecond).
+# Producers round to their resolution and may then add offsets in float
+# arithmetic (e.g. 0.30000000000000004 s); such noise is ~1e-11 ms. Anything
+# farther than this from the resolution grid is a real off-grid value and is
+# refused, never rounded.
+GRID_SNAP_EPSILON_MS = Decimal("0.001")
+
+
+def _time_ms(value: object, resolution_ms: int, where: str, snaps: list[str]) -> int:
     seconds = _decimal(value, where)
     if seconds < 0:
         raise _fail(IngestErrorCode.NEGATIVE, f"{where} must be nonnegative")
     millis = seconds * 1000
-    if millis != millis.to_integral_value() or int(millis) % resolution_ms:
+    nearest = (millis / resolution_ms).to_integral_value() * resolution_ms
+    if abs(millis - nearest) > GRID_SNAP_EPSILON_MS:
         raise _fail(
             IngestErrorCode.NOT_ON_RESOLUTION_GRID,
             f"{where}={value!r} is not a multiple of {resolution_ms} ms",
         )
-    return int(millis)
+    if millis != nearest:
+        snaps.append(where)
+    return int(nearest)
 
 
 def _text(value: object, where: str) -> str:
@@ -451,6 +468,7 @@ def _build(
     resolution_ms: int,
     segments: list[TranscriptEvidenceSegment],
     coverage: Sequence[CoverageSpan] | None,
+    grid_snaps: Sequence[str],
 ) -> TranscriptEvidence:
     try:
         return TranscriptEvidence(
@@ -461,6 +479,7 @@ def _build(
             resolution_ms=resolution_ms,
             segments=tuple(segments),
             coverage=None if coverage is None else tuple(coverage),
+            grid_snaps=tuple(grid_snaps),
         )
     except (TypeError, ValueError) as exc:
         raise _fail(IngestErrorCode.CONTRACT_VIOLATION, str(exc)) from exc
@@ -498,6 +517,7 @@ def ingest_faster_whisper(
     Whisper probability. ``words: null`` -> NOT_REQUESTED; ``words: []`` with
     nonblank text -> ALIGNMENT_FAILED (no word is invented). Resolution 10 ms.
     """
+    snaps: list[str] = []
     res = FASTER_WHISPER_RESOLUTION_MS
     top = _mapping(payload, "payload")
     language_probability = _fraction(
@@ -529,8 +549,10 @@ def ingest_faster_whisper(
                 words.append(
                     _word(
                         text=_text(_required(w, "word", wwhere), f"{wwhere}.word"),
-                        start_ms=_time_ms(_required(w, "start", wwhere), res, f"{wwhere}.start"),
-                        end_ms=_time_ms(_required(w, "end", wwhere), res, f"{wwhere}.end"),
+                        start_ms=_time_ms(
+                            _required(w, "start", wwhere), res, f"{wwhere}.start", snaps
+                        ),
+                        end_ms=_time_ms(_required(w, "end", wwhere), res, f"{wwhere}.end", snaps),
                         timing=EvidenceWordTiming.HEURISTIC_ADJUSTED,
                         confidence_kind=ConfidenceKind.WHISPER_WORD_PROB,
                         confidence=_fraction(
@@ -541,8 +563,8 @@ def ingest_faster_whisper(
         segments.append(
             _segment(
                 segment_index=index,
-                start_ms=_time_ms(_required(seg, "start", where), res, f"{where}.start"),
-                end_ms=_time_ms(_required(seg, "end", where), res, f"{where}.end"),
+                start_ms=_time_ms(_required(seg, "start", where), res, f"{where}.start", snaps),
+                end_ms=_time_ms(_required(seg, "end", where), res, f"{where}.end", snaps),
                 text=text,
                 words_status=status,
                 words=tuple(words),
@@ -561,6 +583,7 @@ def ingest_faster_whisper(
         resolution_ms=res,
         segments=segments,
         coverage=coverage,
+        grid_snaps=snaps,
     )
 
 
@@ -583,6 +606,7 @@ def ingest_whisperx(
     ``"words": []`` -> ALIGNMENT_FAILED. Missing/null ``words`` -> NOT_REQUESTED.
     Resolution 1 ms.
     """
+    snaps: list[str] = []
     res = WHISPERX_RESOLUTION_MS
     top = _mapping(payload, "payload")
     resolved = _resolve_producer(producer, WHISPERX_TOOL, top.get("language"), None)
@@ -614,10 +638,10 @@ def ingest_whisperx(
                     # A half timing is validated but never kept or completed.
                     for value, name in ((start, "start"), (end, "end")):
                         if value is not None:
-                            _time_ms(value, res, f"{wwhere}.{name}")
+                            _time_ms(value, res, f"{wwhere}.{name}", snaps)
                 else:
-                    start_ms = _time_ms(start, res, f"{wwhere}.start")
-                    end_ms = _time_ms(end, res, f"{wwhere}.end")
+                    start_ms = _time_ms(start, res, f"{wwhere}.start", snaps)
+                    end_ms = _time_ms(end, res, f"{wwhere}.end", snaps)
                     timing = (
                         EvidenceWordTiming.INTERPOLATED
                         if score is None
@@ -636,8 +660,8 @@ def ingest_whisperx(
         segments.append(
             _segment(
                 segment_index=i,
-                start_ms=_time_ms(_required(seg, "start", where), res, f"{where}.start"),
-                end_ms=_time_ms(_required(seg, "end", where), res, f"{where}.end"),
+                start_ms=_time_ms(_required(seg, "start", where), res, f"{where}.start", snaps),
+                end_ms=_time_ms(_required(seg, "end", where), res, f"{where}.end", snaps),
                 text=text,
                 words_status=status,
                 words=tuple(words),
@@ -654,6 +678,7 @@ def ingest_whisperx(
         resolution_ms=res,
         segments=segments,
         coverage=coverage,
+        grid_snaps=snaps,
     )
 
 
