@@ -112,8 +112,9 @@ and `file` (`pathurl`, later uses reference `<file id=…/>`). Built with
 `xml.etree`, deterministic. Missing references and UNKNOWN track kinds are
 refused. A file `timecode` is written only when `media_start_frame` is known.
 Not written (explicit limits): `<format>`/`samplecharacteristics` (frame size
-and sample rate are unknown to the model), A/V `link` elements, marker colors
-(warning `MARKER_NOT_REPRESENTED`).
+and sample rate are unknown to the model), marker colors
+(warning `MARKER_NOT_REPRESENTED`). A/V `link` elements were added later by
+APPLY-001 (see `docs/APPLY_001_STATUS.md`).
 
 ## Resolve-shape claims (third-party, UNVERIFIED on our runtime)
 

@@ -5,13 +5,25 @@ License, see licenses/timeline-LICENSE.txt. Ported to Python/xml.etree with
 exact integer frames; unsupported content is refused, never dropped.
 
 Scope limits (explicit): no ``<format>``/``samplecharacteristics`` (frame size
-and audio sample rate are UNKNOWN to the model), no links between A/V
-clipitems, no marker colors (xmeml v5 markers have none; reported as warnings).
+and audio sample rate are UNKNOWN to the model), no marker colors (xmeml v5
+markers have none; reported as warnings). Marker names and comments are
+written (APPLY-001 candidate tokens travel in marker names).
+
+A/V links (APPLY-001): a video clipitem and the audio clipitems that share its
+media, timeline range and source range are written as one FCP7 link group:
+every member carries one ``<link>`` per member (itself included) with
+``linkclipref``, ``mediatype``, ``trackindex`` (1-based within the media kind)
+and ``clipindex`` (1-based position in its track); audio links add
+``groupindex`` 1. The link element layout is adapted from timeline (Chat
+Octopus) src/xmeml/writer.ts ``writeLinkEntries``, MIT License, see
+licenses/timeline-LICENSE.txt. Ambiguous groups (more than one matching video
+clip) are not linked.
 The written file is an Expected artifact only; importing it is a native
 mutation (HOLD / manual user action) and nothing here authorizes it.
 """
 
 import xml.etree.ElementTree as ET
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Literal
 
@@ -114,12 +126,65 @@ def _preflight(timeline: HandoffTimeline) -> list[HandoffDiagnostic]:
     return diagnostics
 
 
+@dataclass(frozen=True)
+class _LinkMember:
+    clip_id: str
+    media_type: str  # "video" | "audio"
+    track_index: int  # 1-based within the media kind
+    clip_index: int  # 1-based position of the clipitem in its track
+
+
+_LinkKey = tuple[str, int, int, int, int]
+
+
+def _ordered_tracks(timeline: HandoffTimeline) -> Iterator[tuple[str, int, HandoffTrack]]:
+    """(media type, 1-based track index within kind, track) in document order."""
+    for kind, media_type in ((HandoffTrackKind.VIDEO, "video"), (HandoffTrackKind.AUDIO, "audio")):
+        index = 0
+        for track in timeline.tracks:
+            if track.kind is kind:
+                index += 1
+                yield media_type, index, track
+
+
+def _link_groups(timeline: HandoffTimeline) -> dict[str, tuple[_LinkMember, ...]]:
+    """clipitem id -> link group (same media, timeline range and source range).
+
+    Clipitem ids are assigned in the same document order as :class:`_Builder`.
+    """
+    groups: dict[_LinkKey, list[_LinkMember]] = {}
+    counter = 0
+    for media_type, track_index, track in _ordered_tracks(timeline):
+        for clip_index, (start, clip) in enumerate(track.placements(), start=1):
+            counter += 1
+            key: _LinkKey = (
+                clip.media.media_id,
+                start,
+                start + clip.duration,
+                clip.source_range.start,
+                clip.source_range.end,
+            )
+            member = _LinkMember(f"clipitem-{counter}", media_type, track_index, clip_index)
+            groups.setdefault(key, []).append(member)
+    result: dict[str, tuple[_LinkMember, ...]] = {}
+    for members in groups.values():
+        videos = [m for m in members if m.media_type == "video"]
+        audios = [m for m in members if m.media_type == "audio"]
+        if len(videos) != 1 or not audios:
+            continue
+        group = tuple(members)
+        for member in group:
+            result[member.clip_id] = group
+    return result
+
+
 class _Builder:
     def __init__(self, timeline: HandoffTimeline) -> None:
         self.timeline = timeline
         self.rate = timeline.rate
         self.file_ids: dict[str, str] = {}
         self.clip_counter = 0
+        self.links = _link_groups(timeline)
 
     def file(self, parent: ET.Element, media: HandoffMediaRef) -> None:
         existing = self.file_ids.get(media.media_id)
@@ -142,7 +207,8 @@ class _Builder:
 
     def clipitem(self, parent: ET.Element, start: int, clip: HandoffClip) -> None:
         self.clip_counter += 1
-        element = ET.SubElement(parent, "clipitem", {"id": f"clipitem-{self.clip_counter}"})
+        clip_id = f"clipitem-{self.clip_counter}"
+        element = ET.SubElement(parent, "clipitem", {"id": clip_id})
         _leaf(element, "name", clip.name)
         _leaf(element, "enabled", "TRUE" if clip.enabled else "FALSE")
         _leaf(element, "duration", str(clip.duration))
@@ -151,6 +217,14 @@ class _Builder:
         _leaf(element, "in", str(clip.source_range.start))
         _leaf(element, "out", str(clip.source_range.end))
         self.file(element, clip.media)
+        for member in self.links.get(clip_id, ()):
+            link = ET.SubElement(element, "link")
+            _leaf(link, "linkclipref", member.clip_id)
+            _leaf(link, "mediatype", member.media_type)
+            _leaf(link, "trackindex", str(member.track_index))
+            _leaf(link, "clipindex", str(member.clip_index))
+            if member.media_type == "audio":
+                _leaf(link, "groupindex", "1")
         for marker in clip.markers:
             marker_element = ET.SubElement(element, "marker")
             _leaf(marker_element, "name", marker.name)
