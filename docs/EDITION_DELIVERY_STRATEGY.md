@@ -101,6 +101,31 @@ honestly in the UI:
    native qualification, lift native mutation HOLD via the existing gates,
    then ship the in-Resolve Studio path.
 
+## 7. Decisions (user, 2026-10-17, later the same day)
+
+- **Studio-only product.** The commercial product is Studio-only; customers are
+  expected to buy DaVinci Resolve Studio. This supersedes the handoff principle
+  "the product must not require a Studio purchase". Free remains only as a
+  persuasion demo.
+- **Free = founder-led demo (option B).** No public service, accounts or
+  long-term storage now. Demos run on the founder's machine or as a short
+  external trial: time-limited invite codes (72 h from first use, up to 5
+  projects, videos up to 10 min), consent notice, automatic deletion of all
+  data at code expiry, HTTPS via a temporary tunnel or a temporary cloud VM
+  deleted after the trial. Revisit hosted trials (option C) when demand exceeds
+  about 10 trial requests per month.
+- **Engineering focus.** Studio path first: STUDIO-T1 tiered apply on the fake,
+  then a Studio license and TASK-020 native qualification, then the existing
+  gates to lift native mutation HOLD, then Studio distribution (script install
+  and product licensing).
+- **Studio apply tiers.** (1) before grading: build and import a new version
+  timeline inside Resolve, confirm only; (2) after grading: same plus grade and
+  Fusion transfer where the API supports it (to verify); (3) cuts on item
+  boundaries: in-place DeleteClips; (4) fallback razor assist. The Resolve API
+  has no documented split-at-frame call (STUDIO-T0).
+- **Customer-safe claim until native verification:** "confirm only" is promised
+  for tier 1 (before grading) only.
+
 ## 6. Open decisions before a public web service
 
 ASR hosting (self-hosted GPU faster-whisper recommended vs external API),
