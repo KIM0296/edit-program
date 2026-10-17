@@ -181,3 +181,7 @@ git diff --check                                                                
 - MOVED clips caused purely by an upstream ripple are locked too (conservative);
   a ripple-consistent exemption would need an approved policy.
 - MERGED is an extra class beyond the requested list (exact-union join).
+- LAYER-001: unplaced track items are kept verbatim as pass-through items;
+  regions fully explained by verbatim-identical / moved / added pass-through
+  items are no longer UNKNOWN and changes to them are locked via
+  `layer_findings` (see `docs/LAYER_001_STATUS.md`, open question).

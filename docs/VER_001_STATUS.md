@@ -122,3 +122,6 @@ open question rather than implemented.
 - Gap items may double-report a drift already reported on the neighbouring
   clip (by design: the cut list is verified item by item).
 - Not wired into orchestration, candidate authority or promotion.
+- LAYER-001 adds layer items (track set/state, pass-through presence:
+  `LAYER_LOST`, `LAYER_ADDED`, `TRACK_STATE_CHANGED`); see
+  `docs/LAYER_001_STATUS.md`.

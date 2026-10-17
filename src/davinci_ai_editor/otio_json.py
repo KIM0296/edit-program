@@ -26,6 +26,14 @@ identified by its target path instead (warning ``MISSING_MEDIA_ID``; the ID is
 listed in ``path_identified_media_ids`` and diffs match it by path + source
 range with WEAK identity). A ``MissingReference`` without our metadata has no
 path and stays a refusal. FCP7 XML remains the default round-trip format.
+
+LAYER-001 (decision: refuse, not preserve): the OTIO reader refuses any
+unknown schema, so an OTIO Actual never carries items the model does not
+understand. The writer refuses (``LAYER_LOSS_RISK``) a timeline whose tracks
+carry pass-through items (xmeml subtrees) or track state this subset cannot
+represent (disabled / locked flag, XML attributes, settings), instead of
+emitting a file that silently lacks a layer item. Preserving raw OTIO objects
+of unknown schema is not implemented.
 """
 
 import json
@@ -346,6 +354,19 @@ def write_otio(
         raise TypeError("A HandoffTimeline is required")
     if not isinstance(profile, OtioProfile) or profile is OtioProfile.UNKNOWN:
         raise ValueError("OTIO profile must be DEFAULT or RESOLVE_SHAPED")
+    losses = tuple(
+        refusal(
+            HandoffDiagnosticCode.LAYER_LOSS_RISK,
+            f"tracks[{index}]",
+            f"Track {track.name!r} carries pass-through items or track state "
+            "(xmeml subtree, disabled/locked flag, attributes) that this OTIO subset "
+            "cannot carry; refused instead of dropping them",
+        )
+        for index, track in enumerate(timeline.tracks)
+        if track.has_layer_state
+    )
+    if losses:
+        return OtioWriteResult(None, profile, losses)
     try:
         document = _Writer(timeline, profile).document()
     except _Refused as refused:

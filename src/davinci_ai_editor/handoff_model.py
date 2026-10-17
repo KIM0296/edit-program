@@ -18,7 +18,7 @@ Coordinates:
 
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import Literal
@@ -86,6 +86,9 @@ class HandoffDiagnosticCode(str, Enum):
     UNSUPPORTED_FEATURE = "UNSUPPORTED_FEATURE"
     MISSING_MEDIA_ID = "MISSING_MEDIA_ID"
     INVALID_VALUE = "INVALID_VALUE"
+    # LAYER-001: a layer item (or track state) the target format cannot carry
+    LAYER_LOSS_RISK = "LAYER_LOSS_RISK"
+    LINK_NOT_PRESERVED = "LINK_NOT_PRESERVED"
 
 
 @dataclass(frozen=True)
@@ -209,23 +212,136 @@ class HandoffGap:
 HandoffItem = HandoffClip | HandoffGap
 
 
+class LayerItemKind(str, Enum):
+    """LAYER-001: what a pass-through (not modelled) track item is."""
+
+    UNKNOWN = "UNKNOWN"
+    GENERATOR = "GENERATOR"
+    TRANSITION = "TRANSITION"
+    NESTED_SEQUENCE = "NESTED_SEQUENCE"
+    EFFECT_CLIP = "EFFECT_CLIP"  # clipitem carrying <filter> effects
+    RETIMED_CLIP = "RETIMED_CLIP"  # speed change / time remap
+    UNMODELLED_CLIP = "UNMODELLED_CLIP"  # any other clipitem the model cannot place
+    UNKNOWN_ELEMENT = "UNKNOWN_ELEMENT"
+
+
+PASSTHROUGH_FORMAT_XMEML: Literal["XMEML"] = "XMEML"
+
+
+@dataclass(frozen=True)
+class PassthroughItem:
+    """LAYER-001: a track item the model does not understand, preserved verbatim.
+
+    ``raw_xml`` is the original element subtree (canonical serialization by the
+    xmeml reader: whitespace-only text removed, ``id`` attributes and ``<link>``
+    children normalized, file references inlined). It is re-emitted as is; only
+    the root's timeline ``start``/``end`` (and, for a 1:1 cut, ``in``/``out``)
+    are ever rewritten.
+
+    ``timeline_range`` is the item's extent in timeline frames, or ``None`` when
+    it cannot be determined (UNKNOWN; such an item is never moved or cut).
+    ``source_range`` is set only when the item is a plain 1:1 clipitem that can
+    be cut like a modelled clip (e.g. a clipitem whose only unmodelled children
+    are ``<filter>`` effects); ``media_id`` is set whenever the item names a file.
+    """
+
+    kind: LayerItemKind
+    label: str
+    timeline_range: FrameRange | None
+    raw_xml: str
+    media_id: str | None = None
+    source_range: FrameRange | None = None
+    has_filters: bool = False
+    # capture metadata only: not part of the item's identity (a re-read never has links)
+    links_removed: int = field(default=0, compare=False)
+    source_format: Literal["XMEML"] = PASSTHROUGH_FORMAT_XMEML
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.kind, LayerItemKind):
+            raise TypeError("Pass-through item requires a LayerItemKind")
+        if not isinstance(self.label, str):
+            raise TypeError("Pass-through label must be a string")
+        _nonempty(self.raw_xml, "Pass-through raw XML")
+        if self.timeline_range is not None and not isinstance(self.timeline_range, FrameRange):
+            raise TypeError("Pass-through extent must be a FrameRange or None")
+        if self.media_id is not None:
+            _nonempty(self.media_id, "Pass-through media ID")
+        if self.source_range is not None:
+            if not isinstance(self.source_range, FrameRange):
+                raise TypeError("Pass-through source range must be a FrameRange")
+            if (
+                self.media_id is None
+                or self.timeline_range is None
+                or self.timeline_range.duration != self.source_range.duration
+            ):
+                raise ValueError("A cuttable pass-through item needs media and a 1:1 extent")
+        if type(self.has_filters) is not bool:
+            raise TypeError("has_filters must be a bool")
+        if type(self.links_removed) is not int or self.links_removed < 0:
+            raise ValueError("links_removed must be a nonnegative int")
+        if self.source_format != PASSTHROUGH_FORMAT_XMEML:
+            raise ValueError("Only xmeml pass-through items exist")
+
+    @property
+    def cuttable(self) -> bool:
+        return self.source_range is not None
+
+
 @dataclass(frozen=True)
 class HandoffTrack:
+    """A track (layer). LAYER-001: tracks are never merged, dropped or reordered.
+
+    ``passthrough`` holds items the model does not understand (absolute
+    timeline positions, never overlapping modelled clips). ``enabled`` /
+    ``locked`` are the track flags as read; ``attributes`` and ``extra_xml``
+    keep other track-level XML (attributes, settings children) verbatim.
+    """
+
     name: str
     kind: HandoffTrackKind
     items: tuple[HandoffItem, ...] = ()
+    passthrough: tuple[PassthroughItem, ...] = ()
+    enabled: bool = True
+    locked: bool = False
+    attributes: tuple[tuple[str, str], ...] = ()
+    extra_xml: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "items", tuple(self.items))
+        object.__setattr__(self, "passthrough", tuple(self.passthrough))
+        object.__setattr__(self, "attributes", tuple(tuple(a) for a in self.attributes))
+        object.__setattr__(self, "extra_xml", tuple(self.extra_xml))
         _nonempty(self.name, "Track name")
         if not isinstance(self.kind, HandoffTrackKind):
             raise TypeError("Unknown track kind type")
         if any(not isinstance(i, (HandoffClip, HandoffGap)) for i in self.items):
             raise TypeError("Track items must be HandoffClip or HandoffGap")
+        if any(not isinstance(p, PassthroughItem) for p in self.passthrough):
+            raise TypeError("Pass-through items must be PassthroughItem values")
+        if type(self.enabled) is not bool or type(self.locked) is not bool:
+            raise TypeError("Track flags must be bools")
+        for pair in self.attributes:
+            if len(pair) != 2 or not all(isinstance(v, str) for v in pair):
+                raise TypeError("Track attributes must be (name, value) string pairs")
+        if any(not isinstance(x, str) or not x.strip() for x in self.extra_xml):
+            raise TypeError("Track extra XML must be nonempty strings")
+        spans = [FrameRange(start, start + clip.duration) for start, clip in self.placements()]
+        for item in self.passthrough:
+            extent = item.timeline_range
+            if extent is not None and any(extent.overlaps(span) for span in spans):
+                raise ValueError("A pass-through item must not overlap a modelled clip")
 
     @property
     def duration(self) -> int:
-        return sum(item.duration for item in self.items)
+        ends = [p.timeline_range.end for p in self.passthrough if p.timeline_range is not None]
+        return max([sum(item.duration for item in self.items), *ends])
+
+    @property
+    def has_layer_state(self) -> bool:
+        """True when the track carries anything beyond modelled clips and gaps."""
+        return bool(
+            self.passthrough or not self.enabled or self.locked or self.attributes or self.extra_xml
+        )
 
     def placements(self) -> tuple[tuple[int, HandoffClip], ...]:
         """(timeline start frame relative to timeline start, clip) in order."""
@@ -273,6 +389,10 @@ class ReimportedTimeline:
     where an Expected plan is required. Tracks reuse the structural
     :class:`HandoffTrack` values.
 
+    ``unpreserved`` (LAYER-001): descriptions of content the file carried that
+    this model cannot preserve when a new file is written (e.g. sequence-level
+    markers). Applying cuts to such a timeline refuses with ``LAYER_LOSS_RISK``.
+
     ``path_identified_media_ids``: media IDs that the file did not carry as our
     metadata (e.g. an OTIO export whose ``metadata["davinci_ai_editor"]`` was
     dropped by the NLE) and were therefore derived from the target path. Clips
@@ -284,6 +404,7 @@ class ReimportedTimeline:
     start_frame: int
     tracks: tuple[HandoffTrack, ...]
     path_identified_media_ids: tuple[str, ...] = ()
+    unpreserved: tuple[str, ...] = ()
     evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
     native_evidence: Literal[False] = False
 
@@ -292,6 +413,9 @@ class ReimportedTimeline:
         object.__setattr__(
             self, "path_identified_media_ids", tuple(sorted(set(self.path_identified_media_ids)))
         )
+        object.__setattr__(self, "unpreserved", tuple(self.unpreserved))
+        if any(not isinstance(u, str) or not u.strip() for u in self.unpreserved):
+            raise TypeError("Unpreserved content descriptions must be nonempty strings")
         _nonempty(self.name, "Timeline name")
         if not isinstance(self.rate, FrameRate) or not is_smpte_rate(self.rate):
             raise ValueError("Timeline rate must be a whitelisted SMPTE FrameRate")

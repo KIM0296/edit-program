@@ -20,6 +20,15 @@ boundaries, overlapping clipitems, mixed-rate files) are reported as explicit
 model (their span becomes a gap) and the region is UNKNOWN; downstream diffing
 must never classify content inside it.
 
+LAYER-001: nothing on a track is dropped. Every track child that is not placed
+as a modelled clip (the unsupported constructs above, every item of a disabled
+or whole-UNKNOWN track, overlapped clipitems) is kept verbatim as a
+``PassthroughItem`` on its ``HandoffTrack`` (canonical subtree, see
+``layer_xml``), with its timeline extent when determinable. Track flags
+(``enabled``/``locked``), track XML attributes and other track settings
+children are kept on the track. Sequence-level markers, which the model cannot
+carry, are listed in ``ReimportedTimeline.unpreserved``.
+
 Security: input is a ``str`` capped at ``max_chars``; any ``<!ENTITY``
 declaration, DTD internal subset, external DOCTYPE identifier or DOCTYPE other
 than the bare ``<!DOCTYPE xmeml>`` is refused before parsing (defusedxml-like
@@ -51,6 +60,8 @@ from .handoff_model import (
     HandoffMediaRef,
     HandoffTrack,
     HandoffTrackKind,
+    LayerItemKind,
+    PassthroughItem,
     ReimportedTimeline,
     TimelineStructure,
     file_url_to_path,
@@ -58,6 +69,7 @@ from .handoff_model import (
     refusal,
     warning,
 )
+from .layer_xml import canonical_subtree, child_int, has_unparsed_markers, raw_markers
 from .temporal_mapping import FrameRate
 from .timecode import is_smpte_rate, parse_timecode
 
@@ -109,6 +121,35 @@ _TRACK_UNSUPPORTED = {
     "transitionitem": "TRANSITION",
     "generatoritem": "GENERATOR",
 }
+
+
+def _layer_kind(element: ET.Element) -> LayerItemKind:
+    if element.tag == "generatoritem":
+        return LayerItemKind.GENERATOR
+    if element.tag == "transitionitem":
+        return LayerItemKind.TRANSITION
+    if element.tag != "clipitem":
+        return LayerItemKind.UNKNOWN_ELEMENT
+    if element.find("sequence") is not None:
+        return LayerItemKind.NESTED_SEQUENCE
+    filters = element.findall("filter")
+    effects = {(f.findtext("effect/effectid") or "").strip().lower() for f in filters}
+    if effects & {"timeremap", "speed"}:
+        return LayerItemKind.RETIMED_CLIP
+    values = [child_int(element, tag) for tag in ("start", "end", "in", "out")]
+    start, end, source_in, source_out = values
+    if (
+        start is not None
+        and end is not None
+        and source_in is not None
+        and source_out is not None
+        and -1 not in values
+        and source_out - source_in != end - start
+    ):
+        return LayerItemKind.RETIMED_CLIP
+    if filters:
+        return LayerItemKind.EFFECT_CLIP
+    return LayerItemKind.UNMODELLED_CLIP
 
 
 class UnsupportedConstruct(str, Enum):
@@ -228,6 +269,7 @@ class _Placed:
     start: int
     end: int
     clip: HandoffClip | None  # None = unsupported (region UNKNOWN, span becomes a gap)
+    construct: UnsupportedConstruct | None = None
 
 
 def _precheck(text: str, max_chars: int) -> None:
@@ -324,6 +366,7 @@ class _Reader:
         self.diagnostics: list[HandoffDiagnostic] = []
         self.regions: list[UnknownRegion] = []
         self.files: dict[str, _FileDef] = {}
+        self.file_elements: dict[str, ET.Element] = {}
         self.rate: FrameRate = FrameRate(24, 1)
 
     # --- files --------------------------------------------------------------
@@ -361,6 +404,7 @@ class _Reader:
                     f"Conflicting definitions for file id {file_id!r}",
                 )
             self.files[file_id] = definition
+            self.file_elements.setdefault(file_id, element)
 
     def resolve_file(self, element: ET.Element, location: str) -> _FileDef:
         file_id = element.get("id")
@@ -478,14 +522,14 @@ class _Reader:
                 unsupported = (UnsupportedConstruct.MISSING_FILE, "File without name or pathurl")
         if unsupported is not None:
             self.unknown(key, span, unsupported[0], location, unsupported[1])
-            return _Placed(span.start, span.end, None)
+            return _Placed(span.start, span.end, None, unsupported[0])
         if definition is None or source_in is None or source_out is None:
             raise AssertionError("validated above")
         try:
             source = FrameRange(source_in, source_out)
         except ValueError:
             self.unknown(key, span, UnsupportedConstruct.INVALID_CLIP, location, "Bad in/out")
-            return _Placed(span.start, span.end, None)
+            return _Placed(span.start, span.end, None, UnsupportedConstruct.INVALID_CLIP)
         markers = self.markers(element, source, location)
         if markers is None:
             self.unknown(
@@ -495,7 +539,7 @@ class _Reader:
                 location,
                 "Marker outside the clip source range or malformed; not dropped",
             )
-            return _Placed(span.start, span.end, None)
+            return _Placed(span.start, span.end, None, UnsupportedConstruct.MARKER_OUT_OF_RANGE)
         enabled_value = _bool_text(element.find("enabled"), f"{location}.enabled")
         if enabled_value is None:
             enabled_value = True
@@ -532,8 +576,11 @@ class _Reader:
 
     def track(self, element: ET.Element, key: TrackKey, location: str) -> HandoffTrack:
         placed: list[_Placed] = []
+        entries: list[tuple[ET.Element, _Placed | None]] = []
+        extra: list[str] = []
         whole_unknown = False
         enabled = _bool_text(element.find("enabled"), f"{location}.enabled")
+        locked = _bool_text(element.find("locked"), f"{location}.locked")
         if enabled is False:
             self.unknown(key, None, UnsupportedConstruct.TRACK_DISABLED, location, "Track disabled")
             whole_unknown = True
@@ -541,6 +588,7 @@ class _Reader:
             c_location = f"{location}.{child.tag}[{index}]"
             if child.tag == "clipitem":
                 result = self.clipitem(child, key, c_location)
+                entries.append((child, result))
                 if result is None:
                     whole_unknown = True
                 else:
@@ -553,21 +601,146 @@ class _Reader:
                 self.unknown(key, span, construct, c_location, f"<{child.tag}>")
                 if span is None:
                     whole_unknown = True
+                    entries.append((child, None))
                 else:
-                    placed.append(_Placed(span.start, span.end, None))
-            elif child.tag not in _BENIGN_TRACK_CHILDREN:
+                    item = _Placed(span.start, span.end, None, construct)
+                    placed.append(item)
+                    entries.append((child, item))
+            elif child.tag in ("enabled", "locked"):
+                continue
+            elif child.tag in _BENIGN_TRACK_CHILDREN:
+                extra.append(canonical_subtree(child, {})[0])
+            else:
                 self.unknown(
                     key, None, UnsupportedConstruct.UNKNOWN_ELEMENT, c_location, "Unknown element"
                 )
                 whole_unknown = True
+                entries.append((child, None))
         name = f"{'Video' if key.kind is HandoffTrackKind.VIDEO else 'Audio'} {key.ordinal}"
-        if whole_unknown:
-            return HandoffTrack(name, key.kind, ())
-        return HandoffTrack(name, key.kind, self.layout(placed, key, location))
+        items: tuple[HandoffItem, ...] = ()
+        kept: set[int] = set()
+        if not whole_unknown:
+            items, kept = self.layout(placed, key, location)
+        leftovers = [(child, p) for child, p in entries if p is None or id(p) not in kept]
+        return HandoffTrack(
+            name,
+            key.kind,
+            items,
+            self.passthrough_items(leftovers, whole_unknown),
+            enabled is not False,
+            locked is True,
+            tuple(sorted(element.attrib.items())),
+            tuple(extra),
+        )
+
+    # --- LAYER-001 pass-through -------------------------------------------
+
+    def passthrough_items(
+        self, leftovers: list[tuple[ET.Element, _Placed | None]], whole_unknown: bool
+    ) -> tuple[PassthroughItem, ...]:
+        """Every track child not placed as a modelled clip, preserved verbatim."""
+        extents = [self.extent(child) for child, _ in leftovers]
+        result: list[PassthroughItem] = []
+        for index, (child, placed) in enumerate(leftovers):
+            extent = extents[index]
+            raw, links = canonical_subtree(child, self.file_elements)
+            kind = _layer_kind(child)
+            media_id = self.raw_media_id(child)
+            overlapped = extent is None or any(
+                other is None or other.overlaps(extent)
+                for position, other in enumerate(extents)
+                if position != index
+            )
+            source: FrameRange | None = None
+            if (
+                not whole_unknown
+                and not overlapped
+                and kind is LayerItemKind.EFFECT_CLIP
+                and placed is not None
+                and placed.construct is UnsupportedConstruct.FILTER
+                and media_id is not None
+            ):
+                source = self.cuttable_source(child, raw)
+            label = (child.findtext("name") or "").strip() or child.tag
+            result.append(
+                PassthroughItem(
+                    kind,
+                    label,
+                    extent,
+                    raw,
+                    media_id,
+                    source,
+                    child.find("filter") is not None,
+                    links,
+                )
+            )
+        return tuple(result)
+
+    @staticmethod
+    def extent(child: ET.Element) -> FrameRange | None:
+        """Timeline extent; ``-1`` (transition-determined) edges derived from in/out."""
+        start = child_int(child, "start")
+        end = child_int(child, "end")
+        source_in = child_int(child, "in")
+        source_out = child_int(child, "out")
+        length = (
+            None
+            if source_in is None or source_out is None or source_out <= source_in
+            else source_out - source_in
+        )
+        if start == -1 and end is not None and end > 0 and length is not None:
+            start = max(0, end - length)
+        if end == -1 and start is not None and start >= 0 and length is not None:
+            end = start + length
+        if start is None or end is None or start < 0 or end <= start:
+            return None
+        return FrameRange(start, end)
+
+    def raw_media_id(self, child: ET.Element) -> str | None:
+        file_element = child.find("file")
+        if child.tag != "clipitem" or file_element is None:
+            return None
+        try:
+            definition = self.resolve_file(file_element, "passthrough.file")
+        except _Refused:
+            return None
+        return definition.name if definition.name is not None else definition.path
+
+    def cuttable_source(self, child: ET.Element, raw: str) -> FrameRange | None:
+        """1:1 source range when the clipitem can be cut like a modelled clip."""
+        for grandchild in child:
+            if grandchild.tag == "filter":
+                effect = (grandchild.findtext("effect/effectid") or "").strip().lower()
+                if effect in ("timeremap", "speed"):
+                    return None
+            elif grandchild.tag not in _BENIGN_CLIP_CHILDREN:
+                return None
+        start, end = child_int(child, "start"), child_int(child, "end")
+        source_in, source_out = child_int(child, "in"), child_int(child, "out")
+        if start is None or end is None or source_in is None or source_out is None:
+            return None
+        if start < 0 or source_in < 0 or end <= start or source_out - source_in != end - start:
+            return None
+        file_element = child.find("file")
+        if file_element is None:
+            return None
+        try:
+            definition = self.resolve_file(file_element, "passthrough.file")
+        except _Refused:
+            return None
+        if definition.rate is not None and definition.rate != self.rate:
+            return None
+        source = FrameRange(source_in, source_out)
+        if has_unparsed_markers(raw) or any(
+            not source.contains(frame_range) for frame_range, _ in raw_markers(raw)
+        ):
+            return None
+        return source
 
     def layout(
         self, placed: list[_Placed], key: TrackKey, location: str
-    ) -> tuple[HandoffItem, ...]:
+    ) -> tuple[tuple[HandoffItem, ...], set[int]]:
+        """(items, ids of the placements kept as modelled clips)."""
         ordered = sorted(placed, key=lambda p: (p.start, p.end))
         # Overlapping placements cannot be represented; the overlapped content is UNKNOWN.
         resolved: list[_Placed] = []
@@ -597,10 +770,11 @@ class _Reader:
                 items.append(item.clip)
             cursor = item.end
         # Trailing unsupported spans would be indistinguishable from nothing; drop the
-        # trailing gaps (the region itself is recorded in ``unknown_regions``).
+        # trailing gaps (the region itself is recorded in ``unknown_regions`` and the
+        # item is kept verbatim as a pass-through item).
         while items and isinstance(items[-1], HandoffGap):
             items.pop()
-        return tuple(items)
+        return tuple(items), {id(p) for p in resolved if p.clip is not None}
 
     # --- document -----------------------------------------------------------
 
@@ -646,7 +820,8 @@ class _Reader:
             for index, track in enumerate(section.findall("track")):
                 key = TrackKey(kind, index + 1)
                 tracks.append(self.track(track, key, f"{section_tag}.track[{index}]"))
-        for marker_index, _ in enumerate(sequence.findall("marker")):
+        unpreserved: list[str] = []
+        for marker_index, marker in enumerate(sequence.findall("marker")):
             self.diagnostics.append(
                 warning(
                     HandoffDiagnosticCode.UNSUPPORTED_FEATURE,
@@ -654,13 +829,18 @@ class _Reader:
                     "Sequence-level markers are not modelled; reported, not compared",
                 )
             )
+            name = (marker.findtext("name") or "").strip()
+            position = (marker.findtext("in") or "?").strip()
+            unpreserved.append(f"sequence marker {name!r} at frame {position}")
         raw_name = (sequence.findtext("name") or "").strip()
         if not raw_name:
             raw_name = "UNNAMED_SEQUENCE"
             self.diagnostics.append(
                 warning(HandoffDiagnosticCode.INVALID_VALUE, "sequence.name", "No sequence name")
             )
-        return ReimportedTimeline(raw_name, rate, start, tuple(tracks))
+        return ReimportedTimeline(
+            raw_name, rate, start, tuple(tracks), unpreserved=tuple(unpreserved)
+        )
 
 
 def read_xmeml(text: str, *, max_chars: int = DEFAULT_MAX_CHARS) -> XmemlReadResult:

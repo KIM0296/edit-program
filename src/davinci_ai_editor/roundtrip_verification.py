@@ -5,7 +5,11 @@ it was supposed to produce) and the RT-001 diff against a re-imported Actual
 file, produce a :class:`VerificationReport`:
 
 - per item: MATCH / MISSING_CUT / EXTRA_CUT / FRAME_DRIFT(delta) / MARKER_LOST /
-  TRACK_FLATTENED / HUMAN_CHANGED / UNKNOWN;
+  TRACK_FLATTENED / HUMAN_CHANGED / UNKNOWN, plus LAYER-001 layer items from
+  ``diff.layer_findings`` (track ``T:<KIND>:<n>``, pass-through ``L:``/``LA:``):
+  MATCH (present verbatim), FRAME_DRIFT (same content, moved), LAYER_LOST (item
+  or track missing), LAYER_ADDED, TRACK_STATE_CHANGED (enabled / locked /
+  attributes / settings) and UNKNOWN (content changed, not interpreted);
 - overall: MATCH / MISMATCH / UNVERIFIED. Any UNKNOWN item, UNSUPPORTED region
   or whole-UNKNOWN diff makes the report UNVERIFIED; it is never MATCH.
 
@@ -45,6 +49,7 @@ from typing import Literal
 
 from .domain import FrameRange
 from .handoff_model import EVIDENCE_CLASS, HandoffClip, HandoffTimeline, HandoffTrackKind
+from .layer_policy import LayerFinding, LayerFindingKind
 from .roundtrip_diff import (
     AttributeChange,
     ChangeKind,
@@ -70,6 +75,10 @@ class ItemStatus(str, Enum):
     MARKER_LOST = "MARKER_LOST"
     TRACK_FLATTENED = "TRACK_FLATTENED"
     HUMAN_CHANGED = "HUMAN_CHANGED"
+    # LAYER-001 layer preservation
+    LAYER_LOST = "LAYER_LOST"
+    LAYER_ADDED = "LAYER_ADDED"
+    TRACK_STATE_CHANGED = "TRACK_STATE_CHANGED"
 
 
 DEFECTS = frozenset(
@@ -79,8 +88,23 @@ DEFECTS = frozenset(
         ItemStatus.FRAME_DRIFT,
         ItemStatus.MARKER_LOST,
         ItemStatus.TRACK_FLATTENED,
+        ItemStatus.LAYER_LOST,
+        ItemStatus.LAYER_ADDED,
+        ItemStatus.TRACK_STATE_CHANGED,
     }
 )
+
+_LAYER_OBSERVED = {
+    LayerFindingKind.MATCH: ItemStatus.MATCH,
+    LayerFindingKind.MOVED: ItemStatus.FRAME_DRIFT,
+    LayerFindingKind.CHANGED: ItemStatus.UNKNOWN,
+    LayerFindingKind.LOST: ItemStatus.LAYER_LOST,
+    LayerFindingKind.ADDED: ItemStatus.LAYER_ADDED,
+    LayerFindingKind.TRACK_MISSING: ItemStatus.LAYER_LOST,
+    LayerFindingKind.TRACK_ADDED: ItemStatus.LAYER_ADDED,
+    LayerFindingKind.TRACK_STATE_CHANGED: ItemStatus.TRACK_STATE_CHANGED,
+    LayerFindingKind.UNKNOWN: ItemStatus.UNKNOWN,
+}
 
 
 IDENTITY_AMBIGUOUS = "IDENTITY_AMBIGUOUS"
@@ -502,12 +526,49 @@ class _Observer:
             )
         return result
 
+    def layer(self, finding: LayerFinding) -> _Observation:
+        """LAYER-001: track set/state and pass-through presence (verbatim compare)."""
+        observed = _LAYER_OBSERVED[finding.kind]
+        drift: FrameDrift | None = None
+        if observed is ItemStatus.FRAME_DRIFT:
+            if finding.expected_range is None or finding.actual_range is None:
+                observed = ItemStatus.UNKNOWN
+            else:
+                drift = FrameDrift(
+                    finding.actual_range.start - finding.expected_range.start,
+                    finding.actual_range.end - finding.expected_range.end,
+                    0,
+                    0,
+                )
+        expected_range = finding.expected_range
+        if finding.kind in (LayerFindingKind.ADDED, LayerFindingKind.TRACK_ADDED):
+            expected_range = None
+        return _Observation(
+            finding.finding_id,
+            finding.track,
+            observed,
+            expected_range,
+            (),
+            (finding.finding_id,),
+            IdentityStrength.UNKNOWN,
+            drift,
+            f"{finding.kind.value}: {finding.label} - {finding.detail}",
+            (finding.finding_id,)
+            if expected_range is not None
+            else (finding.finding_id, finding.kind, finding.actual_range),
+        )
+
     def run(self) -> list[_Observation]:
         observations = [
             self.clip(item) if item.kind is IntendedKind.CLIP else self.gap(item)
             for item in self.intended
         ]
-        return observations + self.actual_only()
+        layers = (
+            [self.layer(f) for f in self.diff.layer_findings]
+            if self.diff.status is not DiffStatus.UNKNOWN
+            else []
+        )
+        return observations + self.actual_only() + layers
 
 
 # --- attribution ----------------------------------------------------------------
@@ -667,6 +728,9 @@ KOREAN_LABELS = {
     "MARKER_LOST": "마커 유실",
     "TRACK_FLATTENED": "트랙 병합",
     "HUMAN_CHANGED": "사람이 수정함",
+    "LAYER_LOST": "레이어 항목 유실",
+    "LAYER_ADDED": "레이어 항목 추가",
+    "TRACK_STATE_CHANGED": "트랙 상태 변경",
 }
 
 
