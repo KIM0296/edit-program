@@ -281,5 +281,69 @@ def test_artifact_ref_is_file_roundtrip_only() -> None:
 def test_unknown_format_is_whole_unknown() -> None:
     expected = fx.expected_timeline()
     artifact = roundtrip_artifact_ref("x", "x", RoundTripFormat.UNKNOWN)
-    diff = diff_roundtrip(expected, expected, artifact_ref=artifact)
+    diff = diff_roundtrip(expected, fx.reimported(expected), artifact_ref=artifact)
     assert diff.status is DiffStatus.UNKNOWN and DiffReason.UNKNOWN_FORMAT in diff.reasons
+
+
+def _otio_without_metadata(expected_text: str, clip_paths: list[tuple[int, int]]) -> str:
+    document = json.loads(expected_text)
+    for track_index, item_index in clip_paths:
+        clip = document["tracks"]["children"][track_index]["children"][item_index]
+        clip["media_references"]["DEFAULT_MEDIA"]["metadata"] = {}
+    return json.dumps(document)
+
+
+def test_otio_without_media_id_falls_back_to_weak_path_identity() -> None:
+    expected = fx.expected_timeline()
+    text = write_otio(expected).text
+    assert text is not None
+    every_clip = [(0, 0), (0, 1), (0, 3), (1, 0), (1, 1)]
+    document = json.loads(_otio_without_metadata(text, every_clip))
+    document["tracks"]["children"][0]["children"][3]["source_range"]["duration"]["value"] = 30
+    mutated = json.dumps(document)
+    artifact = roundtrip_artifact_ref("export.otio", mutated, RoundTripFormat.OTIO_JSON)
+    result = read_otio(mutated)
+    assert result.timeline is not None
+    diff = diff_otio_roundtrip(expected, result, artifact_ref=artifact)
+    assert diff.status is DiffStatus.COMPLETE
+    assert diff.identity_basis is MediaIdentityBasis.PATH_FALLBACK
+    assert {c.identity for c in diff.changes} == {IdentityStrength.WEAK}
+    assert diff.change("E:VIDEO:1:3").kind is ChangeKind.TRIMMED
+    assert diff.change("E:VIDEO:1:0").kind is ChangeKind.UNCHANGED
+
+
+def test_otio_partial_metadata_loss_keeps_strong_where_present() -> None:
+    expected = fx.expected_timeline()
+    text = write_otio(expected).text
+    assert text is not None
+    mutated = _otio_without_metadata(text, [(0, 1)])
+    artifact = roundtrip_artifact_ref("export.otio", mutated, RoundTripFormat.OTIO_JSON)
+    diff = diff_otio_roundtrip(expected, read_otio(mutated), artifact_ref=artifact)
+    assert diff.status is DiffStatus.COMPLETE
+    assert diff.identity_basis is MediaIdentityBasis.PATH_FALLBACK
+    assert diff.change("E:VIDEO:1:1").identity is IdentityStrength.WEAK
+    assert diff.change("E:VIDEO:1:0").identity is IdentityStrength.STRONG
+
+
+def test_otio_path_fallback_with_relinked_path_is_not_matched() -> None:
+    expected = fx.expected_timeline()
+    text = write_otio(expected).text
+    assert text is not None
+    document = json.loads(_otio_without_metadata(text, [(0, 1)]))
+    ref = document["tracks"]["children"][0]["children"][1]["media_references"]["DEFAULT_MEDIA"]
+    ref["target_url"] = "file:///elsewhere/b.mov"
+    mutated = json.dumps(document)
+    artifact = roundtrip_artifact_ref("export.otio", mutated, RoundTripFormat.OTIO_JSON)
+    diff = diff_otio_roundtrip(expected, read_otio(mutated), artifact_ref=artifact)
+    assert diff.change("E:VIDEO:1:1").kind is ChangeKind.REPLACED
+
+
+def test_reimported_and_expected_never_share_a_digest() -> None:
+    expected = fx.expected_timeline()
+    assert timeline_digest(expected) != timeline_digest(fx.reimported(expected))
+    with pytest.raises(TypeError):
+        diff_roundtrip(
+            expected,
+            expected,  # type: ignore[arg-type]
+            artifact_ref=roundtrip_artifact_ref("x", "x", RoundTripFormat.XMEML),
+        )

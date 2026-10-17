@@ -34,9 +34,8 @@ A re-imported file is `FILE_ROUNDTRIP` evidence (`XmemlReadResult`,
 `RoundTripArtifactRef`, `RoundTripDiff` carry the validated constant). It is
 never native evidence, never VERIFIED_LIVE, and never an observed native
 snapshot for Safety. `RoundTripArtifactRef.native_evidence` is a validated
-`False`. The re-read `HandoffTimeline` is a structural container only; its
-model-level `artifact_kind = EXPECTED_TIMELINE_ARTIFACT` constant does not make
-the file an approved plan (see Open questions).
+`False`. The re-read file is a `ReimportedTimeline` (Actual side, see
+"Follow-up decisions"), never an Expected `HandoffTimeline`.
 
 ## xmeml reader (`xmeml_reader.py`)
 
@@ -147,16 +146,38 @@ MYPYPATH=tests python -m mypy --strict --explicit-package-bases <2 new src> <2 n
 git diff --check                                                                                                     clean
 ```
 
+## Follow-up decisions (user-approved, APPLY-001 branch)
+
+1. **Separate Actual container.** Readers (`read_xmeml`, `read_otio`) return
+   `handoff_model.ReimportedTimeline` (evidence class `FILE_ROUNDTRIP`,
+   `native_evidence = False`, no `EXPECTED_TIMELINE_ARTIFACT` constant). The
+   Expected `HandoffTimeline` keeps `EXPECTED_TIMELINE_ARTIFACT`.
+   `diff_roundtrip(expected: HandoffTimeline, actual: ReimportedTimeline, …)`
+   rejects an Expected passed as Actual (`TypeError`). Tracks reuse the
+   structural `HandoffTrack`. The canonical digest includes the type name, so
+   an Expected and a re-read timeline never share a digest. `OtioReadResult`
+   now carries `evidence_class = FILE_ROUNDTRIP` instead of the Expected
+   `artifact_kind` / `authorizes_import` constants.
+2. **FCP7 XML is the default/primary round-trip format.** OTIO stays
+   supported. An OTIO `ExternalReference` whose
+   `metadata["davinci_ai_editor"]` was dropped by the NLE is no longer a
+   refusal: the target path becomes the media ID (warning `MISSING_MEDIA_ID`,
+   ID listed in `ReimportedTimeline.path_identified_media_ids`). The diff
+   matches those clips by target path + source range with identity strength
+   WEAK (`MediaIdentityBasis.PATH_FALLBACK`; clips that kept the metadata stay
+   STRONG). A `MissingReference` without metadata has no path and is still a
+   refusal. A path-derived ID that happens to equal a real media ID is
+   treated as path-identified (weaker, conservative).
+3. VER-001 identity rule — see `docs/VER_001_STATUS.md`.
+
 ## Limits and open questions
 
-- Reusing `HandoffTimeline` for the Actual means it carries the model's
-  `EXPECTED_TIMELINE_ARTIFACT` constant; evidence class lives on the read
-  result / diff. A dedicated Actual container may be preferable.
 - Whether Resolve exports xmeml `in`/`out` 0-based (our writer's convention)
   or media-timecode-absolute is UNVERIFIED; the timeline OSS reader subtracts
   the file timecode. A native probe must settle this before relying on trims.
-- OTIO exports from an NLE will likely drop our `media_id` metadata; the OTIO
-  reader then refuses (whole diff UNKNOWN). A path-based OTIO basis is future work.
+- OTIO exports that drop our `media_id` metadata now use the WEAK path basis
+  (decision 2); media start and Resolve-shaped absolute ranges are then
+  UNKNOWN, so the Resolve-shaped profile still refuses without metadata.
 - MOVED clips caused purely by an upstream ripple are locked too (conservative);
   a ripple-consistent exemption would need an approved policy.
 - MERGED is an extra class beyond the requested list (exact-union join).

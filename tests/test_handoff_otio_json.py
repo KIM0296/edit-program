@@ -15,6 +15,7 @@ from davinci_ai_editor.handoff_model import (
     HandoffTrack,
     HandoffTrackKind,
     MarkerColor,
+    ReimportedTimeline,
 )
 from davinci_ai_editor.otio_json import OtioProfile, read_otio, write_otio
 from davinci_ai_editor.temporal_mapping import FrameRate
@@ -85,8 +86,10 @@ def test_default_round_trip_is_exact(timeline: HandoffTimeline) -> None:
     assert written.text is not None
     read = read_otio(written.text)
     assert read.diagnostics == ()
-    assert read.timeline == timeline
-    assert read.authorizes_import is False
+    assert read.timeline == ReimportedTimeline(
+        timeline.name, timeline.rate, timeline.start_frame, timeline.tracks
+    )
+    assert read.evidence_class == "FILE_ROUNDTRIP" and read.native_evidence is False
 
 
 def test_missing_reference_and_file_url() -> None:
@@ -192,11 +195,6 @@ CLIP = ["tracks", "children", 0, "children", 1]
             HandoffDiagnosticCode.UNSUPPORTED_FEATURE,
         ),
         (
-            [*CLIP, "media_references", "DEFAULT_MEDIA", "metadata"],
-            {},
-            HandoffDiagnosticCode.MISSING_MEDIA_ID,
-        ),
-        (
             ["metadata", "davinci_ai_editor", "profile"],
             "SOMETHING",
             HandoffDiagnosticCode.UNKNOWN_SCHEMA,
@@ -209,7 +207,31 @@ def test_reader_reports_unknown_and_unsupported(
     result = read_otio(_mutated(path, value))
     assert result.timeline is None
     assert result.diagnostics[-1].code is code
-    assert result.authorizes_import is False
+    assert result.evidence_class == "FILE_ROUNDTRIP"
+
+
+def test_reader_falls_back_to_path_when_nle_dropped_media_id() -> None:
+    result = read_otio(_mutated([*CLIP, "media_references", "DEFAULT_MEDIA", "metadata"], {}))
+    assert result.timeline is not None
+    clip = result.timeline.tracks[0].items[1]
+    assert isinstance(clip, HandoffClip)
+    assert clip.media.media_id == clip.media.target_path
+    assert clip.media.media_start_frame is None
+    assert result.timeline.path_identified_media_ids == (clip.media.media_id,)
+    assert [d.code for d in result.diagnostics] == [HandoffDiagnosticCode.MISSING_MEDIA_ID]
+    assert result.diagnostics[0].severity.value == "WARNING"
+
+
+def test_reader_refuses_missing_reference_without_media_id() -> None:
+    text = write_otio(_rich_timeline()).text
+    assert text is not None
+    document = json.loads(text)
+    document["tracks"]["children"][0]["children"][2]["media_references"]["DEFAULT_MEDIA"][
+        "metadata"
+    ] = {}
+    result = read_otio(json.dumps(document))
+    assert result.timeline is None
+    assert result.diagnostics[-1].code is HandoffDiagnosticCode.MISSING_MEDIA_ID
 
 
 def test_reader_keeps_unknown_track_kind_and_color_as_unknown() -> None:

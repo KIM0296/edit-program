@@ -26,9 +26,9 @@ than the bare ``<!DOCTYPE xmeml>`` is refused before parsing (defusedxml-like
 precautions implemented manually; stdlib only).
 
 Evidence: a re-imported file is ``FILE_ROUNDTRIP`` evidence. It is never native
-evidence and never VERIFIED_LIVE. The returned ``HandoffTimeline`` is reused as
-a structural container only; its ``artifact_kind`` is the model's fixed
-constant and does not upgrade the file into an Expected plan.
+evidence and never VERIFIED_LIVE. The reader returns a ``ReimportedTimeline``
+(Actual side), never the Expected ``HandoffTimeline``. FCP7 XML is the default
+round-trip format (RT-001 decision 2).
 """
 
 import re
@@ -39,6 +39,9 @@ from typing import Literal
 
 from .domain import FrameRange
 from .handoff_model import (
+    EVIDENCE_CLASS as _EVIDENCE_CLASS,
+)
+from .handoff_model import (
     HandoffClip,
     HandoffDiagnostic,
     HandoffDiagnosticCode,
@@ -46,9 +49,10 @@ from .handoff_model import (
     HandoffItem,
     HandoffMarker,
     HandoffMediaRef,
-    HandoffTimeline,
     HandoffTrack,
     HandoffTrackKind,
+    ReimportedTimeline,
+    TimelineStructure,
     file_url_to_path,
     has_refusal,
     refusal,
@@ -57,7 +61,7 @@ from .handoff_model import (
 from .temporal_mapping import FrameRate
 from .timecode import is_smpte_rate, parse_timecode
 
-EVIDENCE_CLASS: Literal["FILE_ROUNDTRIP"] = "FILE_ROUNDTRIP"
+EVIDENCE_CLASS: Literal["FILE_ROUNDTRIP"] = _EVIDENCE_CLASS  # defined in handoff_model
 DEFAULT_MAX_CHARS = 8 * 1024 * 1024
 MAX_ELEMENTS = 200_000
 SUPPORTED_VERSIONS = frozenset({"4", "5"})
@@ -142,7 +146,7 @@ class TrackKey:
         return f"{self.kind.value}:{self.ordinal}"
 
 
-def track_keys(timeline: HandoffTimeline) -> tuple[tuple[TrackKey, HandoffTrack], ...]:
+def track_keys(timeline: TimelineStructure) -> tuple[tuple[TrackKey, HandoffTrack], ...]:
     counters: dict[HandoffTrackKind, int] = {}
     result: list[tuple[TrackKey, HandoffTrack]] = []
     for track in timeline.tracks:
@@ -174,7 +178,7 @@ class UnknownRegion:
 
 @dataclass(frozen=True)
 class XmemlReadResult:
-    timeline: HandoffTimeline | None
+    timeline: ReimportedTimeline | None
     diagnostics: tuple[HandoffDiagnostic, ...]
     unknown_regions: tuple[UnknownRegion, ...] = ()
     evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
@@ -600,7 +604,7 @@ class _Reader:
 
     # --- document -----------------------------------------------------------
 
-    def document(self, root: ET.Element) -> HandoffTimeline:
+    def document(self, root: ET.Element) -> ReimportedTimeline:
         if root.tag != "xmeml":
             raise _fail(HandoffDiagnosticCode.MALFORMED_DOCUMENT, "document", "Root is not xmeml")
         version = root.get("version")
@@ -656,7 +660,7 @@ class _Reader:
             self.diagnostics.append(
                 warning(HandoffDiagnosticCode.INVALID_VALUE, "sequence.name", "No sequence name")
             )
-        return HandoffTimeline(raw_name, rate, start, tuple(tracks))
+        return ReimportedTimeline(raw_name, rate, start, tuple(tracks))
 
 
 def read_xmeml(text: str, *, max_chars: int = DEFAULT_MAX_CHARS) -> XmemlReadResult:

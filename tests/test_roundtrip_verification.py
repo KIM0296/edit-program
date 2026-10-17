@@ -3,9 +3,23 @@ import re
 import pytest
 from support import roundtrip_fixtures as fx
 
-from davinci_ai_editor.handoff_model import HandoffTimeline
-from davinci_ai_editor.roundtrip_diff import RoundTripDiff
+from davinci_ai_editor.domain import FrameRange
+from davinci_ai_editor.handoff_model import (
+    HandoffClip,
+    HandoffTimeline,
+    HandoffTrack,
+    HandoffTrackKind,
+)
+from davinci_ai_editor.otio_json import read_otio, write_otio
+from davinci_ai_editor.roundtrip_diff import (
+    IdentityStrength,
+    RoundTripDiff,
+    RoundTripFormat,
+    diff_otio_roundtrip,
+    roundtrip_artifact_ref,
+)
 from davinci_ai_editor.roundtrip_verification import (
+    IDENTITY_AMBIGUOUS,
     ActualProvenance,
     Attribution,
     AttributionBasis,
@@ -224,3 +238,50 @@ def test_render_is_deterministic_and_keeps_codes() -> None:
     korean = render_report(report, korean=True)
     assert "MISMATCH (불일치)" in korean and "FRAME_DRIFT (프레임 어긋남)" in korean
     assert report.digest == _verify(expected, fx.diff_text(expected, text)).digest
+
+
+def _stereo_pair() -> HandoffTimeline:
+    """V1 plus A1/A2 carrying the same file and source range (dual-mono export)."""
+    video = HandoffTrack(
+        "V1", HandoffTrackKind.VIDEO, (HandoffClip("A", fx.M1, FrameRange(100, 150)),)
+    )
+    left = HandoffTrack(
+        "A1", HandoffTrackKind.AUDIO, (HandoffClip("Al", fx.M1, FrameRange(100, 150)),)
+    )
+    right = HandoffTrack(
+        "A2", HandoffTrackKind.AUDIO, (HandoffClip("Ar", fx.M1, FrameRange(100, 150)),)
+    )
+    return HandoffTimeline("ST", fx.RATE, 0, (video, left, right))
+
+
+def test_weak_identity_shared_path_and_source_is_identity_ambiguous() -> None:
+    expected = _stereo_pair()
+    report = _verify(expected, fx.diff_text(expected, fx.written(expected)))
+    assert report.status is VerificationStatus.UNVERIFIED
+    assert IDENTITY_AMBIGUOUS in report.reasons
+    assert report.item("E:VIDEO:1:0").status is ItemStatus.MATCH
+    for item_id in ("E:AUDIO:1:0", "E:AUDIO:2:0"):
+        item = report.item(item_id)
+        assert item.status is ItemStatus.UNKNOWN and item.detail == IDENTITY_AMBIGUOUS
+        assert item.identity is IdentityStrength.WEAK
+
+
+def test_weak_identity_disjoint_sources_on_one_path_is_unique() -> None:
+    # fixture V1 holds A (m1 100-150) and C (m1 300-340): same path, disjoint sources
+    expected = fx.expected_timeline()
+    report = _verify(expected, fx.diff_text(expected, fx.written(expected)))
+    assert report.status is VerificationStatus.MATCH
+    assert report.item("E:VIDEO:1:0").identity is IdentityStrength.WEAK
+
+
+def test_strong_identity_is_match_even_when_paths_repeat() -> None:
+    expected = _stereo_pair()
+    text = write_otio(expected).text
+    assert text is not None
+    artifact = roundtrip_artifact_ref("export.otio", text, RoundTripFormat.OTIO_JSON)
+    diff = diff_otio_roundtrip(expected, read_otio(text), artifact_ref=artifact)
+    report = _verify(expected, diff)
+    assert report.status is VerificationStatus.MATCH
+    assert {i.identity for i in report.items if i.item_id.startswith("E:")} == {
+        IdentityStrength.STRONG
+    }

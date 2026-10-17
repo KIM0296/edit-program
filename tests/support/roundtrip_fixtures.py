@@ -15,6 +15,7 @@ from davinci_ai_editor.handoff_model import (
     HandoffTimeline,
     HandoffTrack,
     HandoffTrackKind,
+    ReimportedTimeline,
 )
 from davinci_ai_editor.roundtrip_diff import (
     RoundTripDiff,
@@ -151,3 +152,8 @@ def insert_in_track(text: str, track_index: int, xml: str) -> str:
 def diff_text(expected: HandoffTimeline, text: str, ref: str = "export.xml") -> RoundTripDiff:
     artifact = roundtrip_artifact_ref(ref, text, RoundTripFormat.XMEML)
     return diff_xmeml_roundtrip(expected, read_xmeml(text), artifact_ref=artifact)
+
+
+def reimported(timeline: HandoffTimeline) -> ReimportedTimeline:
+    """Test-only: the same structure as an Actual-side container (simulated re-read)."""
+    return ReimportedTimeline(timeline.name, timeline.rate, timeline.start_frame, timeline.tracks)

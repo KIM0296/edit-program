@@ -93,13 +93,32 @@ MYPYPATH=tests python -m mypy --strict --explicit-package-bases <3 new src> <3 n
 git diff --check                                                                                   clean
 ```
 
+## Identity rule for MATCH (follow-up decision 3, user-approved)
+
+An item may be MATCH only with STRONG identity (OTIO metadata), or with WEAK
+identity (xmeml display name + path, or OTIO path fallback) that is unique.
+WEAK identity is unique when no *other* clip of the same track kind, in the
+Expected or in the Actual, has the same media path **with an overlapping
+source range** (the WEAK key is path + source range, the same key the RT-001
+matcher uses). Otherwise the item is `UNKNOWN` with detail
+`IDENTITY_AMBIGUOUS`, the report gets reason `IDENTITY_AMBIGUOUS` and the
+overall status is `UNVERIFIED` (never MATCH). Example: a dual-mono export with
+the same file and range on A1 and A2 is ambiguous over FCP7 XML; the same
+timeline over OTIO with metadata (STRONG) can be MATCH.
+
+Interpretation note: same-path clips with disjoint source ranges (every
+ordinary cut of one interview file, and every split APPLY-001 produces) are
+distinguishable by source range and stay unique. Requiring a globally unique
+path would make FCP7 XML (the default format) unable to ever report MATCH for
+a timeline that uses one source file twice; that reading is recorded as an
+open question rather than implemented.
+
 ## Limits and open questions
 
 - The baseline approach needs the editor to export once right after import;
   the review UI must ask for that file (or for acknowledgements).
-- WEAK identity (xmeml display name + path) is accepted for MATCH in this
-  file-round-trip scope and is shown per item; a stricter policy may require
-  STRONG identity (OTIO metadata) for MATCH.
+- Open: whether WEAK uniqueness should be the stricter "no other clip with the
+  same path at all" (see the interpretation note above).
 - Gap items may double-report a drift already reported on the neighbouring
   clip (by design: the cut list is verified item by item).
 - Not wired into orchestration, candidate authority or promotion.

@@ -36,17 +36,19 @@ from typing import Literal
 
 from .domain import FrameRange, ProtectedRange, TrackId
 from .handoff_model import (
+    EVIDENCE_CLASS,
     HandoffClip,
     HandoffDiagnostic,
     HandoffTimeline,
     HandoffTrackKind,
+    ReimportedTimeline,
+    TimelineStructure,
     is_windows_absolute,
 )
 from .otio_json import OtioReadResult
 from .timecode import frames_per_24_hours
 from .trust_evidence import canonical_bytes
 from .xmeml_reader import (
-    EVIDENCE_CLASS,
     TrackKey,
     UnknownRegion,
     XmemlReadResult,
@@ -63,11 +65,16 @@ class RoundTripFormat(str, Enum):
 
 
 class MediaIdentityBasis(str, Enum):
-    """How the Actual file names media: our metadata (OTIO) or a display name (xmeml)."""
+    """How the Actual file names media: our metadata (OTIO) or a display name (xmeml).
+
+    ``PATH_FALLBACK``: OTIO file where some clips lost our metadata; those clips
+    are matched by target path + source range (WEAK), the rest by metadata.
+    """
 
     UNKNOWN = "UNKNOWN"
     METADATA = "METADATA"
     DISPLAY_NAME = "DISPLAY_NAME"
+    PATH_FALLBACK = "PATH_FALLBACK"
 
 
 _BASIS_BY_FORMAT = {
@@ -150,10 +157,14 @@ def roundtrip_artifact_ref(ref: str, text: str, fmt: RoundTripFormat) -> RoundTr
     return RoundTripArtifactRef(ref, fmt, hashlib.sha256(text.encode("utf-8")).hexdigest())
 
 
-def timeline_digest(timeline: HandoffTimeline) -> str:
-    """Same canonicalization/digest as ``trust_evidence.artifact_revision``."""
-    if not isinstance(timeline, HandoffTimeline):
-        raise TypeError("A HandoffTimeline is required")
+def timeline_digest(timeline: TimelineStructure) -> str:
+    """Same canonicalization/digest as ``trust_evidence.artifact_revision``.
+
+    The canonical form includes the type name, so an Expected ``HandoffTimeline``
+    and a ``ReimportedTimeline`` never share a digest.
+    """
+    if not isinstance(timeline, (HandoffTimeline, ReimportedTimeline)):
+        raise TypeError("A HandoffTimeline or ReimportedTimeline is required")
     return hashlib.sha256(canonical_bytes(timeline)).hexdigest()
 
 
@@ -298,7 +309,8 @@ class ProtectionUnavailable(ValueError):
 # --- identity -----------------------------------------------------------------
 
 
-def _path_key(path: str | None) -> str | None:
+def path_key(path: str | None) -> str | None:
+    """Normalized comparison key for a media path (Windows drive letter / separators)."""
     if path is None:
         return None
     if is_windows_absolute(path):
@@ -313,7 +325,7 @@ def identity_strength(
     """``None`` = no correspondence (different media)."""
     e_media, a_media = expected.media, actual.media
     id_eq = e_media.media_id == a_media.media_id
-    pe, pa = _path_key(e_media.target_path), _path_key(a_media.target_path)
+    pe, pa = path_key(e_media.target_path), path_key(a_media.target_path)
     path_eq = pe is not None and pe == pa
     if not id_eq and not path_eq:
         return None
@@ -323,7 +335,7 @@ def identity_strength(
         if id_eq:
             return IdentityStrength.WEAK  # same logical media, relinked path
         return IdentityStrength.UNKNOWN  # same file, different logical media IDs
-    if basis is MediaIdentityBasis.DISPLAY_NAME:
+    if basis in (MediaIdentityBasis.DISPLAY_NAME, MediaIdentityBasis.PATH_FALLBACK):
         if path_eq:
             return IdentityStrength.WEAK
         return IdentityStrength.UNKNOWN  # display-name collision with a different path
@@ -350,7 +362,7 @@ def _key_order(key: TrackKey) -> tuple[int, int]:
     return (_KIND_ORDER[key.kind], key.ordinal)
 
 
-def _placements(timeline: HandoffTimeline) -> dict[TrackKey, list[ClipPlacement]]:
+def _placements(timeline: TimelineStructure) -> dict[TrackKey, list[ClipPlacement]]:
     result: dict[TrackKey, list[ClipPlacement]] = {}
     for key, track in track_keys(timeline):
         cursor = 0
@@ -395,11 +407,12 @@ class _Differ:
     def __init__(
         self,
         expected: HandoffTimeline,
-        actual: HandoffTimeline,
+        actual: ReimportedTimeline,
         basis: MediaIdentityBasis,
         regions: tuple[UnknownRegion, ...],
     ) -> None:
         self.basis = basis
+        self.path_identified = frozenset(actual.path_identified_media_ids)
         self.regions = regions
         self.expected = _placements(expected)
         self.actual = _placements(actual)
@@ -408,6 +421,14 @@ class _Differ:
         self.matched_a: set[tuple[TrackKey, int]] = set()
         # actual placements of matched expected clips: for REMOVED neighbourhoods
         self.e_to_a: dict[tuple[TrackKey, int], tuple[ClipPlacement, ...]] = {}
+
+    def basis_for(self, actual: HandoffClip) -> MediaIdentityBasis:
+        """Per-clip basis: path-identified OTIO media fall back to path matching (WEAK)."""
+        if self.basis is MediaIdentityBasis.METADATA and actual.media.media_id in (
+            self.path_identified
+        ):
+            return MediaIdentityBasis.PATH_FALLBACK
+        return self.basis
 
     # --- unknown regions ----------------------------------------------------
 
@@ -529,7 +550,7 @@ class _Differ:
             for ai, a in enumerate(actual):
                 if not e.source_range.overlaps(a.source_range):
                     continue
-                strength = identity_strength(e.clip, a.clip, self.basis)
+                strength = identity_strength(e.clip, a.clip, self.basis_for(a.clip))
                 if strength is not None:
                     edges.setdefault(ei, {})[ai] = strength
         # connected components of the bipartite e-a graph
@@ -628,7 +649,7 @@ class _Differ:
                     for a in self.leftovers_a(other):
                         if a.source_range != e.source_range:
                             continue
-                        strength = identity_strength(e.clip, a.clip, self.basis)
+                        strength = identity_strength(e.clip, a.clip, self.basis_for(a.clip))
                         if strength is not None and strength is not IdentityStrength.UNKNOWN:
                             found.append((a, strength))
                 if len(found) == 1:
@@ -746,7 +767,7 @@ def _change_sort(change: RoundTripChange) -> tuple[int, tuple[int, int], int, st
     return (1, _key_order(p.track), p.item_index, change.change_id)
 
 
-def _extents(expected: HandoffTimeline, actual: HandoffTimeline) -> tuple[TrackExtent, ...]:
+def _extents(expected: HandoffTimeline, actual: ReimportedTimeline) -> tuple[TrackExtent, ...]:
     expected_names = {key: track.name for key, track in track_keys(expected)}
     return tuple(
         TrackExtent(key, expected_names.get(key, f"ROUNDTRIP:{key.label}"), track.duration)
@@ -756,7 +777,7 @@ def _extents(expected: HandoffTimeline, actual: HandoffTimeline) -> tuple[TrackE
 
 def _whole_unknown(
     expected: HandoffTimeline,
-    actual: HandoffTimeline | None,
+    actual: ReimportedTimeline | None,
     artifact_ref: RoundTripArtifactRef,
     basis: MediaIdentityBasis,
     reasons: tuple[DiffReason, ...],
@@ -810,7 +831,7 @@ def _whole_unknown(
 
 def diff_roundtrip(
     expected: HandoffTimeline,
-    actual: HandoffTimeline,
+    actual: ReimportedTimeline,
     *,
     artifact_ref: RoundTripArtifactRef,
     unknown_regions: tuple[UnknownRegion, ...] = (),
@@ -820,10 +841,14 @@ def diff_roundtrip(
 
     The media identity basis follows ``artifact_ref.format``: OTIO carries our
     ``media_id`` metadata (STRONG possible); xmeml only carries a display name
-    and path (WEAK at best).
+    and path (WEAK at best). OTIO clips whose metadata the NLE dropped
+    (``actual.path_identified_media_ids``) are matched by path + source range
+    with WEAK identity instead of making the whole diff UNKNOWN.
     """
-    if not isinstance(expected, HandoffTimeline) or not isinstance(actual, HandoffTimeline):
-        raise TypeError("Expected and Actual must be HandoffTimeline values")
+    if not isinstance(expected, HandoffTimeline):
+        raise TypeError("Expected must be a HandoffTimeline (Expected artifact)")
+    if not isinstance(actual, ReimportedTimeline):
+        raise TypeError("Actual must be a ReimportedTimeline (FILE_ROUNDTRIP)")
     if not isinstance(artifact_ref, RoundTripArtifactRef):
         raise TypeError("A RoundTripArtifactRef is required")
     regions = tuple(unknown_regions)
@@ -831,6 +856,8 @@ def diff_roundtrip(
         raise TypeError("Unknown regions must be UnknownRegion values")
     diagnostics = tuple(read_diagnostics)
     basis = _BASIS_BY_FORMAT[artifact_ref.format]
+    if basis is MediaIdentityBasis.METADATA and actual.path_identified_media_ids:
+        basis = MediaIdentityBasis.PATH_FALLBACK
     reasons: list[DiffReason] = []
     if basis is MediaIdentityBasis.UNKNOWN:
         reasons.append(DiffReason.UNKNOWN_FORMAT)
@@ -842,7 +869,10 @@ def diff_roundtrip(
         return _whole_unknown(
             expected, actual, artifact_ref, basis, tuple(reasons), regions, diagnostics
         )
-    changes = _Differ(expected, actual, basis, regions).run()
+    differ_basis = (
+        MediaIdentityBasis.METADATA if basis is MediaIdentityBasis.PATH_FALLBACK else basis
+    )
+    changes = _Differ(expected, actual, differ_basis, regions).run()
     partial = bool(regions) or any(c.kind is ChangeKind.UNKNOWN for c in changes)
     return RoundTripDiff(
         timeline_digest(expected),

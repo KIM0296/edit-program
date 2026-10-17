@@ -29,6 +29,7 @@ from .temporal_mapping import FrameRate
 from .timecode import is_smpte_rate
 
 ARTIFACT_KIND: Literal["EXPECTED_TIMELINE_ARTIFACT"] = "EXPECTED_TIMELINE_ARTIFACT"
+EVIDENCE_CLASS: Literal["FILE_ROUNDTRIP"] = "FILE_ROUNDTRIP"
 
 
 class HandoffTrackKind(str, Enum):
@@ -260,6 +261,55 @@ class HandoffTimeline:
     @property
     def duration(self) -> int:
         return max((t.duration for t in self.tracks), default=0)
+
+
+@dataclass(frozen=True)
+class ReimportedTimeline:
+    """Actual side: a timeline re-read from a file an NLE exported (RT-001 decision 1).
+
+    Distinct from the Expected :class:`HandoffTimeline`: it carries the evidence
+    class ``FILE_ROUNDTRIP`` (never native evidence, never VERIFIED_LIVE) and no
+    ``EXPECTED_TIMELINE_ARTIFACT`` constant, so a re-read file can never be passed
+    where an Expected plan is required. Tracks reuse the structural
+    :class:`HandoffTrack` values.
+
+    ``path_identified_media_ids``: media IDs that the file did not carry as our
+    metadata (e.g. an OTIO export whose ``metadata["davinci_ai_editor"]`` was
+    dropped by the NLE) and were therefore derived from the target path. Clips
+    with these IDs are matched by path + source range with WEAK identity only.
+    """
+
+    name: str
+    rate: FrameRate
+    start_frame: int
+    tracks: tuple[HandoffTrack, ...]
+    path_identified_media_ids: tuple[str, ...] = ()
+    evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
+    native_evidence: Literal[False] = False
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "tracks", tuple(self.tracks))
+        object.__setattr__(
+            self, "path_identified_media_ids", tuple(sorted(set(self.path_identified_media_ids)))
+        )
+        _nonempty(self.name, "Timeline name")
+        if not isinstance(self.rate, FrameRate) or not is_smpte_rate(self.rate):
+            raise ValueError("Timeline rate must be a whitelisted SMPTE FrameRate")
+        if type(self.start_frame) is not int or self.start_frame < 0:
+            raise ValueError("Timeline start frame must be a nonnegative int")
+        if any(not isinstance(t, HandoffTrack) for t in self.tracks):
+            raise TypeError("Timeline tracks must be HandoffTrack values")
+        for media_id in self.path_identified_media_ids:
+            _nonempty(media_id, "Path-identified media ID")
+        if self.evidence_class != EVIDENCE_CLASS or self.native_evidence is not False:
+            raise ValueError("A re-imported timeline is FILE_ROUNDTRIP evidence, never native")
+
+    @property
+    def duration(self) -> int:
+        return max((t.duration for t in self.tracks), default=0)
+
+
+TimelineStructure = HandoffTimeline | ReimportedTimeline
 
 
 @dataclass(frozen=True)

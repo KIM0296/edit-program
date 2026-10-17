@@ -18,6 +18,14 @@ frame is UNKNOWN the profile refuses instead of assuming 0.
 
 The written file is an Expected artifact only. Importing it into Resolve is a
 native mutation (HOLD / manual user action) and nothing here authorizes it.
+
+Reading is the Actual side: ``read_otio`` returns a ``ReimportedTimeline``
+(``FILE_ROUNDTRIP`` evidence). When an NLE export dropped our
+``metadata["davinci_ai_editor"]`` from an ``ExternalReference``, the media is
+identified by its target path instead (warning ``MISSING_MEDIA_ID``; the ID is
+listed in ``path_identified_media_ids`` and diffs match it by path + source
+range with WEAK identity). A ``MissingReference`` without our metadata has no
+path and stays a refusal. FCP7 XML remains the default round-trip format.
 """
 
 import json
@@ -28,6 +36,7 @@ from typing import Literal
 from .domain import FrameRange
 from .handoff_model import (
     ARTIFACT_KIND,
+    EVIDENCE_CLASS,
     HandoffClip,
     HandoffDiagnostic,
     HandoffDiagnosticCode,
@@ -39,6 +48,7 @@ from .handoff_model import (
     HandoffTrack,
     HandoffTrackKind,
     MarkerColor,
+    ReimportedTimeline,
     file_url_to_path,
     has_refusal,
     has_url_scheme,
@@ -99,15 +109,15 @@ class OtioWriteResult:
 
 @dataclass(frozen=True)
 class OtioReadResult:
-    timeline: HandoffTimeline | None
+    timeline: ReimportedTimeline | None
     diagnostics: tuple[HandoffDiagnostic, ...]
-    artifact_kind: Literal["EXPECTED_TIMELINE_ARTIFACT"] = ARTIFACT_KIND
-    authorizes_import: Literal[False] = False
+    evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
+    native_evidence: Literal[False] = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "diagnostics", tuple(self.diagnostics))
-        if self.artifact_kind != ARTIFACT_KIND or self.authorizes_import is not False:
-            raise ValueError("OTIO results are artifacts that never authorize import")
+        if self.evidence_class != EVIDENCE_CLASS or self.native_evidence is not False:
+            raise ValueError("A re-read OTIO file is FILE_ROUNDTRIP evidence, never native")
         if self.timeline is not None and has_refusal(self.diagnostics):
             raise ValueError("A refused read cannot carry a timeline")
 
@@ -350,6 +360,7 @@ class _Reader:
     def __init__(self) -> None:
         self.diagnostics: list[HandoffDiagnostic] = []
         self.rate: FrameRate | None = None
+        self.path_identified: set[str] = set()
 
     def fail(self, code: HandoffDiagnosticCode, location: str, message: str) -> _Refused:
         return _Refused(refusal(code, location, message))
@@ -436,9 +447,26 @@ class _Reader:
         metadata = data.get("metadata")
         ours = metadata.get(METADATA_NAMESPACE) if isinstance(metadata, dict) else None
         media_id = ours.get("media_id") if isinstance(ours, dict) else None
+        target: str | None = None
+        if expected == "ExternalReference.1":
+            url = self.string(data, "target_url", location)
+            if not url:
+                raise self.fail(HandoffDiagnosticCode.INVALID_VALUE, location, "Empty target_url")
+            target = url if resolve else file_url_to_path(url)
         if not isinstance(media_id, str) or not media_id.strip():
-            raise self.fail(
-                HandoffDiagnosticCode.MISSING_MEDIA_ID, location, "No media_id; not guessed"
+            if target is None:
+                raise self.fail(
+                    HandoffDiagnosticCode.MISSING_MEDIA_ID, location, "No media_id; not guessed"
+                )
+            # The NLE dropped our metadata: identify by path (WEAK), never by a guess.
+            media_id = target
+            self.path_identified.add(target)
+            self.diagnostics.append(
+                warning(
+                    HandoffDiagnosticCode.MISSING_MEDIA_ID,
+                    location,
+                    "No media_id metadata; media identified by target path (WEAK identity)",
+                )
             )
         start = ours.get("media_start_frame") if isinstance(ours, dict) else None
         if start is not None and (type(start) is not int or start < 0):
@@ -458,12 +486,6 @@ class _Reader:
             if available_raw is None
             else self.frame_range(available_raw, offset, f"{location}.available_range")
         )
-        target: str | None = None
-        if expected == "ExternalReference.1":
-            url = self.string(data, "target_url", location)
-            if not url:
-                raise self.fail(HandoffDiagnosticCode.INVALID_VALUE, location, "Empty target_url")
-            target = url if resolve else file_url_to_path(url)
         return HandoffMediaRef(media_id, target, available, start), offset
 
     def marker(self, value: object, offset: int, location: str) -> HandoffMarker:
@@ -560,7 +582,7 @@ class _Reader:
             raise self.fail(HandoffDiagnosticCode.INVALID_VALUE, location, "Empty track name")
         return HandoffTrack(name, kind, items)
 
-    def document(self, value: object) -> HandoffTimeline:
+    def document(self, value: object) -> ReimportedTimeline:
         data = self.obj(value, "Timeline.1", "timeline")
         metadata = data.get("metadata")
         ours = metadata.get(METADATA_NAMESPACE) if isinstance(metadata, dict) else None
@@ -592,7 +614,9 @@ class _Reader:
             raise self.fail(HandoffDiagnosticCode.UNKNOWN_RATE, "timeline", "No rate")
         name = self.string(data, "name", "timeline")
         try:
-            return HandoffTimeline(name, self.rate, start, tracks)
+            return ReimportedTimeline(
+                name, self.rate, start, tracks, tuple(sorted(self.path_identified))
+            )
         except (TypeError, ValueError) as exc:
             raise self.fail(HandoffDiagnosticCode.INVALID_VALUE, "timeline", str(exc)) from exc
 

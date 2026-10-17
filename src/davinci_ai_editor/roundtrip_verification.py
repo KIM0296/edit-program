@@ -28,6 +28,13 @@ decided only from explicit evidence, otherwise the item is UNKNOWN:
 
 HUMAN_CHANGED is not an error: a report whose only deviations are
 HUMAN_CHANGED is MATCH with ``human_changed_count > 0``.
+
+Identity rule for MATCH (RT/VER decision 3): an item is MATCH only with STRONG
+identity, or WEAK identity that is unique. WEAK identity (path / display name)
+is unique when no *other* clip of the same track kind - in Expected or in
+Actual - has the same media path with an overlapping source range (the WEAK
+key is path + source range, as in the RT-001 matcher). Otherwise the item is
+UNKNOWN with code ``IDENTITY_AMBIGUOUS`` and the report is UNVERIFIED.
 """
 
 import hashlib
@@ -37,7 +44,7 @@ from enum import Enum
 from typing import Literal
 
 from .domain import FrameRange
-from .handoff_model import HandoffClip, HandoffTimeline, HandoffTrackKind
+from .handoff_model import EVIDENCE_CLASS, HandoffClip, HandoffTimeline, HandoffTrackKind
 from .roundtrip_diff import (
     AttributeChange,
     ChangeKind,
@@ -47,10 +54,11 @@ from .roundtrip_diff import (
     RoundTripArtifactRef,
     RoundTripChange,
     RoundTripDiff,
+    path_key,
     timeline_digest,
 )
 from .trust_evidence import PreparedArtifactRevision, canonical_bytes
-from .xmeml_reader import EVIDENCE_CLASS, TrackKey, track_keys
+from .xmeml_reader import TrackKey, track_keys
 
 
 class ItemStatus(str, Enum):
@@ -73,6 +81,9 @@ DEFECTS = frozenset(
         ItemStatus.TRACK_FLATTENED,
     }
 )
+
+
+IDENTITY_AMBIGUOUS = "IDENTITY_AMBIGUOUS"
 
 
 class VerificationStatus(str, Enum):
@@ -296,6 +307,11 @@ def _drift(change: RoundTripChange) -> FrameDrift:
     )
 
 
+def _media_key(clip: HandoffClip) -> tuple[str, str]:
+    path = path_key(clip.media.target_path)
+    return ("PATH", path) if path is not None else ("ID", clip.media.media_id)
+
+
 def _kind_counts(keys: Iterable[TrackKey]) -> dict[HandoffTrackKind, int]:
     counts: dict[HandoffTrackKind, int] = {}
     for key in keys:
@@ -315,6 +331,29 @@ class _Observer:
             if change.expected is not None:
                 placement = change.expected
                 self.by_expected[f"E:{placement.track.label}:{placement.item_index}"] = change
+        self.expected_media = [
+            (item.track.kind, _media_key(item.clip), item.clip.source_range)
+            for item in self.intended
+            if item.clip is not None
+        ]
+        actual: dict[tuple[TrackKey, int], ClipPlacement] = {}
+        for change in diff.changes:
+            for a in change.actual:
+                actual[(a.track, a.item_index)] = a
+        self.actual_media = [
+            (a.track.kind, _media_key(a.clip), a.source_range) for a in actual.values()
+        ]
+
+    def ambiguous(self, kind: HandoffTrackKind, clip: HandoffClip) -> bool:
+        """WEAK identity is ambiguous when another same-kind clip shares path + source."""
+        key = _media_key(clip)
+        for media in (self.expected_media, self.actual_media):
+            hits = sum(
+                1 for k, m, r in media if k is kind and m == key and r.overlaps(clip.source_range)
+            )
+            if hits > 1:
+                return True
+        return False
 
     def flattened(self, key: TrackKey) -> bool:
         return self.actual_counts.get(key.kind, 0) < self.expected_counts.get(key.kind, 0)
@@ -352,6 +391,15 @@ class _Observer:
                 detail = "enabled changed"
             elif not _marker_keys((clip,)) <= _marker_keys(actual_clips):
                 observed, detail = ItemStatus.MARKER_LOST, "marker missing in Actual"
+        if (
+            observed is ItemStatus.MATCH
+            and change.identity is not IdentityStrength.STRONG
+            and (
+                change.identity is not IdentityStrength.WEAK
+                or self.ambiguous(item.track.kind, clip)
+            )
+        ):
+            observed, detail = ItemStatus.UNKNOWN, IDENTITY_AMBIGUOUS
         return self.make(item, observed, change, drift, detail)
 
     def make(
@@ -584,6 +632,8 @@ def verify_roundtrip(
             key=_sort_key,
         )
     )
+    if any(i.status is ItemStatus.UNKNOWN and i.detail == IDENTITY_AMBIGUOUS for i in items):
+        reasons.append(IDENTITY_AMBIGUOUS)
     if reasons or any(i.status is ItemStatus.UNKNOWN for i in items):
         status = VerificationStatus.UNVERIFIED
     elif any(i.status in DEFECTS for i in items):
