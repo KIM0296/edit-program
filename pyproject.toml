@@ -17,6 +17,13 @@ dev = [
   "mypy>=1.10",
   "numpy==2.3.5",
 ]
+# WEB-001 local development server only (apps/web); the core package stays zero-dependency.
+web = [
+  "fastapi==0.115.6",
+  "uvicorn==0.32.1",
+  "python-multipart==0.0.20",
+  "httpx==0.28.1",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

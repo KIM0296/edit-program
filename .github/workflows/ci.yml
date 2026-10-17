@@ -19,3 +19,18 @@ jobs:
       - run: python -m pytest -q
       - run: python -m ruff check src tests tools
       - run: python -m mypy
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e ".[dev,web]"
+      - run: python -m pytest -q tests/web
+      - run: python -m ruff check apps tests/web
+      - run: python -m ruff format --check apps tests/web
+      - run: python -m mypy --strict --explicit-package-bases apps/web/aie_web tests/web
+        env:
+          MYPYPATH: src:apps/web:tests/web
