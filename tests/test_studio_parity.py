@@ -17,8 +17,8 @@ from davinci_ai_editor.apply_cuts import (
     ApplyRefused,
     SkipReason,
     apply_approved_cuts,
+    actual_binding_digest,
     build_apply_confirmation,
-    confirmation_digest_for,
 )
 from davinci_ai_editor.candidate_markers import (
     CandidateHandoff,
@@ -42,7 +42,6 @@ from davinci_ai_editor.roundtrip_diff import (
     RoundTripFormat,
     diff_xmeml_roundtrip,
     roundtrip_artifact_ref,
-    timeline_digest,
 )
 from davinci_ai_editor.roundtrip_verification import (
     ActualProvenance,
@@ -270,16 +269,14 @@ def test_file_and_studio_transports_reach_the_same_core_result() -> None:
         "AIE-0003": SkipReason.REJECTED,
         "AIE-0004": SkipReason.PENDING,
     }
-    # Digest inputs differ ONLY by marker colour (xmeml cannot carry it; the live read does).
+    # LAYER-001: the confirmation digest binds the RESOLVED candidate status and the
+    # Actual with marker colours neutralized, so both transports give ONE digest even
+    # though FCP7 xmeml carries no marker colour and the live read does.
     assert live.actual is not None
-    assert conf_a.confirmation_digest != conf_b.confirmation_digest
     assert _uncoloured(live.actual) == actual_a
-    assert (
-        confirmation_digest_for(
-            conf_b.expected_digest, timeline_digest(_uncoloured(live.actual)), conf_b.approved_cuts
-        )
-        == conf_a.confirmation_digest
-    )
+    assert conf_a.candidate_statuses == conf_b.candidate_statuses
+    assert actual_binding_digest(live.actual) == actual_binding_digest(actual_a)
+    assert conf_a.confirmation_digest == conf_b.confirmation_digest
     # apply: file path -> new Expected file; Studio -> in place on the fake
     outcome = studio.mutation.apply_confirmed_cuts(
         conf_b, confirmed_digest=conf_b.confirmation_digest
@@ -462,11 +459,10 @@ def test_wrong_digest_and_foreign_confirmation_are_refused() -> None:
     with pytest.raises(ApplyRefused):
         studio.mutation.apply_confirmed_cuts(confirmation, confirmed_digest="0" * 64)
     _, _, conf_file, _ = file_path()
-    with pytest.raises(ApplyRefused):
-        studio.mutation.apply_confirmed_cuts(
-            confirmation, confirmed_digest=conf_file.confirmation_digest
-        )
-    # a file-path confirmation (different Actual digest) cannot drive the live timeline
+    # LAYER-001: same decision on the same content -> one transport-neutral digest ...
+    assert conf_file.confirmation_digest == confirmation.confirmation_digest
+    assert conf_file.actual_digest != confirmation.actual_digest
+    # ... but a file-path confirmation (another Actual) still cannot drive the live timeline
     outcome = studio.mutation.apply_confirmed_cuts(
         conf_file, confirmed_digest=conf_file.confirmation_digest
     )

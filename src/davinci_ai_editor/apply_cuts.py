@@ -74,9 +74,11 @@ from .candidate_markers import (
 from .domain import FrameRange, ProtectedRange, RippleDisplacement
 from .handoff_model import (
     ARTIFACT_KIND,
+    EVIDENCE_CLASS,
     HandoffClip,
     HandoffTimeline,
     HandoffTrack,
+    HandoffTrackKind,
     MarkerColor,
     ReimportedTimeline,
 )
@@ -198,14 +200,65 @@ class CandidateStatus:
             raise TypeError("Typed candidate status required")
 
 
-def actual_binding_digest(actual: ReimportedTimeline) -> str:
-    """Digest of the Actual with every marker colour neutralized.
+_ClipSlot = tuple[TrackKey, int]  # (Actual track, timeline start) of a modelled clip
 
-    Marker colour is only a secondary approval signal (FCP7 xmeml carries none,
-    OTIO does); its effect is bound through the resolved ``CandidateStatus``
-    instead, so the same approvals give the same confirmation digest whether or
-    not the transport carried colours.
+
+def _implied_link_partition(actual: ReimportedTimeline) -> frozenset[frozenset[_ClipSlot]]:
+    """Link groups the APPLY-001 writer rule derives on its own (same media, timeline
+    range and source range; exactly one video member and at least one audio)."""
+    groups: dict[tuple[str, int, int, int, int], list[_ClipSlot]] = {}
+    for key, track in track_keys(actual):
+        for start, clip in track.placements():
+            rule = (
+                clip.media.media_id,
+                start,
+                start + clip.duration,
+                clip.source_range.start,
+                clip.source_range.end,
+            )
+            groups.setdefault(rule, []).append((key, start))
+    result: set[frozenset[_ClipSlot]] = set()
+    for members in groups.values():
+        videos = [m for m in members if m[0].kind is HandoffTrackKind.VIDEO]
+        audios = [m for m in members if m[0].kind is HandoffTrackKind.AUDIO]
+        if len(videos) == 1 and audios:
+            result.add(frozenset(members))
+    return frozenset(result)
+
+
+def _links_are_implied(actual: ReimportedTimeline) -> bool:
+    """True when the Actual's file ``<link>`` groups carry no information beyond the
+    APPLY-001 rule (or there are none): dropping them changes no apply result."""
+    file_groups: dict[str, list[_ClipSlot]] = {}
+    for key, track in track_keys(actual):
+        if any(item.link_group is not None for item in track.passthrough):
+            return False
+        for start, clip in track.placements():
+            if clip.link_group is not None:
+                file_groups.setdefault(clip.link_group, []).append((key, start))
+    if not file_groups:
+        return True
+    partition = frozenset(frozenset(members) for members in file_groups.values())
+    return partition == _implied_link_partition(actual)
+
+
+def actual_binding_digest(actual: ReimportedTimeline) -> str:
+    """Digest of the Actual with transport-only evidence canonicalized.
+
+    - Marker colour is only a secondary approval signal (FCP7 xmeml carries none,
+      OTIO and the Studio read do); its effect is bound through the resolved
+      ``CandidateStatus`` instead.
+    - The evidence class (``FILE_ROUNDTRIP`` / ``STUDIO_API_READ``) names the
+      transport, not the content.
+    - File ``<link>`` groups are dropped ONLY when they are exactly the groups the
+      APPLY-001 rule derives by itself (same media, timeline range and source
+      range), i.e. when they carry no extra information. Any other link structure
+      (separate-recorder audio, J/L-cuts, links on pass-through items) stays bound.
+
+    So the same approvals on the same content give the same confirmation digest
+    whichever transport read the Actual.
     """
+    drop_links = _links_are_implied(actual)
     tracks = tuple(
         replace(
             track,
@@ -213,6 +266,7 @@ def actual_binding_digest(actual: ReimportedTimeline) -> str:
                 replace(
                     item,
                     markers=tuple(replace(m, color=MarkerColor.UNKNOWN) for m in item.markers),
+                    link_group=None if drop_links else item.link_group,
                 )
                 if isinstance(item, HandoffClip)
                 else item
@@ -221,7 +275,7 @@ def actual_binding_digest(actual: ReimportedTimeline) -> str:
         )
         for track in actual.tracks
     )
-    return timeline_digest(replace(actual, tracks=tracks))
+    return timeline_digest(replace(actual, tracks=tracks, evidence_class=EVIDENCE_CLASS))
 
 
 def confirmation_digest_for(
