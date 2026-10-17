@@ -25,6 +25,15 @@ HARD_LOCK range) or as ``safety_preflight.ProtectedRangeRecord`` values with
 must exclude these ranges before proposing. Locks are never relaxed by
 re-running the AI; a stale plan built before the round-trip cannot
 auto-execute and is never silently rebased onto the Actual.
+
+LAYER-001: the diff also carries ``layer_findings`` (``layer_policy.compare_layers``):
+track set/order/state and every pass-through item (generator, transition,
+filtered clip, ...) compared verbatim on its canonical subtree. An UNSUPPORTED
+region fully explained by pass-through items found identical (MATCH), moved
+with identical content (MOVED) or newly added (ADDED) is no longer UNKNOWN;
+MOVED / ADDED / CHANGED / LOST items and changed track state are HARD_LOCKed
+like any other human change. A region with changed content, or overlapping an
+Expected modelled clip, stays UNKNOWN.
 """
 
 import hashlib
@@ -44,6 +53,12 @@ from .handoff_model import (
     ReimportedTimeline,
     TimelineStructure,
     is_windows_absolute,
+)
+from .layer_policy import (
+    LayerFinding,
+    LayerFindingKind,
+    compare_layers,
+    resolve_passthrough_regions,
 )
 from .otio_json import OtioReadResult
 from .timecode import frames_per_24_hours
@@ -267,10 +282,18 @@ class RoundTripDiff:
     actual_tracks: tuple[TrackExtent, ...]
     lock_horizon: int
     read_diagnostics: tuple[HandoffDiagnostic, ...] = ()
+    layer_findings: tuple[LayerFinding, ...] = ()
     evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
 
     def __post_init__(self) -> None:
-        for name in ("reasons", "changes", "unknown_regions", "actual_tracks", "read_diagnostics"):
+        for name in (
+            "reasons",
+            "changes",
+            "unknown_regions",
+            "actual_tracks",
+            "read_diagnostics",
+            "layer_findings",
+        ):
             object.__setattr__(self, name, tuple(getattr(self, name)))
         if self.evidence_class != EVIDENCE_CLASS:
             raise ValueError("Round-trip diffs are FILE_ROUNDTRIP evidence only")
@@ -322,7 +345,18 @@ def path_key(path: str | None) -> str | None:
 def identity_strength(
     expected: HandoffClip, actual: HandoffClip, basis: MediaIdentityBasis
 ) -> IdentityStrength | None:
-    """``None`` = no correspondence (different media)."""
+    """``None`` = no correspondence (different media, or different source channel).
+
+    LAYER-001 follow-up: when both clips carry FCP7 ``<sourcetrack>`` evidence
+    (``source_track``) and it differs (e.g. the left vs right channel of one
+    stereo file), they are different content and never correspond.
+    """
+    if (
+        expected.source_track is not None
+        and actual.source_track is not None
+        and expected.source_track != actual.source_track
+    ):
+        return None
     e_media, a_media = expected.media, actual.media
     id_eq = e_media.media_id == a_media.media_id
     pe, pa = path_key(e_media.target_path), path_key(a_media.target_path)
@@ -872,6 +906,8 @@ def diff_roundtrip(
     differ_basis = (
         MediaIdentityBasis.METADATA if basis is MediaIdentityBasis.PATH_FALLBACK else basis
     )
+    findings = compare_layers(expected, actual)
+    regions = resolve_passthrough_regions(regions, expected, actual, findings)
     changes = _Differ(expected, actual, differ_basis, regions).run()
     partial = bool(regions) or any(c.kind is ChangeKind.UNKNOWN for c in changes)
     return RoundTripDiff(
@@ -886,6 +922,7 @@ def diff_roundtrip(
         _extents(expected, actual),
         frames_per_24_hours(actual.rate),
         diagnostics,
+        findings,
     )
 
 
@@ -960,6 +997,16 @@ def _merge(ranges: list[FrameRange]) -> list[FrameRange]:
     return merged
 
 
+_LAYER_LOCKED = frozenset(
+    {
+        LayerFindingKind.MOVED,
+        LayerFindingKind.CHANGED,
+        LayerFindingKind.ADDED,
+        LayerFindingKind.LOST,
+    }
+)
+
+
 def derive_human_edit_protection(diff: RoundTripDiff) -> tuple[ProtectedRange, ...]:
     """HARD_LOCK every human-touched and every UNKNOWN region (Actual coordinates).
 
@@ -991,6 +1038,14 @@ def derive_human_edit_protection(diff: RoundTripDiff) -> tuple[ProtectedRange, .
                 add(region.track, region.frame_range)
     for unknown in diff.unknown_regions:
         add(unknown.track, whole if unknown.frame_range is None else unknown.frame_range)
+    for finding in diff.layer_findings:
+        # LAYER-001: a moved / changed / added / lost pass-through item or a changed
+        # track state is a human (or NLE) change: lock it like any other.
+        if finding.kind in _LAYER_LOCKED:
+            frame_range = finding.actual_range or finding.expected_range
+            add(finding.track, whole if frame_range is None else frame_range)
+        elif finding.kind is LayerFindingKind.TRACK_STATE_CHANGED:
+            add(finding.track, whole)
     result: list[ProtectedRange] = []
     for track in sorted(by_track, key=_key_order):
         for frame_range in _merge(by_track[track]):

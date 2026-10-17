@@ -62,7 +62,7 @@ other `filter`, unknown clip/track child, clip without file or in/out,
 mixed-rate file, marker outside the clip, overlapping placements, disabled
 track. A `-1`/missing clip boundary or unknown track child makes the whole
 track UNKNOWN (`frame_range=None`). Missing clip `enabled` uses the FCP7 DTD
-default TRUE with a warning. Sequence-level markers are reported, not modelled.
+default TRUE with a warning. Sequence-level markers are kept (LAYER-001 follow-up).
 
 ## Diff (`roundtrip_diff.py`)
 
@@ -181,3 +181,7 @@ git diff --check                                                                
 - MOVED clips caused purely by an upstream ripple are locked too (conservative);
   a ripple-consistent exemption would need an approved policy.
 - MERGED is an extra class beyond the requested list (exact-union join).
+- LAYER-001: unplaced track items are kept verbatim as pass-through items;
+  regions fully explained by verbatim-identical / moved / added pass-through
+  items are no longer UNKNOWN and changes to them are locked via
+  `layer_findings` (see `docs/LAYER_001_STATUS.md`, open question).

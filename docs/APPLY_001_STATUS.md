@@ -35,9 +35,11 @@ a manual user action.
    gives the **confirmation** summary and digest.
 5. The user confirms explicitly: `apply_approved_cuts(confirmation,
    confirmed_digest=…)`. This is the **approval**. The result is a **new**
-   Expected timeline (`<name> AIE v2`). It has the cuts applied to every video
-   and audio track with ripple, keeps A/V linked, and keeps the remaining
-   candidates as markers.
+   Expected timeline (`<name> AIE v2`). Since LAYER-001 the cuts follow a
+   per-track policy (dialogue source tracks are cut, every other track only
+   ripples, nothing spanning a cut is split), all tracks and unmodelled items
+   are preserved, A/V stays linked, and the remaining candidates stay as
+   markers. See `docs/LAYER_001_STATUS.md`.
 6. The editor imports the new file by hand and renders only the final version
    in Resolve Deliver. VER-001 on the next round trip is the **verification**.
 
@@ -114,10 +116,12 @@ whose cut set was altered cannot exist.
 - The call raises `ApplyRefused` unless `confirmed_digest ==
   confirmation.confirmation_digest`.
 - The cuts are applied to the **Actual** re-imported timeline, not to the old
-  Expected. Each approved range, in Actual timeline frames, is removed from
-  every VIDEO and AUDIO track at the same frames. Clips are split as needed
-  with a 1:1 source cut. Gaps shrink, adjacent gaps merge and trailing gaps are
-  dropped. Later items ripple left by the removed duration.
+  Expected. Superseded by LAYER-001: each approved range, in Actual timeline
+  frames, is removed only from the tracks whose policy for that cut is
+  `CUT_WITH_SOURCE`; `SHIFT_WITH_RIPPLE` tracks only move their later items
+  left; `KEEP_IN_PLACE` tracks do not change (`docs/LAYER_001_STATUS.md`). On
+  CUT tracks clips are split as needed with a 1:1 source cut. Gaps shrink,
+  adjacent gaps merge and trailing gaps are dropped.
 - The output is a ripple displacement per moved clip piece, following the
   project's `domain.RippleDisplacement` semantics (as in
   `safety.propose_ripple_displacements`):
@@ -160,8 +164,9 @@ import is UNVERIFIED.
   work done on the old timeline do not carry over to `… AIE v2`. **Approve
   cuts before finishing work** (grading, mixing, effects) on the timeline.
 - Only cut candidates that lie inside one clip of `Video 1` can be marked.
-- Cuts remove the same frames from every track, music beds and B-roll
-  included. Track-selective cuts are out of scope.
+- ~~Cuts remove the same frames from every track, music beds and B-roll
+  included.~~ Fixed by LAYER-001: per-track policy; music beds, B-roll, titles
+  and SFX are not cut by default (`docs/LAYER_001_STATUS.md`).
 - RT-001 locks MOVED clips conservatively. After a ripple trim by the editor,
   every downstream clip is locked, so its candidates are skipped as
   `HUMAN_EDIT_LOCKED`. A non-ripple trim (which leaves a gap) locks only the
