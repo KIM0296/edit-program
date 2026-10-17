@@ -17,6 +17,21 @@ dev = [
   "mypy>=1.10",
   "numpy==2.3.5",
 ]
+# WEB-001 local development server only (apps/web); the core package stays zero-dependency.
+web = [
+  "fastapi==0.115.6",
+  "uvicorn==0.32.1",
+  "python-multipart==0.0.20",
+  "httpx==0.28.1",
+]
+# WEB-002 local ASR for apps/web only (not installed by CI). faster-whisper 1.1.1 imports
+# `requests` without declaring it, so it is pinned here too. PyAV (a faster-whisper
+# dependency) is pinned to the version validated with aie_web's own audio decoder.
+asr = [
+  "faster-whisper==1.1.1",
+  "requests==2.32.3",
+  "av==19.0.1",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
