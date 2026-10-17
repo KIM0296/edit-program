@@ -182,9 +182,20 @@ controlled subprocess environment is asserted.
 The Linux reference qualification run above (`38698069106`) was produced by the
 **previous** runner on head `e14e5e2`. The corrected runner changes the
 subprocess environment and the `ldd` invocation path; the pinned values are
-unchanged, but an end-to-end re-run of `--verify` on the GitHub-hosted Ubuntu
-reference for the corrected head has **not** been performed yet and remains
-`UNKNOWN` until it is. Ordinary repository CI does not run FFmpeg.
+unchanged. Ordinary repository CI does not run FFmpeg.
+
+Decision: the Ubuntu end-to-end re-run for the corrected head is **not
+performed and not required**. The Linux reference receipt never contributes to
+G2; only a separately pinned Windows host receipt can. Re-qualifying a
+disposable hosted runner would add no gate evidence. Consequences:
+
+- `38698069106` is retained as **historical** evidence of the previous runner
+  only; it is not evidence for the corrected head.
+- Whether the corrected runner reproduces the Linux reference result is
+  `UNKNOWN` and stays `UNKNOWN`; it must not be claimed either way.
+- The corrected runner's first real end-to-end use is the Windows host
+  qualification, which requires its own Windows receipt, its own approved
+  digest and Windows-specific inspection (no `ldd`; DLL pins instead).
 
 ## Qualification language
 
