@@ -100,6 +100,8 @@ class Settings:
     # deployment behind an HTTPS tunnel / reverse proxy
     trust_proxy: bool = False
     secure_cookies: bool = False
+    # SITE-001 public site: contact shown for trial-code requests (placeholder default)
+    contact_email: str = "contact@safestay.kr"
 
     @property
     def max_request_bytes(self) -> int:
@@ -139,6 +141,8 @@ class Settings:
             trial_global_failures=_env_int("AIE_WEB_TRIAL_GLOBAL_FAILURES", 50),
             trust_proxy=_env_bool("AIE_WEB_TRUST_PROXY", False),
             secure_cookies=_env_bool("AIE_WEB_SECURE_COOKIES", False),
+            contact_email=os.environ.get("AIE_WEB_CONTACT_EMAIL", "").strip()
+            or "contact@safestay.kr",
         )
 
 

@@ -21,7 +21,7 @@ from typing import Annotated
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -80,7 +80,7 @@ from .store import (
 from .trial import Invite, InviteError, InviteStore
 
 CSP = (
-    "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; "
+    "default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'self'; "
     "frame-ancestors 'none'; base-uri 'none'"
 )
 _VERIFY_PROVENANCE = {
@@ -209,7 +209,7 @@ def create_app(
         yield
 
     app = FastAPI(
-        title="AIE Free", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
+        title="Coditor", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
     )
     app.state.store = store
     app.state.invites = invites
@@ -455,16 +455,53 @@ def create_app(
 
     @app.get("/", response_class=HTMLResponse)
     async def landing(request: Request) -> HTMLResponse:
-        if config.trial_mode and trial_session(request) is None:
-            return _html(
-                render.consent_page(
-                    csrf(request),
-                    config.trial_code_hours,
-                    config.trial_max_projects,
-                    config.max_media_seconds // 60,
-                )
+        """SITE-001 public landing; in trial mode it embeds the consent / code form."""
+        session = trial_session(request)
+        state: render.TrialState = "local"
+        if config.trial_mode:
+            state = "open" if session is None else "active"
+        return _html(
+            render.landing(
+                trial=state,
+                csrf=csrf(request),
+                hours=config.trial_code_hours,
+                max_projects=config.trial_max_projects,
+                max_minutes=config.max_media_seconds // 60,
+                max_mb=config.max_media_bytes // (1024 * 1024),
+                contact=config.contact_email,
+                remaining_projects=session[1].remaining_projects() if session else None,
             )
-        return _html(render.landing())
+        )
+
+    @app.get("/trial", response_model=None)
+    async def trial_entry(request: Request) -> Response:
+        if not config.trial_mode:
+            raise StarletteHTTPException(404)
+        if trial_session(request) is not None:
+            return _redirect("/new")
+        return _html(
+            render.consent_page(
+                csrf(request),
+                config.trial_code_hours,
+                config.trial_max_projects,
+                config.max_media_seconds // 60,
+            )
+        )
+
+    @app.get("/privacy", response_class=HTMLResponse)
+    async def privacy() -> HTMLResponse:
+        return _html(
+            render.privacy_page(
+                trial=config.trial_mode,
+                hours=config.trial_code_hours,
+                max_age_hours=config.max_age_hours,
+                contact=config.contact_email,
+            )
+        )
+
+    @app.get("/robots.txt", response_class=PlainTextResponse)
+    async def robots() -> PlainTextResponse:
+        return PlainTextResponse(render.ROBOTS_TXT)
 
     @app.post("/trial/start", response_model=None)
     async def trial_start(

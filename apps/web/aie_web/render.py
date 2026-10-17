@@ -8,6 +8,8 @@ import html
 import time
 from collections.abc import Callable, Sequence
 from string import Template
+from typing import Literal
+from urllib.parse import quote
 
 from davinci_ai_editor.apply_cuts import SKIP_LABELS_KO, AppliedTimeline
 from davinci_ai_editor.candidate_markers import CandidateDecision
@@ -35,67 +37,253 @@ def e(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
+BRAND = "Coditor"
+SITE_TITLE = "Coditor — 인터뷰 편집 어시스턴트 for DaVinci Resolve"
+SITE_DESCRIPTION = (
+    "긴 인터뷰의 무음·긴 호흡·필러·반복 후보를 DaVinci Resolve 타임라인에 마커로 표시하고, "
+    "편집자가 승인한 컷만 대사 레이어에 적용합니다. 찾는 건 Coditor가, 결정은 편집자가."
+)
+CORE_MESSAGE = "AI에게 편집 업무는 맡기되, 편집권은 넘기지 않는다."
+
+# Inline SVG favicon (data URI, percent-encoded, so the page names no external URL).
+_FAVICON_SVG = (
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
+    "<rect width='32' height='32' rx='7' fill='#14171d'/>"
+    "<rect x='5' y='19' width='22' height='4' rx='2' fill='#5b6475'/>"
+    "<rect x='5' y='11' width='13' height='4' rx='2' fill='#5b6475'/>"
+    "<path d='M21 6h6v7l-3 3-3-3z' fill='#f5b83d'/></svg>"
+)
+FAVICON = "data:image/svg+xml," + quote(_FAVICON_SVG, safe="")
+
+# Design tokens shared by every page (dark first; light via prefers-color-scheme).
+# One accent (marker amber). Contrast of text tokens on --bg/--surface is WCAG AA.
+CSS = """
+:root{color-scheme:dark light;
+--bg:#0f1115;--surface:#161920;--surface-2:#1d212a;--line:#2b303b;--fg:#e9ebf0;--muted:#a4acbb;
+--accent:#f5b83d;--accent-ink:#1b1405;--accent-soft:rgba(245,184,61,.14);--link:#f7c76a;
+--ok:#5ad19a;--warn:#ffab7a;--bad:#ff7b7b;--err-bg:#2a1517;--err-line:#6b2b2f;
+--studio-bg:#1b1a2a;--studio-line:#3f3a6b;--studio-fg:#c8bcff;--code-bg:#1d212a;
+--track-v:#3a5a8c;--track-a:#2f6b55;--track-m:#5a4a7a;--track-t:#4b5262;
+--radius:12px;--shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.25)}
+@media (prefers-color-scheme:light){:root{
+--bg:#f6f6f2;--surface:#ffffff;--surface-2:#efeee8;--line:#dcdbd3;--fg:#16181d;--muted:#555b66;
+--accent:#e8a21a;--accent-ink:#1b1405;--accent-soft:rgba(232,162,26,.16);--link:#8a5200;
+--ok:#17703f;--warn:#9a4300;--bad:#b3261e;--err-bg:#fdecea;--err-line:#f2b8b5;
+--studio-bg:#f3f0ff;--studio-line:#cfc4ff;--studio-fg:#4b2aa8;--code-bg:#efeee8;
+--track-v:#9db8e6;--track-a:#93cdb4;--track-m:#c4b5e3;--track-t:#c9ccd3;
+--shadow:0 1px 2px rgba(20,20,10,.06),0 8px 24px rgba(20,20,10,.06)}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",
+"Noto Sans KR",sans-serif;color:var(--fg);background:var(--bg);line-height:1.65;word-break:keep-all;
+overflow-wrap:anywhere}
+a{color:var(--link);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:8px;background:var(--accent);color:var(--accent-ink);
+padding:8px 12px;border-radius:8px;z-index:10}
+.skip:focus{left:12px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+.page{padding-top:20px;padding-bottom:8px}
+header.site{position:sticky;top:0;z-index:5;background:var(--bg);background:color-mix(in srgb,var(--bg) 88%,transparent);
+backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.site .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;min-height:56px}
+.brand{display:inline-flex;align-items:center;gap:8px;font-weight:800;letter-spacing:-.01em;color:var(--fg);
+text-decoration:none;font-size:1.08rem}
+.brand svg{width:22px;height:22px}
+header.site nav{display:flex;flex-wrap:wrap;gap:4px 14px;margin-left:auto}
+header.site nav a{color:var(--muted);text-decoration:none;font-size:.93rem;padding:6px 0}
+header.site nav a:hover{color:var(--fg)}
+h1,h2,h3{line-height:1.3;letter-spacing:-.015em}
+h1{font-size:1.6rem;margin:.4em 0 .5em}
+h2{font-size:1.2rem;margin:1.6em 0 .6em}
+h3{font-size:1.02rem;margin:1.2em 0 .4em}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;
+margin:14px 0}
+.studio{background:var(--studio-bg);border:1px solid var(--studio-line);border-radius:var(--radius);
+padding:12px 16px;margin:14px 0}
+.studio b{color:var(--studio-fg)}
+.err{background:var(--err-bg);border:1px solid var(--err-line);border-radius:var(--radius);padding:12px 16px}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.tag{display:inline-block;padding:0 8px;border-radius:999px;font-size:.85em;border:1px solid var(--line)}
+.s-MATCH,.ok{color:var(--ok);font-weight:700}
+.s-MISMATCH,.bad{color:var(--bad);font-weight:700}
+.s-UNVERIFIED,.warn{color:var(--warn);font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:.86rem}
+.scroll{overflow-x:auto}
+code,pre{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:.9em}
+code{background:var(--code-bg);padding:1px 5px;border-radius:5px}
+pre{white-space:pre-wrap;word-break:break-all;background:var(--code-bg);padding:12px;border-radius:8px}
+label{display:block;font-weight:600;margin-top:12px}
+input[type=text],input[type=number],select{width:100%;max-width:520px;padding:9px 10px;color:var(--fg);
+background:var(--surface-2);border:1px solid var(--line);border-radius:8px;font:inherit}
+input[type=file]{max-width:100%;margin-top:6px;color:var(--muted)}
+input[type=checkbox]{accent-color:var(--accent);width:1.05em;height:1.05em;vertical-align:-2px}
+.hint{font-size:.88em;color:var(--muted);margin:4px 0 0}
+button,.btn{display:inline-block;background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);
+border-radius:10px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;margin-top:12px;
+text-decoration:none;line-height:1.4}
+button:hover,.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--muted)}
+button.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+details summary{cursor:pointer}
+progress{width:100%;max-width:520px;accent-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+ol li,ul li{margin:4px 0}
+footer.site{border-top:1px solid var(--line);margin-top:48px;padding:24px 0 32px;color:var(--muted);
+font-size:.88rem}
+footer.site .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline}
+footer.site nav{display:flex;flex-wrap:wrap;gap:4px 16px}
+footer.site nav a{color:var(--muted)}
+footer.site p{margin:4px 0;flex-basis:100%}
+/* landing */
+.section{padding:56px 0;border-top:1px solid var(--line)}
+.eyebrow{display:inline-block;color:var(--link);font-weight:700;font-size:.82rem;letter-spacing:.06em;
+text-transform:uppercase;margin:0 0 8px}
+.hero{padding:48px 0 40px}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:center}
+.hero h1{font-size:clamp(1.9rem,1.2rem + 3vw,3.1rem);line-height:1.18;margin:.1em 0 .4em;letter-spacing:-.03em}
+.hero h1 .accent{color:var(--link)}
+.motto{font-size:1.08rem;font-weight:600;border-left:3px solid var(--accent);padding:2px 0 2px 12px;margin:0 0 14px}
+.lead{font-size:1.06rem;color:var(--muted);max-width:36em}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 10px}
+.cta .btn{margin-top:0;padding:12px 20px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:14px 0 0;list-style:none}
+.chips li{margin:0;font-size:.84rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;
+padding:3px 10px}
+.timeline{width:100%;height:auto;display:block;background:var(--surface);border:1px solid var(--line);
+border-radius:var(--radius);box-shadow:var(--shadow)}
+.tl-bg{fill:var(--surface-2)}
+.tl-ruler{fill:var(--muted);font:600 10px ui-monospace,Consolas,monospace}
+.tl-label{fill:var(--muted);font:600 11px system-ui,sans-serif}
+.tl-v{fill:var(--track-v)}.tl-a{fill:var(--track-a)}.tl-m{fill:var(--track-m)}.tl-t{fill:var(--track-t)}
+.tl-wave{fill:var(--fg);opacity:.55}
+.tl-cand{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 3}
+.tl-mark{fill:var(--accent)}
+.tl-mtext{fill:var(--accent-ink);font:700 9.5px system-ui,sans-serif}
+.tl-head{stroke:var(--fg);stroke-width:1.5}
+.tl-ok{fill:var(--ok);font:700 10px system-ui,sans-serif}
+.tl-x{fill:var(--muted);font:700 10px system-ui,sans-serif}
+.section h2{font-size:clamp(1.35rem,1.1rem + 1.2vw,1.9rem);margin:.2em 0 .5em}
+.pain{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;
+padding:0;margin:20px 0 0;list-style:none}
+.pain li{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.pain b{display:block;margin-bottom:4px}
+.pain span{display:block;font-size:.93rem}
+.hero-fig{margin:0;min-width:0}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;padding:0;margin:24px 0 0;
+list-style:none;counter-reset:step}
+.steps li{position:relative;margin:0;background:var(--surface);border:1px solid var(--line);
+border-radius:var(--radius);padding:16px}
+.steps li::before{counter-increment:step;content:counter(step);display:inline-grid;place-items:center;
+width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:800;
+font-size:.9rem;margin-bottom:8px}
+.steps li:not(:last-child)::after{content:"";position:absolute;top:30px;right:-15px;width:12px;height:12px;
+border-top:2px solid var(--accent);border-right:2px solid var(--accent);transform:rotate(45deg)}
+.steps h3{margin:.2em 0 .3em}
+.steps p{margin:0;color:var(--muted);font-size:.93rem}
+.steps svg{display:block;width:100%;height:auto;margin:10px 0 0}
+.why{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:14px;
+padding:0;margin:20px 0 0;list-style:none}
+.why li{margin:0;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--accent);
+border-radius:var(--radius);padding:16px}
+.why b{display:block;margin-bottom:4px;font-size:1.02rem}
+.why p{margin:0;color:var(--muted);font-size:.93rem}
+.compare{min-width:540px}
+.compare th[scope=row]{color:var(--fg);font-weight:700;white-space:nowrap}
+.badge{display:inline-block;font-size:.8rem;font-weight:700;border-radius:999px;padding:1px 9px;
+border:1px solid var(--line)}
+.badge.live{color:var(--ok);border-color:var(--ok)}
+.badge.dev{color:var(--warn);border-color:var(--warn)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:0;
+margin:16px 0;list-style:none}
+.facts li{margin:0;background:var(--surface-2);border-radius:10px;padding:12px}
+.facts b{display:block;font-size:1.15rem}
+.facts span{color:var(--muted);font-size:.86rem}
+.trial{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.hero .wrap,.trial{grid-template-columns:minmax(0,1fr)}
+.steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li:nth-child(2)::after{display:none}}
+@media (max-width:560px){.steps{grid-template-columns:minmax(0,1fr)}
+.steps li::after{display:none}.section{padding:40px 0}.hero{padding:28px 0}
+header.site nav{margin-left:0}}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+"""
+
+_BRAND_MARK = (
+    '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">'
+    '<rect width="32" height="32" rx="7" fill="var(--surface-2)"/>'
+    '<rect x="5" y="19" width="22" height="4" rx="2" fill="var(--muted)"/>'
+    '<rect x="5" y="11" width="13" height="4" rx="2" fill="var(--muted)"/>'
+    '<path d="M21 6h6v7l-3 3-3-3z" fill="var(--accent)"/></svg>'
+)
+
 _LAYOUT = Template(
     """<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>$title · AIE Free</title>
+<meta name="color-scheme" content="dark light">
+<title>$title</title>
+<meta name="description" content="$description">
+<meta name="robots" content="$robots">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Coditor">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="$title">
+<meta property="og:description" content="$description">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#0f1115">
+<link rel="icon" type="image/svg+xml" href="$favicon">
 $head
-<style>
-:root{--fg:#1d2330;--muted:#5b6475;--bg:#f6f7f9;--card:#fff;--line:#dfe3ea;--accent:#2457d6;
---ok:#1d7a46;--warn:#9a6200;--bad:#b3261e;--studio:#f1ecff;--studio-line:#cbb8ff}
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
-color:var(--fg);background:var(--bg);line-height:1.6}
-header{background:var(--card);border-bottom:1px solid var(--line)}
-header .in{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
-header a.brand{font-weight:700;color:var(--fg);text-decoration:none}
-nav a{margin-right:14px;color:var(--accent);text-decoration:none}
-main{max-width:1040px;margin:0 auto;padding:16px}
-h1{font-size:1.5rem;margin:.4em 0}
-h2{font-size:1.15rem;margin:1.4em 0 .5em}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin:12px 0}
-.studio{background:var(--studio);border:1px solid var(--studio-line);border-radius:10px;padding:10px 14px;margin:12px 0}
-.studio b{color:#4b2aa8}
-.err{background:#fdecea;border:1px solid #f2b8b5;border-radius:10px;padding:12px 14px}
-.muted{color:var(--muted)}
-.tag{display:inline-block;padding:0 8px;border-radius:999px;font-size:.85em;border:1px solid var(--line)}
-.s-MATCH,.ok{color:var(--ok);font-weight:700}
-.s-MISMATCH,.bad{color:var(--bad);font-weight:700}
-.s-UNVERIFIED,.warn{color:var(--warn);font-weight:700}
-table{border-collapse:collapse;width:100%;font-size:.93rem}
-th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
-.scroll{overflow-x:auto}
-code,pre{font-family:ui-monospace,Consolas,monospace;font-size:.9em}
-pre{white-space:pre-wrap;word-break:break-all;background:#f0f2f6;padding:10px;border-radius:8px}
-label{display:block;font-weight:600;margin-top:10px}
-input[type=text],input[type=number],select{width:100%;max-width:520px;padding:7px;border:1px solid var(--line);border-radius:6px;font:inherit}
-.hint{font-size:.88em;color:var(--muted);margin:2px 0 0}
-button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;cursor:pointer;margin-top:12px}
-button.danger{background:var(--bad)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-ol li,ul li{margin:4px 0}
-footer{max-width:1040px;margin:24px auto;padding:0 16px 24px;color:var(--muted);font-size:.85em}
-</style>
+<style>$css</style>
 </head>
 <body>
-<header><div class="in"><a class="brand" href="/">AIE Free · 웹 (로컬)</a>
-<nav><a href="/">소개</a><a href="/new">새 프로젝트</a><a href="/guide">Resolve 안내</a><a href="/limits">한계</a><a href="/studio">Studio</a></nav></div></header>
-<main>
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+<header class="site"><div class="wrap"><a class="brand" href="/">$mark<span>Coditor</span></a>
+<nav aria-label="주요 메뉴"><a href="/#how">작동 방식</a><a href="/studio">체험·Studio 비교</a><a href="/guide">Resolve 안내</a><a href="/limits">한계</a><a href="/new">내 작업</a></nav></div></header>
+<main id="main">
 $body
 </main>
-<footer>체험(데모) 서버 · 생성되는 파일은 모두 <b>Expected 산출물</b>이며 검증된 결과가 아닙니다 ·
-Resolve로 가져오기는 사용자가 직접 합니다 · 렌더링은 하지 않습니다.</footer>
+<footer class="site"><div class="wrap">
+<span>© Coditor</span>
+<nav aria-label="바닥글 메뉴"><a href="/privacy">개인정보 안내</a><a href="/studio">체험·Studio 비교</a><a href="/limits">정직한 한계</a><a href="/guide">Resolve 안내</a></nav>
+<p>추적·분석 도구, 외부 스크립트, 외부 글꼴을 쓰지 않습니다. 쿠키는 보안 확인과 체험 코드 세션에만 씁니다.</p>
+<p>생성되는 타임라인 파일은 검증 전 <b>Expected 산출물</b>입니다 · Resolve로 가져오기는 편집자가 직접 합니다 · 렌더링은 하지 않습니다.</p>
+</div></footer>
 </body>
 </html>
 """
 )
 
 
-def page(title: str, body: str, head: str = "") -> str:
-    return _LAYOUT.substitute(title=e(title), body=body, head=head)
+def page(
+    title: str,
+    body: str,
+    head: str = "",
+    *,
+    full_title: str | None = None,
+    description: str = SITE_DESCRIPTION,
+    indexable: bool = False,
+    wide: bool = False,
+) -> str:
+    """Whole HTML document. ``wide`` pages lay out their own sections (landing)."""
+    content = body if wide else f'<div class="wrap page">{body}</div>'
+    return _LAYOUT.substitute(
+        title=e(full_title or f"{title} · {BRAND}"),
+        description=e(description),
+        robots="index, follow" if indexable else "noindex, nofollow",
+        favicon=e(FAVICON),
+        css=CSS,
+        mark=_BRAND_MARK,
+        body=content,
+        head=head,
+    )
 
 
 def studio(text: str) -> str:
@@ -144,72 +332,115 @@ def error_page(message: str, codes: Sequence[str] = (), back: str | None = None)
 # --------------------------------------------------------------------------- static pages
 
 
-def landing() -> str:
-    body = """
-<h1>편집은 맡기되, 편집권은 넘기지 않는다</h1>
-<p>AI가 <b>후보</b>를 찾고, 편집자가 DaVinci Resolve 안에서 <b>마커 이름</b>으로 고르고,
-브라우저에서 <b>확인 버튼</b>을 눌러야만 컷이 적용된 새 타임라인 파일이 만들어집니다.
-자동 적용은 없습니다.</p>
-<div class="grid">
-<div class="card"><h2>Free 체험 (이 웹)</h2>
-<p class="muted">흐름이 끝까지 실제로 동작하는 것을 직접 확인하는 체험판입니다.</p>
-<ul>
-<li>짧은 영상 업로드 → 이 서버에서 음성 인식(전사) → 후보를 Resolve 마커로</li>
-<li>Resolve 안에서 마커 이름 변경으로 선택 (<code>AIE-0012 OK</code> / <code>AIE-0012 X</code>)</li>
-<li>내보낸 XML 업로드 → 확인 요약(컷 수, 제거 초, 건너뛴 항목과 이유)</li>
-<li>확인 버튼 → 트랙별로 편집된 새 타임라인(FCP7 XML): 대사와 연결된 A/V는 같은 프레임에서 자르고,
-음악·B-roll·자막 트랙은 자르지 않고 당김(트랙은 병합하지 않음)</li>
-<li>사람이 고친 구간은 보호(HARD_LOCK)되어 건너뜀</li>
-<li>다시 내보낸 XML로 검증 리포트(MATCH / MISMATCH / UNVERIFIED)</li>
-</ul></div>
-<div class="card"><h2>Studio (Resolve 안에서, 개발 중)</h2>
-<p class="muted">실제 작업용 제품입니다. 같은 후보·같은 승인 규칙에 더해:</p>
-<ul>
-<li>파일 주고받기 없이 Resolve 안에서: <b>색보정 전</b>에는 확인 한 번으로 컷을 적용합니다(새 버전 타임라인, 원본은 백업 — tier 1)</li>
-<li><b>색보정 후</b>의 그레이드 이전은 검증 중입니다 — Resolve가 지원하는 범위에서, 네이티브 검증을 통과한 뒤에만 약속합니다</li>
-<li>사람이 고친 구간을 매번 타임라인에서 직접 읽어 보호</li>
-<li>Resolve 안 확인 대화상자, 네이티브 사후 검증</li>
-</ul>
-<p><a href="/studio">Free와 Studio 비교 · 현재 상태 →</a></p></div>
-</div>
-<div class="card"><h2>흐름</h2>
-<ol>
-<li><a href="/new">새 프로젝트</a>: 짧은 영상(CFR)을 올립니다. 이 서버에서 faster-whisper로 전사합니다.</li>
-<li>다운로드: 후보 마커가 있는 FCP7 XML(기본), OTIO(선택), SRT 자막.</li>
-<li>Resolve에서 가져오고 마커 이름을 바꿔 선택한 뒤, 타임라인을 FCP7 XML로 내보냅니다.</li>
-<li>승인 업로드 → 확인 요약 → <b>확인</b> 버튼 → 적용된 새 타임라인 다운로드.</li>
-<li>가져온 새 타임라인을 다시 내보내 검증 리포트를 받습니다.</li>
-</ol>
-<p><a href="/guide">Resolve 무료 버전 따라하기 안내</a> · <a href="/limits">정직한 한계 보기</a> —
-특히 <b>가져오면 새 타임라인이 생기므로, 컷 승인은 색보정/이펙트 작업 전에</b> 하세요.</p>
-</div>
-<p class="muted">음성 인식(faster-whisper)은 이 서버 안에서 실행됩니다. LLM 호출과 외부 네트워크 호출은 없습니다.</p>
-"""
-    return page(
-        "소개",
-        body
-        + studio(
-            "같은 후보와 같은 승인 규칙을 Resolve 안에서 파일 없이 씁니다. "
-            "네이티브 검증 전이며, 색보정 전에는 확인 한 번으로 컷을 적용합니다."
-        ),
+DEFAULT_CONTACT_EMAIL = "contact@safestay.kr"  # placeholder; AIE_WEB_CONTACT_EMAIL overrides
+
+TrialState = Literal["open", "active", "local"]
+
+
+def _waveform() -> str:
+    """Deterministic dialogue waveform bars for the hero timeline (quiet where candidates are)."""
+    quiet = ((134, 166), (238, 256), (356, 398))
+    bars = []
+    for index, x in enumerate(range(68, 466, 4)):
+        if any(lo <= x < hi for lo, hi in quiet):
+            height = 1.5
+        else:
+            height = 4 + ((index * 37) % 13) * 1.15 + ((index * 11) % 5)
+        bars.append(
+            f'<rect x="{x}" y="{130 - height / 2:.1f}" width="2" height="{height:.1f}" rx="1"/>'
+        )
+    return "".join(bars)
+
+
+def _hero_timeline() -> str:
+    candidates = (
+        (134, 32, "무음", "AIE-0001 OK", "tl-ok"),
+        (238, 18, "필러", "AIE-0002 OK", "tl-ok"),
+        (356, 42, "반복", "AIE-0003 X", "tl-x"),
     )
+    marks = "".join(
+        f'<rect class="tl-cand" x="{x}" y="72" width="{w}" height="80" rx="3"/>'
+        f'<rect class="tl-mark" x="{x + w / 2 - 17:.0f}" y="26" width="34" height="15" rx="7.5"/>'
+        f'<text class="tl-mtext" x="{x + w / 2:.0f}" y="37" text-anchor="middle">{label}</text>'
+        f'<text class="{cls}" x="{x + w / 2:.0f}" y="196" text-anchor="middle">{decision}</text>'
+        for x, w, label, decision, cls in candidates
+    )
+    ruler = "".join(
+        f'<text class="tl-ruler" x="{x}" y="15" text-anchor="middle">{tc}</text>'
+        for x, tc in ((110, "01:00:10"), (220, "01:00:20"), (330, "01:00:30"), (440, "01:00:40"))
+    )
+    return f"""<svg class="timeline" viewBox="0 0 480 210" role="img" aria-labelledby="tl-title tl-desc">
+<title id="tl-title">Resolve 타임라인 위의 Coditor 후보 마커</title>
+<desc id="tl-desc">자막, 인터뷰 영상, 대사, 음악 네 개 트랙이 있는 타임라인. 무음, 필러, 반복 구간이
+점선 상자와 마커로 표시되어 있고, 편집자가 마커 이름으로 앞의 두 개는 OK, 세 번째는 X로 정했습니다.</desc>
+<rect class="tl-bg" x="0" y="0" width="480" height="210" rx="12"/>
+{ruler}
+<text class="tl-label" x="10" y="61">V2 자막</text>
+<text class="tl-label" x="10" y="93">V1 영상</text>
+<text class="tl-label" x="10" y="134">A1 대사</text>
+<text class="tl-label" x="10" y="171">A2 음악</text>
+<rect class="tl-t" x="96" y="48" width="84" height="20" rx="3"/>
+<rect class="tl-t" x="300" y="48" width="104" height="20" rx="3"/>
+<rect class="tl-v" x="64" y="76" width="404" height="28" rx="3"/>
+<rect class="tl-a" x="64" y="110" width="404" height="40" rx="3"/>
+<g class="tl-wave">{_waveform()}</g>
+<rect class="tl-m" x="64" y="158" width="404" height="20" rx="3"/>
+{marks}
+<line class="tl-head" x1="300" y1="20" x2="300" y2="182"/>
+<path class="tl-mark" d="M294 18h12l-6 7z"/>
+</svg>"""
 
 
-def consent_page(
-    csrf: str, hours: float, max_projects: int, max_minutes: int, error: str = ""
-) -> str:
-    err = f'<div class="err"><p>{e(error)}</p></div>' if error else ""
-    body = f"""
-<h1>AIE Free 체험</h1>
-<p>초대 코드로 짧은 영상을 올려, AI 후보 → Resolve 안 선택 → 확인 → 적용된 타임라인 → 검증까지
-흐름이 실제로 동작하는 것을 확인하는 <b>체험판</b>입니다. 실제 제품은 Resolve Studio 안에서 동작할
-예정입니다(<a href="/studio">비교 보기</a>).</p>
-{err}
+_STEP_ART = (
+    # 1. candidates as markers
+    (
+        '<svg viewBox="0 0 200 64" aria-hidden="true" focusable="false">'
+        '<rect class="tl-a" x="4" y="30" width="192" height="24" rx="3"/>'
+        '<rect class="tl-cand" x="30" y="26" width="26" height="32" rx="3"/>'
+        '<rect class="tl-cand" x="96" y="26" width="16" height="32" rx="3"/>'
+        '<rect class="tl-cand" x="146" y="26" width="30" height="32" rx="3"/>'
+        '<path class="tl-mark" d="M37 6h12v10l-6 6-6-6zM98 6h12v10l-6 6-6-6zM155 6h12v10l-6 6-6-6z"/>'
+        "</svg>"
+    ),
+    # 2. approve by marker name inside Resolve
+    (
+        '<svg viewBox="0 0 200 64" aria-hidden="true" focusable="false">'
+        '<rect class="tl-bg" x="4" y="6" width="192" height="24" rx="6"/>'
+        '<text class="tl-ok" x="14" y="22">AIE-0012 OK</text>'
+        '<rect class="tl-bg" x="4" y="36" width="192" height="24" rx="6"/>'
+        '<text class="tl-x" x="14" y="52">AIE-0013 X</text></svg>'
+    ),
+    # 3. cut only the dialogue layer, shift the other layers
+    (
+        '<svg viewBox="0 0 200 64" aria-hidden="true" focusable="false">'
+        '<rect class="tl-t" x="120" y="4" width="60" height="14" rx="3"/>'
+        '<path class="tl-head" d="M112 11h-16m5-5-5 5 5 5" fill="none"/>'
+        '<rect class="tl-v" x="4" y="24" width="88" height="16" rx="3"/>'
+        '<rect class="tl-v" x="94" y="24" width="102" height="16" rx="3"/>'
+        '<rect class="tl-a" x="4" y="44" width="88" height="16" rx="3"/>'
+        '<rect class="tl-a" x="94" y="44" width="102" height="16" rx="3"/>'
+        '<line x1="93" y1="22" x2="93" y2="62" stroke="var(--accent)" stroke-width="2"/></svg>'
+    ),
+    # 4. verification report
+    (
+        '<svg viewBox="0 0 200 64" aria-hidden="true" focusable="false">'
+        '<circle cx="12" cy="12" r="5" fill="var(--ok)"/>'
+        '<rect class="tl-bg" x="24" y="8" width="150" height="8" rx="4"/>'
+        '<circle cx="12" cy="32" r="5" fill="var(--ok)"/>'
+        '<rect class="tl-bg" x="24" y="28" width="120" height="8" rx="4"/>'
+        '<circle cx="12" cy="52" r="5" fill="var(--warn)"/>'
+        '<rect class="tl-bg" x="24" y="48" width="136" height="8" rx="4"/></svg>'
+    ),
+)
+
+
+def _consent_form(csrf: str, hours: float, max_projects: int, max_minutes: int) -> str:
+    return f"""
 <form class="card" method="post" action="/trial/start">
 {csrf_field(csrf)}
-<h2>동의 안내</h2>
+<h3>체험 코드로 시작하기</h3>
 <p><b>업로드한 영상은 전사·후보 생성에만 사용되며 코드 만료({hours:g}시간) 시 자동 삭제됩니다.</b></p>
-<ul>
+<ul class="small">
 <li>저장되는 것: 올린 영상/오디오 파일, 전사 결과, 올린 XML, 확인 코드. 음성 인식은 이 서버 안에서
 실행되며 외부 서비스로 보내지 않습니다.</li>
 <li>코드는 처음 사용한 때부터 {hours:g}시간 유효하고, 프로젝트를 최대 {max_projects}개 만들 수
@@ -219,12 +450,285 @@ def consent_page(
 <li>다른 사람의 얼굴·목소리가 담긴 영상은 올려도 되는 것만 올려 주세요.</li>
 </ul>
 <label for="code">초대 코드</label>
-<input id="code" type="text" name="code" autocomplete="off" placeholder="AIE-XXXX-XXXX-XXXX">
+<input id="code" type="text" name="code" autocomplete="off" spellcheck="false" placeholder="AIE-XXXX-XXXX-XXXX">
 <label><input type="checkbox" name="consent" value="yes"> 위 내용을 읽었고 동의합니다 (필수)</label>
 <button type="submit">동의하고 시작</button>
-</form>
+</form>"""
+
+
+def mailto(contact: str, subject: str) -> str:
+    return f"mailto:{contact}?subject={quote(subject)}"
+
+
+_STEPS = (
+    ("후보 표시", "무음 · 긴 호흡 · 필러 · 반복 구간을 찾아 타임라인 마커로 올립니다."),
+    (
+        "Resolve 안에서 승인",
+        "마커 이름을 AIE-0012 OK 또는 X로 바꿔서 고릅니다. 새 도구를 배울 필요가 없습니다.",
+    ),
+    (
+        "승인한 컷만 적용",
+        "대사 레이어만 자릅니다. B-roll·자막·음악 레이어는 자르지 않고 보존한 채 함께 당깁니다.",
+    ),
+    (
+        "적용 결과 검증",
+        "들어간 타임라인을 의도한 컷과 대조해 일치 · 불일치 · 판단 불가로 보고합니다.",
+    ),
+)
+
+_WHY = (
+    (
+        "사람이 고친 부분은 다시 돌려도 보존",
+        "편집자가 손댄 구간은 보호 구간이 됩니다. 다시 실행해도 그 안의 후보는 건너뜁니다.",
+    ),
+    (
+        "들어간 결과를 대조해 보고",
+        (
+            "적용 뒤 타임라인을 다시 읽어 의도한 컷과 항목별로 비교합니다. "
+            "판단할 수 없는 것은 성공으로 표시하지 않습니다."
+        ),
+    ),
+    (
+        "레이어를 합치지 않음",
+        "트랙 수·순서·이름을 그대로 둡니다. 레이어마다 따로 편집하고, 하나로 합치지 않습니다.",
+    ),
+    (
+        "자동 삭제 없음, 승인 필수",
+        "후보는 제안일 뿐입니다. 편집자가 고르고 확인을 눌러야만 적용됩니다.",
+    ),
+    (
+        "한국어 후보",
+        "'음', '어' 같은 한국어 필러와 되풀이한 말을 후보로 찾습니다. 애매한 표현은 제안으로만 남깁니다.",
+    ),
+)
+
+# (row, Free, Studio) — trusted static HTML; docs/EDITION_DELIVERY_STRATEGY.md §3 and §7
+_COMPARE = (
+    ("어디서", "웹 브라우저 + DaVinci Resolve (무료 버전 가능)", "DaVinci Resolve Studio 안"),
+    ("용도", "흐름을 직접 확인하는 체험(데모)", "실제 작업용 제품"),
+    (
+        "컷 적용",
+        "적용된 새 타임라인 파일(FCP7 XML)을 가져옵니다. 이전 타임라인의 색보정·이펙트는 넘어오지 않습니다.",
+        (
+            "<b>색보정 전</b>: 확인 클릭만으로 새 버전 타임라인에 적용(원본은 백업). "
+            "<b>색보정 후</b>: 그레이드 이전은 검증 중"
+        ),
+    ),
+    ("사람 편집 보호", "업로드한 XML을 내보낸 시점 기준", "실행할 때마다 타임라인에서 직접 읽음"),
+    ("검증", "다시 내보낸 파일로 대조", "편집 직후 타임라인을 직접 다시 읽어 대조"),
+    (
+        "상태",
+        '<span class="badge live">체험 코드로 이용 가능</span>',
+        '<span class="badge dev">개발 중 · 실기 검증 예정</span>',
+    ),
+)
+
+
+def _trial_entry(
+    trial: TrialState,
+    csrf: str,
+    hours: float,
+    max_projects: int,
+    max_minutes: int,
+    remaining_projects: int | None,
+) -> str:
+    if trial == "open":
+        return _consent_form(csrf, hours, max_projects, max_minutes)
+    if trial == "active":
+        left = (
+            f" 이 코드로 프로젝트를 {remaining_projects}개 더 만들 수 있습니다."
+            if remaining_projects is not None
+            else ""
+        )
+        return (
+            '<div class="card"><h3>체험 중입니다</h3>'
+            f"<p>이 브라우저에서 체험 코드가 활성화되어 있습니다.{e(left)}</p>"
+            '<p><a class="btn" href="/new">새 프로젝트 만들기</a></p></div>'
+        )
+    return (
+        '<div class="card"><h3>로컬 실행 중</h3><p>이 서버는 체험 코드 없이 실행 중입니다.</p>'
+        '<p><a class="btn" href="/new">새 프로젝트 만들기</a></p></div>'
+    )
+
+
+def landing(
+    *,
+    trial: TrialState = "local",
+    csrf: str = "",
+    hours: float = 72.0,
+    max_projects: int = 5,
+    max_minutes: int = 10,
+    max_mb: int = 95,
+    contact: str = DEFAULT_CONTACT_EMAIL,
+    remaining_projects: int | None = None,
+) -> str:
+    """Public Coditor landing page; embeds the trial consent form when a code is needed."""
+    cta_href, cta_label = (
+        ("#start", "체험 코드로 시작하기") if trial == "open" else ("/new", "새 프로젝트 만들기")
+    )
+    step_items = "".join(
+        f"<li><h3>{e(title)}</h3><p>{e(text)}</p>{art}</li>"
+        for (title, text), art in zip(_STEPS, _STEP_ART, strict=True)
+    )
+    why_items = "".join(f"<li><b>{e(t)}</b><p>{e(d)}</p></li>" for t, d in _WHY)
+    compare = "".join(
+        f'<tr><th scope="row">{e(row)}</th><td>{free}</td><td>{studio_cell}</td></tr>'
+        for row, free, studio_cell in _COMPARE
+    )
+    request_link = f'<a href="{e(mailto(contact, "Coditor 체험 코드 요청"))}">{e(contact)}</a>'
+    entry = _trial_entry(trial, csrf, hours, max_projects, max_minutes, remaining_projects)
+    body = f"""
+<section class="hero" aria-labelledby="hero-title"><div class="wrap">
+<div>
+<p class="eyebrow">DaVinci Resolve용 인터뷰 편집 어시스턴트</p>
+<h1 id="hero-title">긴 인터뷰의 군더더기,<br><span>찾는 건 Coditor가</span> ·
+<span class="accent">결정은 편집자가.</span></h1>
+<p class="motto">{e(CORE_MESSAGE)}</p>
+<p class="lead">무음·긴 호흡·필러·반복 후보를 Resolve 타임라인에 마커로 표시합니다.
+편집자가 승인한 컷만, 대사 레이어에만 적용합니다.</p>
+<div class="cta"><a class="btn" href="{cta_href}">{cta_label}</a>
+<a class="btn ghost" href="#how">작동 방식 보기</a></div>
+<ul class="chips" aria-label="핵심 원칙"><li>자동 삭제 없음</li><li>레이어 병합 없음</li>
+<li>Resolve 무료 버전으로 체험 가능</li></ul>
+</div>
+<figure class="hero-fig">{_hero_timeline()}
+<figcaption class="hint">후보는 마커로만 표시됩니다. 자를지는 편집자가 마커 이름으로 정합니다.</figcaption>
+</figure>
+</div></section>
+
+<section class="section" id="problem" aria-labelledby="problem-title"><div class="wrap">
+<p class="eyebrow">문제</p>
+<h2 id="problem-title">자르는 판단은 몇 초, 자를 곳을 찾는 데는 한참</h2>
+<p class="lead">긴 인터뷰를 다듬으려면 같은 구간을 몇 번씩 돌려 보며 숨 고르는 틈, "음…",
+고쳐 말한 문장을 찾아야 합니다. 시간은 대부분 찾는 데 쓰입니다.</p>
+<ul class="pain">
+<li><b>스크럽하며 빈 곳 찾기</b><span class="muted">파형을 따라가며 말이 끊긴 지점을 하나씩 확인합니다.</span></li>
+<li><b>다시 재생하며 필러 듣기</b><span class="muted">"음", "어"를 놓치지 않으려고 같은 구간을 되돌려 듣습니다.</span></li>
+<li><b>앞뒤를 오가며 반복 비교</b><span class="muted">고쳐 말한 문장 중 어느 쪽을 살릴지 몇 번씩 비교합니다.</span></li>
+</ul>
+<p>Coditor는 <b>찾는 일</b>을 맡고, 자를지 말지는 편집자에게 남깁니다.</p>
+</div></section>
+
+<section class="section" id="how" aria-labelledby="how-title"><div class="wrap">
+<p class="eyebrow">작동 방식</p>
+<h2 id="how-title">네 단계, 결정은 모두 편집자가</h2>
+<ol class="steps">{step_items}</ol>
+<p class="hint">확인 버튼을 누르기 전에는 아무것도 바뀌지 않습니다. 체험판의 무음·긴 호흡 후보는 전사 단어
+사이의 빈 구간으로 찾습니다(음향 분석 아님).</p>
+</div></section>
+
+<section class="section" id="why" aria-labelledby="why-title"><div class="wrap">
+<p class="eyebrow">무엇이 다른가</p>
+<h2 id="why-title">편집권을 지키는 방식으로 만들었습니다</h2>
+<ul class="why">{why_items}</ul>
+</div></section>
+
+<section class="section" id="compare" aria-labelledby="compare-title"><div class="wrap">
+<p class="eyebrow">Free 체험과 Studio</p>
+<h2 id="compare-title">체험으로 흐름을 확인하고, 실제 작업은 Studio에서</h2>
+<div class="card scroll"><table class="compare">
+<thead><tr><th scope="col">항목</th><th scope="col">Free 체험 (이 웹)</th><th scope="col">Studio (Resolve 안)</th></tr></thead>
+<tbody>{compare}</tbody></table>
+<p class="hint">'확인 클릭만'은 색보정 전 단계(tier 1)에만 약속합니다. 그 밖의 경우는 실제 Resolve에서
+검증된 뒤에 안내합니다. <a href="/studio">자세한 비교</a></p></div>
+{studio("같은 후보와 같은 승인 규칙을 Resolve 안에서 파일 없이 씁니다. 실기(네이티브) 검증 전이며, 색보정 전에는 확인 한 번으로 컷을 적용합니다.")}
+</div></section>
+
+<section class="section" id="start" aria-labelledby="start-title"><div class="wrap">
+<p class="eyebrow">체험 안내</p>
+<h2 id="start-title">{hours:g}시간 체험으로 직접 확인해 보세요</h2>
+<div class="trial">
+<div>
+<ul class="facts">
+<li><b>{hours:g}시간</b><span>코드를 처음 쓴 때부터</span></li>
+<li><b>프로젝트 {max_projects}개</b><span>코드 하나당</span></li>
+<li><b>{max_minutes}분 · {max_mb}MB 이하</b><span>영상 하나당</span></li>
+<li><b>CFR 영상</b><span>고정 프레임레이트</span></li>
+</ul>
+<p>결과 타임라인은 <b>DaVinci Resolve 무료 버전</b>으로 가져와 확인할 수 있습니다.</p>
+<h3>개인정보</h3>
+<p>업로드한 영상은 전사·후보 생성에만 사용하고, 코드가 만료되면 자동으로 삭제합니다. 음성 인식은 이 서버
+안에서 실행하며 외부 AI 서비스로 보내지 않습니다. <a href="/privacy">개인정보 안내 전문</a></p>
+<h3>체험 코드 요청</h3>
+<p>체험 코드는 개별로 보내 드립니다. {request_link} 로 요청해 주세요.</p>
+</div>
+<div>{entry}</div>
+</div>
+</div></section>
+"""
+    return page("소개", body, full_title=SITE_TITLE, indexable=True, wide=True)
+
+
+def consent_page(
+    csrf: str, hours: float, max_projects: int, max_minutes: int, error: str = ""
+) -> str:
+    err = f'<div class="err"><p>{e(error)}</p></div>' if error else ""
+    body = f"""
+<h1>Coditor 체험 시작</h1>
+<p>초대 코드로 짧은 영상을 올려, 후보 표시 → Resolve 안 선택 → 확인 → 적용된 타임라인 → 검증까지
+흐름이 실제로 동작하는 것을 확인하는 <b>체험판</b>입니다. 실제 제품은 Resolve Studio 안에서 동작할
+예정입니다(<a href="/studio">비교 보기</a>).</p>
+{err}
+{_consent_form(csrf, hours, max_projects, max_minutes)}
 """
     return page("체험 시작", body + studio("Resolve 안에서 실행되므로 영상을 업로드하지 않습니다."))
+
+
+def privacy_page(
+    *, trial: bool, hours: float, max_age_hours: float, contact: str = DEFAULT_CONTACT_EMAIL
+) -> str:
+    """Short privacy notice generated from the retention rules actually configured."""
+    if trial:
+        retention = (
+            f"체험 코드를 처음 사용한 때부터 {hours:g}시간 뒤 코드가 만료되면, 그 코드로 만든 모든 "
+            "프로젝트(영상·전사·결과 파일)를 자동으로 삭제합니다. 코드가 회수되면 즉시 삭제합니다."
+        )
+    else:
+        retention = f"프로젝트를 만든 뒤 {max_age_hours:g}시간이 지나면 자동으로 삭제합니다."
+    body = f"""
+<h1>개인정보 안내</h1>
+<p class="lead">Coditor 체험 서비스가 무엇을 저장하고, 언제 지우는지 알려 드립니다.</p>
+<div class="card">
+<h2>저장하는 것</h2>
+<ul>
+<li>올린 영상/오디오 파일, 그 파일의 전사 결과, Resolve에서 내보내 올린 XML, 확인 코드</li>
+<li>체험 코드: 코드 자체가 아니라 해시 값만 저장하고, 처음 사용한 시각과 만든 프로젝트 수를 기록합니다.</li>
+</ul>
+<h2>쓰는 목적</h2>
+<p>영상은 <b>전사와 편집 후보 생성에만</b> 씁니다. 광고, 판매, AI 모델 학습에 쓰지 않습니다.
+음성 인식은 이 서버 안에서 실행하며 외부 AI 서비스로 보내지 않습니다.</p>
+<h2>보관과 삭제</h2>
+<p>{e(retention)} 프로젝트 페이지의 <b>이 프로젝트 삭제</b> 버튼으로 언제든 즉시 지울 수 있습니다.</p>
+<h2>쿠키</h2>
+<ul>
+<li><code>aie_csrf</code>: 다른 사이트가 대신 요청을 보내지 못하게 막는 보안 확인용</li>
+<li><code>aie_trial</code>: 체험 코드 세션. 코드가 만료되면 함께 만료됩니다.</li>
+</ul>
+<p>이 밖의 쿠키, 추적·분석 도구, 광고, 외부 스크립트, 외부 글꼴은 쓰지 않습니다.</p>
+<h2>접속 정보</h2>
+<p>잘못된 체험 코드 입력을 막기 위해 접속 IP를 서버 메모리에서만 잠시 사용합니다(파일로 저장하지 않음).
+서버 프로그램의 실행 기록과 HTTPS 연결을 전달하는 네트워크 사업자에는 일반적인 접속 기록(IP, 요청 주소)이
+남을 수 있습니다.</p>
+<h2>문의</h2>
+<p>개인정보·삭제 요청: <a href="{e(mailto(contact, "Coditor 개인정보 문의"))}">{e(contact)}</a></p>
+</div>
+<p class="hint">이 안내는 체험 서비스 기준이며, 정식 서비스 전에 갱신합니다.</p>
+"""
+    return page("개인정보 안내", body, indexable=True)
+
+
+ROBOTS_TXT = """User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /studio
+Allow: /guide
+Disallow: /p/
+Disallow: /new
+Disallow: /media
+Disallow: /projects
+Disallow: /trial
+Disallow: /admin
+"""
 
 
 def limits() -> str:
