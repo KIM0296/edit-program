@@ -128,6 +128,64 @@ removed from the final PR diff. The committed runner, synthetic fixture, receipt
 tests and status remain; ordinary repository CI therefore does not depend on
 apt/FFmpeg availability or silently requalify a changed hosted runner.
 
+## Chat Gate P1 corrections (after reviewed head `100821cf`)
+
+The Chat Gate returned `CHANGES_REQUIRED` with two P1 blockers. Both are closed
+in the runner without changing the receipt, fixture or known-answer values.
+
+### P1-1 — receipt is evidence, not authority
+
+- `APPROVED_RECEIPT_SHA256` (trusted code) fixes the canonical receipt digest
+  `38f844c3…b7ec`. `load_receipt()` refuses any receipt whose digest differs
+  (`RECEIPT_DIGEST_NOT_APPROVED`) **before** any substantive field is consumed.
+  Duplicate JSON keys and non-finite numbers are refused at parse time.
+- Independently of the digest, `validate_receipt_contract()` re-checks the
+  receipt against code constants: exact key sets, type-strict values (no
+  bool/int or int/float aliasing), Linux reference environment/scope, approved
+  ffmpeg/ffprobe path+SHA-256, synthetic fixture pin, known-answer PCM
+  SHA/bytes/frames, and the exact probe/decode argument contracts including
+  placeholder count, order and position plus a forbidden-flag list.
+- `verify()` materializes commands and known answers from the code constants,
+  checks the committed fixture against the code-side pin, and refuses a
+  non-Linux host (`HOST_PLATFORM_NOT_LINUX_REFERENCE`) before locating any tool.
+
+### P1-2 — no unapproved binary is executed
+
+Order is now: locate → resolve → read/hash bytes → compare approved path and
+SHA-256 for **both** ffmpeg and ffprobe → stop if either fails. Only then are
+`-version`, `-buildconf` and `ldd` run, the remaining pins compared, and the
+synthetic decode performed. Binary bytes are re-hashed after the decode to
+detect replacement during the run.
+
+Every subprocess goes through `run_controlled()`: explicit
+`PATH=/usr/bin:/bin`, `LC_ALL=C`, `LANG=C`, no other inherited variables,
+`stdin=DEVNULL`, non-zero exit fails. `ldd` is invoked by absolute path.
+
+Residual limit: a binary swapped between the hash and its execution (TOCTOU) is
+not prevented, only detected afterwards by the post-run re-hash.
+
+### Regressions added
+
+Receipt: filter flag, resample/downmix/seek flags, unlisted argument drift,
+malformed placeholder count/order/position, non-string tokens, receipt+fixture
+modified together, known-answer PCM SHA/bytes/frames/type change, non-Linux
+environment, rebound binary pin, extra/duplicate keys, non-Linux host.
+
+Binary: PATH-hijacked ffmpeg, changed ffmpeg bytes at the approved path, valid
+ffmpeg + changed ffprobe, ffprobe-only hijack, missing tool — all with zero
+subprocess calls; approved bytes with version/build/library drift are inspected
+then rejected without touching ffprobe; post-run byte swap is detected; the
+controlled subprocess environment is asserted.
+
+### Evidence status of the corrected head
+
+The Linux reference qualification run above (`38698069106`) was produced by the
+**previous** runner on head `e14e5e2`. The corrected runner changes the
+subprocess environment and the `ldd` invocation path; the pinned values are
+unchanged, but an end-to-end re-run of `--verify` on the GitHub-hosted Ubuntu
+reference for the corrected head has **not** been performed yet and remains
+`UNKNOWN` until it is. Ordinary repository CI does not run FFmpeg.
+
 ## Qualification language
 
 A successful run may claim only:
