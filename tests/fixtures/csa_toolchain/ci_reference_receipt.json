@@ -1,0 +1,161 @@
+{
+  "schema": "csa-002-ci-reference-receipt-v1",
+  "qualification": "CI_REFERENCE_SYNTHETIC_PIN_CANDIDATE",
+  "source_probe": {
+    "workflow_run_id": 38696850933,
+    "job_id": 116295325058,
+    "branch_commit": "17e0bd691bbbd725a123c08179659c3c64396a8e"
+  },
+  "environment": {
+    "os_family": "linux",
+    "runner": "github-hosted-ubuntu-latest",
+    "note": "Reference CI environment only; not a Windows/G2 acquisition qualification.",
+    "apt_package": "ffmpeg",
+    "apt_package_version": "7:6.1.1-3ubuntu5",
+    "install_policy": "TEMPORARY_CI_REFERENCE_ONLY",
+    "linked_library_pin_scope": "FFMPEG_CORE_LIBRARIES_ONLY"
+  },
+  "ffmpeg": {
+    "path": "/usr/bin/ffmpeg",
+    "sha256": "ed16af623947494a72e284b6eb8ff225f2da22b38b5d5069c2fd4b4ba3384e41",
+    "version_first_line": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
+    "version_text_sha256": "5b320c97f515e79171f10a2147d875ffb6b14bd2b25681047b73c46fe0a527ee",
+    "buildconf_sha256": "f1e6bf8a39fc8b4d6a261a5b7233e2a96a0f854a472e98163365fc007d5bcead",
+    "libraries": [
+      {
+        "name": "libavcodec.so.60",
+        "path": "/usr/lib/x86_64-linux-gnu/libavcodec.so.60.31.102",
+        "sha256": "8231c9aecba7d02c132de0e16195ccb3e8002a235a5f364b3635df09e7f513e0"
+      },
+      {
+        "name": "libavdevice.so.60",
+        "path": "/usr/lib/x86_64-linux-gnu/libavdevice.so.60.3.100",
+        "sha256": "d4df19849bf3805bf76d0563366e7cbcb28bc2674a3bfa3e2465e8994f53fc6d"
+      },
+      {
+        "name": "libavfilter.so.9",
+        "path": "/usr/lib/x86_64-linux-gnu/libavfilter.so.9.12.100",
+        "sha256": "863ec5f6b0d32cbc64a10048e987a2bba79e3852abc73dfcb9a435158fc75f24"
+      },
+      {
+        "name": "libavformat.so.60",
+        "path": "/usr/lib/x86_64-linux-gnu/libavformat.so.60.16.100",
+        "sha256": "5f0970c52b7723037a7f6357cc1931879513449f742240fff7c37ceb7175ac9f"
+      },
+      {
+        "name": "libavutil.so.58",
+        "path": "/usr/lib/x86_64-linux-gnu/libavutil.so.58.29.100",
+        "sha256": "11b0836441b899e1b2183fc10eda5a5f637c03547fdfe5b97774e2cbd5aeb72c"
+      },
+      {
+        "name": "libpostproc.so.57",
+        "path": "/usr/lib/x86_64-linux-gnu/libpostproc.so.57.3.100",
+        "sha256": "f282fc8370aad3d9246de333c0e6c356834cf16077a7fed3437da75ab29a99ed"
+      },
+      {
+        "name": "libswresample.so.4",
+        "path": "/usr/lib/x86_64-linux-gnu/libswresample.so.4.12.100",
+        "sha256": "d6ca325614995109ee64b2b2e7dc2d2e5a6a67daba26fed101f0a44b65abc1b1"
+      },
+      {
+        "name": "libswscale.so.7",
+        "path": "/usr/lib/x86_64-linux-gnu/libswscale.so.7.5.100",
+        "sha256": "a2122c6342e9457a9b7faab2d3f7018f3634fdac4d0b25b8ea974eae0277d78c"
+      }
+    ]
+  },
+  "ffprobe": {
+    "path": "/usr/bin/ffprobe",
+    "sha256": "272f6ebc634a63d9c8b4ca68e964119d980f25154e5aa2c35e5487da48e9a58f",
+    "version_first_line": "ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers",
+    "version_text_sha256": "1b6410f756d8b5ef5308d712b51d2543bf8c8e6bc5796b7ede9570d099131e0b",
+    "buildconf_sha256": "f1e6bf8a39fc8b4d6a261a5b7233e2a96a0f854a472e98163365fc007d5bcead",
+    "libraries": [
+      {
+        "name": "libavcodec.so.60",
+        "path": "/usr/lib/x86_64-linux-gnu/libavcodec.so.60.31.102",
+        "sha256": "8231c9aecba7d02c132de0e16195ccb3e8002a235a5f364b3635df09e7f513e0"
+      },
+      {
+        "name": "libavdevice.so.60",
+        "path": "/usr/lib/x86_64-linux-gnu/libavdevice.so.60.3.100",
+        "sha256": "d4df19849bf3805bf76d0563366e7cbcb28bc2674a3bfa3e2465e8994f53fc6d"
+      },
+      {
+        "name": "libavfilter.so.9",
+        "path": "/usr/lib/x86_64-linux-gnu/libavfilter.so.9.12.100",
+        "sha256": "863ec5f6b0d32cbc64a10048e987a2bba79e3852abc73dfcb9a435158fc75f24"
+      },
+      {
+        "name": "libavformat.so.60",
+        "path": "/usr/lib/x86_64-linux-gnu/libavformat.so.60.16.100",
+        "sha256": "5f0970c52b7723037a7f6357cc1931879513449f742240fff7c37ceb7175ac9f"
+      },
+      {
+        "name": "libavutil.so.58",
+        "path": "/usr/lib/x86_64-linux-gnu/libavutil.so.58.29.100",
+        "sha256": "11b0836441b899e1b2183fc10eda5a5f637c03547fdfe5b97774e2cbd5aeb72c"
+      },
+      {
+        "name": "libpostproc.so.57",
+        "path": "/usr/lib/x86_64-linux-gnu/libpostproc.so.57.3.100",
+        "sha256": "f282fc8370aad3d9246de333c0e6c356834cf16077a7fed3437da75ab29a99ed"
+      },
+      {
+        "name": "libswresample.so.4",
+        "path": "/usr/lib/x86_64-linux-gnu/libswresample.so.4.12.100",
+        "sha256": "d6ca325614995109ee64b2b2e7dc2d2e5a6a67daba26fed101f0a44b65abc1b1"
+      },
+      {
+        "name": "libswscale.so.7",
+        "path": "/usr/lib/x86_64-linux-gnu/libswscale.so.7.5.100",
+        "sha256": "a2122c6342e9457a9b7faab2d3f7018f3634fdac4d0b25b8ea974eae0277d78c"
+      }
+    ]
+  },
+  "synthetic_fixture": {
+    "file": "synthetic_aac48_stereo.m4a.b64",
+    "decoded_source_sha256": "ead1fe9beaff5010eaf4b9adde660b389dc8d90dd422ab2b0124874d4795e12a",
+    "decoded_source_bytes": 6819,
+    "audio_stream_index": 0,
+    "codec_name": "aac",
+    "codec_profile": "LC",
+    "sample_rate": 48000,
+    "channels": 2,
+    "channel_layout": "stereo",
+    "expected_pcm_sha256": "39dc39bef5e87dd3e8b324257899f44bfaf7f5c54db9829873dcbfc6c01d1c47",
+    "expected_pcm_bytes": 49152,
+    "expected_sample_frames": 12288,
+    "probe_second_decode_byte_identical": true
+  },
+  "command_contract": {
+    "decode_args": [
+      "-v",
+      "error",
+      "-nostdin",
+      "-threads",
+      "1",
+      "-i",
+      "{SOURCE}",
+      "-map",
+      "0:0",
+      "-vn",
+      "-sn",
+      "-dn",
+      "-c:a",
+      "pcm_s16le",
+      "-f",
+      "s16le",
+      "{OUTPUT}"
+    ],
+    "probe_args": [
+      "-v",
+      "error",
+      "-show_format",
+      "-show_streams",
+      "-of",
+      "json",
+      "{SOURCE}"
+    ]
+  }
+}
