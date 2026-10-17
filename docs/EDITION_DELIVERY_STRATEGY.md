@@ -35,6 +35,30 @@ Parity tests: a shared fixture runs through the file transport and the
 confirmation digests over the same approved cut set, and identical applied
 cut geometry.
 
+## 2a. Layer preservation precondition (user decision 2026-10-17)
+
+Applies to both editions and every feature. Tracks (layers) are never merged
+or flattened before the final render; each layer is edited on its own.
+
+- Approved cuts apply only to tracks whose items at the cut come from the
+  candidate's source media (dialogue and its linked A/V): CUT_WITH_SOURCE.
+- Every other layer (B-roll, titles, graphics, SFX) is not cut; items after the
+  cut shift by the removed duration (SHIFT_WITH_RIPPLE), or stay in place if
+  the user chooses (KEEP_IN_PLACE, with a sync warning).
+- An item that spans a cut on a non-cut layer (music bed, long title) is never
+  split automatically; that cut is skipped as LAYER_CONFLICT until the user
+  sets that layer to cut.
+- Track count, order, names, kinds and lock state are preserved; empty tracks
+  remain.
+- Free file path: items the core does not model are preserved verbatim and
+  only re-timed; if anything would be lost, no file is emitted
+  (LAYER_LOSS_RISK). Resolve-only grades/Fusion may still not survive FCP7 XML
+  (format limit, UNVERIFIED).
+- Studio: per-track in-place edits on the current timeline; never rebuild the
+  timeline. Per-track ripple capability in the Resolve API is being verified.
+- Verification checks every layer (cut / shifted by the expected delta /
+  unchanged); a lost layer item is MISMATCH.
+
 ## 3. Studio is a superset: detail and depth
 
 Studio must reach the same core results and then go further. Planned
