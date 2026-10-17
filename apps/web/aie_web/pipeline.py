@@ -247,11 +247,17 @@ class MediaFacts:
 
 @dataclass(frozen=True)
 class TranscriptSource:
+    """Producer facts for :class:`TranscriptProducerRef`. Unknown stays None / UNDECLARED."""
+
     tool: AsrTool
     tool_version: str
     model_id: str
     offset_ms: int
     gap_seconds: str  # policy threshold as entered (decimal string)
+    model_revision: str | None = None
+    vad_method: str | None = None
+    vad_config_digest: str | None = None
+    language_requested: str | None = None
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -260,6 +266,10 @@ class TranscriptSource:
             "model_id": self.model_id,
             "offset_ms": self.offset_ms,
             "gap_seconds": self.gap_seconds,
+            "model_revision": self.model_revision,
+            "vad_method": self.vad_method,
+            "vad_config_digest": self.vad_config_digest,
+            "language_requested": self.language_requested,
         }
 
     @classmethod
@@ -267,12 +277,21 @@ class TranscriptSource:
         offset = data["offset_ms"]
         if not isinstance(offset, int):
             raise PipelineError("저장된 프로젝트 정보가 손상되었습니다.")
+
+        def optional(key: str) -> str | None:
+            value = data.get(key)
+            return value if isinstance(value, str) and value.strip() else None
+
         return cls(
             AsrTool(str(data["tool"])),
             str(data["tool_version"]),
             str(data["model_id"]),
             offset,
             str(data["gap_seconds"]),
+            optional("model_revision"),
+            optional("vad_method"),
+            optional("vad_config_digest"),
+            optional("language_requested"),
         )
 
 
@@ -343,11 +362,11 @@ def ingest(
         tool=source.tool.value,
         tool_version=source.tool_version or "UNDECLARED",
         model_id=source.model_id or "UNDECLARED",
-        model_revision=None,
+        model_revision=source.model_revision,
         alignment_model_id=None,
-        vad_method=None,
-        vad_config_digest=None,
-        language_requested=None,
+        vad_method=source.vad_method,
+        vad_config_digest=source.vad_config_digest,
+        language_requested=source.language_requested,
         language_detected="UNKNOWN",
         language_probability=None,
     )
@@ -760,5 +779,6 @@ __all__ = [
     "decode_xml",
     "parse_frame_or_timecode",
     "parse_rate",
+    "rate_key",
     "verify",
 ]

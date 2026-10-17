@@ -21,12 +21,12 @@ from aie_web.store import ProjectStore, Settings
 from fastapi.testclient import TestClient
 
 
-def _settings(tmp_path: Path, **overrides: int) -> Settings:
+def _settings(tmp_path: Path, max_transcript_bytes: int = 5 * 1024 * 1024) -> Settings:
     return Settings(
         root=tmp_path / "projects",
         max_age_hours=24.0,
         allowed_hosts=("testserver",),
-        **overrides,
+        max_transcript_bytes=max_transcript_bytes,
     )
 
 
@@ -40,10 +40,14 @@ def client(settings: Settings) -> TestClient:
     return TestClient(create_app(settings))
 
 
+def _with_token(client: TestClient, data: dict[str, str]) -> dict[str, str]:
+    return {**data, "csrf_token": wf.csrf_token(client.get("/new").text)}
+
+
 def _create(client: TestClient, payload: bytes | None = None, **fields: str) -> str:
     response = client.post(
         "/projects",
-        data=wf.form(**fields),
+        data=_with_token(client, wf.form(**fields)),
         files={
             "transcript": ("transcript.json", payload or wf.transcript_bytes(), "application/json")
         },
@@ -59,7 +63,7 @@ def _upload(client: TestClient, url: str, text: str | bytes, **fields: str) -> h
     data = text.encode("utf-8") if isinstance(text, str) else text
     return client.post(
         url,
-        data=fields,
+        data=_with_token(client, fields),
         files={"export": ("export.xml", data, "application/xml")},
         follow_redirects=False,
     )
@@ -130,12 +134,16 @@ def test_end_to_end_candidates_approval_apply_verify(client: TestClient) -> None
     assert client.get(f"/p/{pid}/download/applied.xml").status_code == 400
 
     # --- wrong digest refused, nothing applied ---
-    wrong = client.post(f"/p/{pid}/confirm", data={"digest": "0" * 64}, follow_redirects=False)
+    wrong = client.post(
+        f"/p/{pid}/confirm", data=_with_token(client, {"digest": "0" * 64}), follow_redirects=False
+    )
     assert wrong.status_code == 400 and "일치하지 않습니다" in wrong.text
     assert client.get(f"/p/{pid}/applied", follow_redirects=False).status_code == 303
 
     # --- approval: the exact digest ---
-    ok = client.post(f"/p/{pid}/confirm", data={"digest": digest}, follow_redirects=False)
+    ok = client.post(
+        f"/p/{pid}/confirm", data=_with_token(client, {"digest": digest}), follow_redirects=False
+    )
     assert ok.status_code == 303 and ok.headers["location"] == f"/p/{pid}/applied"
     applied_page = client.get(f"/p/{pid}/applied").text
     assert "인터뷰 AIE v2" in applied_page and "검증되지 않은" in applied_page
@@ -201,12 +209,16 @@ def test_oversize_uploads_are_refused(tmp_path: Path) -> None:
     client = TestClient(create_app(_settings(tmp_path, max_transcript_bytes=512)))
     big = wf.transcript_bytes() + b" " * 1024
     response = client.post(
-        "/projects", data=wf.form(), files={"transcript": ("t.json", big, "application/json")}
+        "/projects",
+        data=_with_token(client, wf.form()),
+        files={"transcript": ("t.json", big, "application/json")},
     )
     assert response.status_code == 413 and "너무 큽니다" in response.text
     huge = b"x" * (Settings().max_request_bytes + 10)
     response = client.post(
-        "/projects", data=wf.form(), files={"transcript": ("t.json", huge, "application/json")}
+        "/projects",
+        data=_with_token(client, wf.form()),
+        files={"transcript": ("t.json", huge, "application/json")},
     )
     assert response.status_code == 413
 
@@ -214,14 +226,14 @@ def test_oversize_uploads_are_refused(tmp_path: Path) -> None:
 def test_malformed_json_and_xml_get_friendly_errors(client: TestClient) -> None:
     response = client.post(
         "/projects",
-        data=wf.form(),
+        data=_with_token(client, wf.form()),
         files={"transcript": ("t.json", b"{not json", "application/json")},
     )
     assert response.status_code == 400 and "전사 JSON 형식이 올바르지 않습니다" in response.text
     assert "D:\\Footage\\interview.mov" in response.text  # form values kept (escaped)
     wrong_shape = client.post(
         "/projects",
-        data=wf.form(),
+        data=_with_token(client, wf.form()),
         files={"transcript": ("t.json", b'{"segments": 3}', "application/json")},
     )
     assert wrong_shape.status_code == 400 and "INVALID_TYPE" in wrong_shape.text
@@ -253,13 +265,13 @@ def test_project_ids_cannot_traverse_paths(client: TestClient, settings: Setting
         assert "top secret" not in response.text
     pid = _create(client)
     assert client.get(f"/p/{pid}/download/meta.json").status_code == 404
-    assert client.post("/p/..%2Fprojects/delete").status_code == 404
+    assert client.post("/p/..%2Fprojects/delete", data=_with_token(client, {})).status_code == 404
     assert secret.exists()
 
 
 def test_delete_and_cleanup(client: TestClient, settings: Settings) -> None:
     first, second = _create(client), _create(client)
-    deleted = client.post(f"/p/{first}/delete")
+    deleted = client.post(f"/p/{first}/delete", data=_with_token(client, {}))
     assert deleted.status_code == 200
     assert client.get(f"/p/{first}").status_code == 404
     store = ProjectStore(settings)
@@ -272,7 +284,7 @@ def test_delete_and_cleanup(client: TestClient, settings: Settings) -> None:
 def test_resolve_profile_requires_media_start(client: TestClient) -> None:
     response = client.post(
         "/projects",
-        data=wf.form(media_start=""),
+        data=_with_token(client, wf.form(media_start="")),
         files={"transcript": ("t.json", wf.transcript_bytes(), "application/json")},
     )
     assert response.status_code == 400 and "MEDIA_START_UNKNOWN" in response.text
@@ -286,7 +298,7 @@ def test_resolve_profile_requires_media_start(client: TestClient) -> None:
 def test_rate_must_come_from_the_whitelist(client: TestClient) -> None:
     response = client.post(
         "/projects",
-        data=wf.form(rate="23.98"),
+        data=_with_token(client, wf.form(rate="23.98")),
         files={"transcript": ("t.json", wf.transcript_bytes(), "application/json")},
     )
     assert response.status_code == 400 and "UNKNOWN_RATE" in response.text

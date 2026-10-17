@@ -89,6 +89,12 @@ def reexport(applied_xml: str) -> str:
     return applied_xml.replace("clipitem-", "item-")
 
 
+def csrf_token(page: str) -> str:
+    match = re.search(r'name="csrf_token" value="([A-Za-z0-9_-]{32,64})"', page)
+    assert match is not None, "csrf token missing"
+    return match.group(1)
+
+
 def hidden_digest(page: str) -> str:
     match = re.search(r'name="digest" value="([0-9a-f]{64})"', page)
     assert match is not None, "confirmation form missing"

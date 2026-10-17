@@ -5,7 +5,8 @@ fields, diagnostics) goes through :func:`e` before it reaches the page.
 """
 
 import html
-from collections.abc import Sequence
+import time
+from collections.abc import Callable, Sequence
 from string import Template
 
 from davinci_ai_editor.apply_cuts import SKIP_LABELS_KO, AppliedTimeline
@@ -38,6 +39,7 @@ _LAYOUT = Template(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>$title · AIE Free</title>
+$head
 <style>
 :root{--fg:#1d2330;--muted:#5b6475;--bg:#f6f7f9;--card:#fff;--line:#dfe3ea;--accent:#2457d6;
 --ok:#1d7a46;--warn:#9a6200;--bad:#b3261e;--studio:#f1ecff;--studio-line:#cbb8ff}
@@ -77,11 +79,11 @@ footer{max-width:1040px;margin:24px auto;padding:0 16px 24px;color:var(--muted);
 </head>
 <body>
 <header><div class="in"><a class="brand" href="/">AIE Free · 웹 (로컬)</a>
-<nav><a href="/">소개</a><a href="/new">새 프로젝트</a><a href="/limits">한계</a></nav></div></header>
+<nav><a href="/">소개</a><a href="/new">새 프로젝트</a><a href="/guide">Resolve 안내</a><a href="/limits">한계</a><a href="/studio">Studio</a></nav></div></header>
 <main>
 $body
 </main>
-<footer>로컬 개발 서버(127.0.0.1) 전용 · 생성되는 파일은 모두 <b>Expected 산출물</b>이며 검증된 결과가 아닙니다 ·
+<footer>체험(데모) 서버 · 생성되는 파일은 모두 <b>Expected 산출물</b>이며 검증된 결과가 아닙니다 ·
 Resolve로 가져오기는 사용자가 직접 합니다 · 렌더링은 하지 않습니다.</footer>
 </body>
 </html>
@@ -89,12 +91,41 @@ Resolve로 가져오기는 사용자가 직접 합니다 · 렌더링은 하지 
 )
 
 
-def page(title: str, body: str) -> str:
-    return _LAYOUT.substitute(title=e(title), body=body)
+def page(title: str, body: str, head: str = "") -> str:
+    return _LAYOUT.substitute(title=e(title), body=body, head=head)
 
 
 def studio(text: str) -> str:
-    return f'<aside class="studio"><b>Studio에서는</b> {e(text)}</aside>'
+    return (
+        f'<aside class="studio"><b>Studio에서는</b> {e(text)} '
+        '<a href="/studio">Studio 자세히 →</a></aside>'
+    )
+
+
+def csrf_field(token: str) -> str:
+    return f'<input type="hidden" name="csrf_token" value="{e(token)}">'
+
+
+def when(timestamp: float) -> str:
+    return time.strftime("%Y-%m-%d %H:%M", time.localtime(timestamp))
+
+
+def retention_notice(hours: float, expires_at: float | None = None, trial: bool = False) -> str:
+    """What is stored and when it is deleted (Korean, shown on every upload page)."""
+    if trial:
+        rule = (
+            f"체험 코드가 처음 사용된 때부터 {hours:g}시간 뒤 코드가 만료되면, 그 코드로 만든 "
+            "모든 프로젝트(영상·전사·결과 파일)가 자동으로 삭제됩니다."
+        )
+    else:
+        rule = f"프로젝트를 만든 뒤 {hours:g}시간이 지나면 자동으로 삭제됩니다."
+    due = f" 삭제 예정: <b>{e(when(expires_at))}</b> (서버 시각)." if expires_at else ""
+    return (
+        '<div class="card notice"><b>저장과 삭제 안내</b><p>이 서버에 저장되는 것: 올린 영상/오디오 파일, '
+        "그 파일의 전사 결과(JSON), Resolve에서 내보내 올린 XML, 확인 코드. 영상은 전사와 후보 "
+        f"생성에만 쓰이며 다른 곳으로 보내지 않습니다(음성 인식도 이 서버 안에서 실행). {e(rule)}"
+        f"{due} 프로젝트 페이지의 <b>이 프로젝트 삭제</b> 버튼으로 언제든 즉시 지울 수 있습니다.</p></div>"
+    )
 
 
 def error_page(message: str, codes: Sequence[str] = (), back: str | None = None) -> str:
@@ -117,40 +148,76 @@ def landing() -> str:
 브라우저에서 <b>확인 버튼</b>을 눌러야만 컷이 적용된 새 타임라인 파일이 만들어집니다.
 자동 적용은 없습니다.</p>
 <div class="grid">
-<div class="card"><h2>Free (이 웹)</h2>
-<p class="muted">설득용: 핵심 결과를 모두 직접 확인합니다.</p>
+<div class="card"><h2>Free 체험 (이 웹)</h2>
+<p class="muted">흐름이 끝까지 실제로 동작하는 것을 직접 확인하는 체험판입니다.</p>
 <ul>
-<li>전사 JSON + 미디어 정보 입력 → 후보를 Resolve 마커로</li>
+<li>짧은 영상 업로드 → 이 서버에서 음성 인식(전사) → 후보를 Resolve 마커로</li>
 <li>Resolve 안에서 마커 이름 변경으로 선택 (<code>AIE-0012 OK</code> / <code>AIE-0012 X</code>)</li>
 <li>내보낸 XML 업로드 → 확인 요약(컷 수, 제거 초, 건너뛴 항목과 이유)</li>
 <li>확인 버튼 → 비디오+오디오가 같은 프레임에서 잘린 새 타임라인(FCP7 XML)</li>
 <li>사람이 고친 구간은 보호(HARD_LOCK)되어 건너뜀</li>
 <li>다시 내보낸 XML로 검증 리포트(MATCH / MISMATCH / UNVERIFIED)</li>
 </ul></div>
-<div class="card"><h2>Studio (Resolve 안에서)</h2>
-<p class="muted">실제 작업용: 같은 결과 + 더 깊이.</p>
+<div class="card"><h2>Studio (Resolve 안에서, 개발 중)</h2>
+<p class="muted">실제 작업용 제품입니다. 같은 후보·같은 승인 규칙에 더해:</p>
 <ul>
-<li>현재 타임라인에 바로 적용 — 그레이드, 이펙트, 믹스 유지</li>
-<li>파일 내보내기/가져오기 없이 타임라인을 실시간으로 읽음</li>
+<li>파일 주고받기 없이 <b>현재 타임라인</b>에 바로 적용 (새 타임라인 가져오기 없음)</li>
+<li>그레이드·이펙트·믹스 유지 — Resolve가 지원하는 범위에서, 네이티브 검증을 통과한 뒤에만 약속합니다</li>
+<li>사람이 고친 구간을 매번 타임라인에서 직접 읽어 보호</li>
 <li>Resolve 안 확인 대화상자, 네이티브 사후 검증</li>
-<li>프레임 단위 정확한 클립 경계, 여러 타임라인, 트랙별 정책</li>
-</ul></div>
+</ul>
+<p><a href="/studio">Free와 Studio 비교 · 현재 상태 →</a></p></div>
 </div>
 <div class="card"><h2>흐름</h2>
 <ol>
-<li><a href="/new">새 프로젝트</a>: 전사 JSON(faster-whisper / whisperX)과 미디어 정보를 입력합니다.</li>
+<li><a href="/new">새 프로젝트</a>: 짧은 영상(CFR)을 올립니다. 이 서버에서 faster-whisper로 전사합니다.</li>
 <li>다운로드: 후보 마커가 있는 FCP7 XML(기본), OTIO(선택), SRT 자막.</li>
 <li>Resolve에서 가져오고 마커 이름을 바꿔 선택한 뒤, 타임라인을 FCP7 XML로 내보냅니다.</li>
 <li>승인 업로드 → 확인 요약 → <b>확인</b> 버튼 → 적용된 새 타임라인 다운로드.</li>
 <li>가져온 새 타임라인을 다시 내보내 검증 리포트를 받습니다.</li>
 </ol>
-<p><a href="/limits">정직한 한계 보기</a> — 특히 <b>가져오면 새 타임라인이 생기므로, 컷 승인은 색보정/이펙트 작업 전에</b> 하세요.</p>
+<p><a href="/guide">Resolve 무료 버전 따라하기 안내</a> · <a href="/limits">정직한 한계 보기</a> —
+특히 <b>가져오면 새 타임라인이 생기므로, 컷 승인은 색보정/이펙트 작업 전에</b> 하세요.</p>
 </div>
-<p class="muted">이 단계(Phase 1)는 로컬 개발 서버입니다: 미디어 업로드, 음성 인식(ASR), LLM 호출, 네트워크 호출이 없습니다.</p>
+<p class="muted">음성 인식(faster-whisper)은 이 서버 안에서 실행됩니다. LLM 호출과 외부 네트워크 호출은 없습니다.</p>
 """
     return page(
-        "소개", body + studio("같은 후보와 같은 승인 규칙을 Resolve 안에서 파일 없이 바로 씁니다.")
+        "소개",
+        body
+        + studio("같은 후보와 같은 승인 규칙을 Resolve 안에서 파일 없이 현재 타임라인에 씁니다."),
     )
+
+
+def consent_page(
+    csrf: str, hours: float, max_projects: int, max_minutes: int, error: str = ""
+) -> str:
+    err = f'<div class="err"><p>{e(error)}</p></div>' if error else ""
+    body = f"""
+<h1>AIE Free 체험</h1>
+<p>초대 코드로 짧은 영상을 올려, AI 후보 → Resolve 안 선택 → 확인 → 적용된 타임라인 → 검증까지
+흐름이 실제로 동작하는 것을 확인하는 <b>체험판</b>입니다. 실제 제품은 Resolve Studio 안에서 동작할
+예정입니다(<a href="/studio">비교 보기</a>).</p>
+{err}
+<form class="card" method="post" action="/trial/start">
+{csrf_field(csrf)}
+<h2>동의 안내</h2>
+<p><b>업로드한 영상은 전사·후보 생성에만 사용되며 코드 만료({hours:g}시간) 시 자동 삭제됩니다.</b></p>
+<ul>
+<li>저장되는 것: 올린 영상/오디오 파일, 전사 결과, 올린 XML, 확인 코드. 음성 인식은 이 서버 안에서
+실행되며 외부 서비스로 보내지 않습니다.</li>
+<li>코드는 처음 사용한 때부터 {hours:g}시간 유효하고, 프로젝트를 최대 {max_projects}개 만들 수
+있습니다(영상 하나당 최대 {max_minutes}분, 전사는 서버 전체에서 한 번에 하나).</li>
+<li>코드가 만료되거나 회수되면 그 코드로 만든 모든 프로젝트·영상·결과가 자동으로 삭제됩니다.
+각 프로젝트는 직접 즉시 삭제할 수도 있습니다.</li>
+<li>다른 사람의 얼굴·목소리가 담긴 영상은 올려도 되는 것만 올려 주세요.</li>
+</ul>
+<label for="code">초대 코드</label>
+<input id="code" type="text" name="code" autocomplete="off" placeholder="AIE-XXXX-XXXX-XXXX">
+<label><input type="checkbox" name="consent" value="yes"> 위 내용을 읽었고 동의합니다 (필수)</label>
+<button type="submit">동의하고 시작</button>
+</form>
+"""
+    return page("체험 시작", body + studio("Resolve 안에서 실행되므로 영상을 업로드하지 않습니다."))
 
 
 def limits() -> str:
@@ -170,7 +237,9 @@ Whisper 계열 타이밍은 서버 시계 기준이라 최소 1프레임 오차�
 <li>Resolve의 FCP7 XML 내보내기 세부(소스 in/out 기준, <code>&lt;link&gt;</code> 처리, SRT 기준 시각)는 아직
 실제 Resolve에서 확인되지 않았습니다(UNVERIFIED).</li>
 <li>한 번의 왕복에 타임라인 하나, 미디어 파일 하나만 다룹니다. 렌더링은 하지 않습니다(최종 렌더는 Resolve Deliver).</li>
-<li>로컬 개발 서버입니다: 인증·데이터베이스 없음, 프로젝트는 임시 폴더에 저장되고 일정 시간 뒤 자동 삭제됩니다.</li>
+<li>음성 인식은 faster-whisper <code>small</code> 모델(CPU)입니다. 큰 모델보다 오인식이 많고, 단어 타이밍은
+경험적으로 보정된 값(HEURISTIC_ADJUSTED)입니다. 고정 프레임레이트(CFR) 영상만 받고, 길이와 크기에 제한이 있습니다.</li>
+<li>체험 서버입니다: 초대 코드 외의 인증·데이터베이스가 없고, 프로젝트는 서버 폴더에 저장되었다가 정해진 시간 뒤 자동 삭제됩니다.</li>
 </ul></div>
 """
     return page(
@@ -182,8 +251,36 @@ Whisper 계열 타이밍은 서버 시계 기준이라 최소 1프레임 오차�
     )
 
 
+def _error_box(error: str, codes: Sequence[str]) -> str:
+    if not error:
+        return ""
+    items = "".join(f"<li><code>{e(c)}</code></li>" for c in codes)
+    return f'<div class="err"><p>{e(error)}</p>{"<ul>" + items + "</ul>" if items else ""}</div>'
+
+
+def _timeline_fields(val: Callable[[str, str], str], p: str) -> str:
+    return f"""
+<label for="{p}timeline_name">새 타임라인 이름</label>
+<input id="{p}timeline_name" type="text" name="timeline_name" value="{val("timeline_name", "AIE 후보")}">
+<label for="{p}timeline_start">타임라인 시작 타임코드</label>
+<input id="{p}timeline_start" type="text" name="timeline_start" value="{val("timeline_start", "01:00:00:00")}">
+<label for="{p}gap_seconds">전사 공백 기준(초)</label>
+<input id="{p}gap_seconds" type="text" name="gap_seconds" value="{val("gap_seconds", "1.0")}">
+<p class="hint">단어 사이 빈 구간이 이 값 이상이면 후보로 표시합니다(음향 무음 분석 아님).</p>"""
+
+
 def new_project(
-    error: str = "", codes: Sequence[str] = (), values: dict[str, str] | None = None
+    error: str = "",
+    codes: Sequence[str] = (),
+    values: dict[str, str] | None = None,
+    *,
+    csrf: str = "",
+    max_minutes: int = 10,
+    max_mb: int = 1024,
+    asr_label: str = "faster-whisper small (CPU)",
+    allow_json: bool = True,
+    notice: str = "",
+    busy: bool = False,
 ) -> str:
     v = values or {}
 
@@ -197,15 +294,49 @@ def new_project(
         f'<option value="{e(key)}"{selected("rate", key, "24000/1001")}>{e(label)}</option>'
         for key, label in RATE_CHOICES
     )
-    err = ""
-    if error:
-        items = "".join(f"<li><code>{e(c)}</code></li>" for c in codes)
-        err = f'<div class="err"><p>{e(error)}</p>{"<ul>" + items + "</ul>" if items else ""}</div>'
+    busy_note = (
+        "<p class='warn'>지금 다른 전사 작업이 진행 중입니다. 한 번에 하나만 처리하므로 잠시 후 올려 주세요.</p>"
+        if busy
+        else ""
+    )
+    media_form = f"""
+<form class="card" method="post" action="/media" enctype="multipart/form-data">
+{csrf_field(csrf)}
+<h2>A. 영상 올리기 (권장)</h2>
+{busy_note}
+<label for="media">영상/오디오 파일 (최대 {max_minutes}분, {max_mb} MB · mp4/mov/mkv/mxf/wav 등)</label>
+<input id="media" type="file" name="media" accept="video/*,audio/*,.mxf,.mkv">
+<p class="hint"><b>고정 프레임레이트(CFR)</b> 영상만 받습니다. 휴대폰 영상은 대개 가변(VFR)이라
+CFR로 변환 후 올려 주세요. 전사: {e(asr_label)}, 단어 타임스탬프. 이 서버 안에서 실행됩니다.</p>
+<label for="media_folder">Resolve에서 보이는 원본 폴더 경로 (선택)</label>
+<input id="media_folder" type="text" name="media_folder" value="{val("media_folder")}" placeholder="D:\\Footage">
+<p class="hint">XML의 미디어 경로 = 이 폴더 + 원본 파일 이름. 비워 두면 파일 이름만 쓰므로, Resolve로
+가져온 뒤 미디어가 오프라인이면 <b>Relink</b>로 원본을 연결하세요.</p>
+{_timeline_fields(val, "m_")}
+<button type="submit">올리고 전사 시작</button>
+</form>"""
+    if not allow_json:
+        body = f"""
+<h1>새 프로젝트</h1>
+{_error_box(error, codes)}
+{notice}
+{media_form}
+"""
+        return page(
+            "새 프로젝트",
+            body
+            + studio(
+                "영상을 업로드하지 않습니다. 프레임레이트와 시작 타임코드를 타임라인에서 직접 읽습니다."
+            ),
+        )
     body = f"""
 <h1>새 프로젝트</h1>
-{err}
+{_error_box(error, codes)}
+{notice}
+{media_form}
 <form class="card" method="post" action="/projects" enctype="multipart/form-data">
-<h2>1. 전사 JSON</h2>
+{csrf_field(csrf)}
+<h2>B. 이미 가진 전사 JSON으로 만들기 (개발/고급)</h2>
 <label for="transcript">전사 파일 (faster-whisper 또는 whisperX 결과 JSON, 최대 5 MB)</label>
 <input id="transcript" type="file" name="transcript" accept=".json,application/json">
 <label for="tool">ASR 도구</label>
@@ -308,7 +439,12 @@ def rename_rules() -> str:
 
 
 def project_page(
-    project_id: str, build: ProjectBuild, has_approval: bool, has_applied: bool
+    project_id: str,
+    build: ProjectBuild,
+    has_approval: bool,
+    has_applied: bool,
+    csrf: str = "",
+    notice: str = "",
 ) -> str:
     pid = e(project_id)
     facts = build.facts
@@ -336,6 +472,7 @@ def project_page(
 {e(facts.rate.numerator)}/{e(facts.rate.denominator)} fps · 길이 {facts.duration_frames}프레임 ·
 미디어 시작 {e(start_text)} · 프로필 {e(facts.profile.value)}</p>
 {progress}
+{notice}
 <div class="card">
 <p>마커 후보 <b>{marked_count}개</b> (모두 <b>제안</b>이며 자동 적용되지 않습니다) ·
 전사 단어 {len(build.snapshot.words)}개 · 타이밍 문제 {build.projection_issue_count}개 ·
@@ -364,6 +501,7 @@ def project_page(
 
 <h2>3. 승인 업로드</h2>
 <form class="card" method="post" action="/p/{pid}/approval" enctype="multipart/form-data">
+{csrf_field(csrf)}
 <label for="approval">Resolve에서 내보낸 FCP7 XML (최대 8 MB)</label>
 <input id="approval" type="file" name="export" accept=".xml,text/xml,application/xml">
 <button type="submit">업로드하고 확인 요약 보기</button>
@@ -371,6 +509,7 @@ def project_page(
 </form>
 
 <form method="post" action="/p/{pid}/delete">
+{csrf_field(csrf)}
 <button class="danger" type="submit">이 프로젝트 삭제</button>
 <p class="hint">작업 폴더와 업로드한 파일이 즉시 삭제됩니다. 오래된 프로젝트는 자동으로 삭제됩니다.</p>
 </form>
@@ -378,7 +517,7 @@ def project_page(
     return page("후보 목록", body)
 
 
-def confirm_page(project_id: str, build: ProjectBuild, view: ApprovalView) -> str:
+def confirm_page(project_id: str, build: ProjectBuild, view: ApprovalView, csrf: str = "") -> str:
     pid = e(project_id)
     c = view.confirmation
     rate = c.actual.rate
@@ -430,6 +569,7 @@ def confirm_page(project_id: str, build: ProjectBuild, view: ApprovalView) -> st
     if c.approved_cuts:
         action = f"""
 <form class="card" method="post" action="/p/{pid}/confirm">
+{csrf_field(csrf)}
 <input type="hidden" name="digest" value="{e(c.confirmation_digest)}">
 <p>위 내용대로 <b>{len(c.approved_cuts)}개 컷</b>, 총 <b>{e(seconds(c.removed_frames, rate))}초</b>를
 비디오와 오디오 모든 트랙에서 같은 프레임으로 잘라 <b>새 타임라인 파일</b>을 만듭니다.</p>
@@ -463,7 +603,7 @@ def confirm_page(project_id: str, build: ProjectBuild, view: ApprovalView) -> st
     return page("확인 요약", body)
 
 
-def applied_page(project_id: str, applied: AppliedTimeline) -> str:
+def applied_page(project_id: str, applied: AppliedTimeline, csrf: str = "") -> str:
     pid = e(project_id)
     rate = applied.timeline.rate
     removed = sum(c.timeline_range.duration for c in applied.applied_cuts)
@@ -482,6 +622,7 @@ def applied_page(project_id: str, applied: AppliedTimeline) -> str:
 {studio("새 파일 없이 현재 타임라인에 바로 적용되어 색보정·이펙트·믹스·빈 구성이 그대로 유지됩니다.")}
 <h2>4. 검증</h2>
 <form class="card" method="post" action="/p/{pid}/verify" enctype="multipart/form-data">
+{csrf_field(csrf)}
 <p>가져온 새 타임라인을 Resolve에서 다시 <b>FCP 7 XML</b>로 내보내 올리면, 의도한 컷 목록과 비교합니다.</p>
 <label for="reexport">다시 내보낸 FCP7 XML</label>
 <input id="reexport" type="file" name="export" accept=".xml,text/xml,application/xml">
@@ -545,4 +686,192 @@ def report_page(project_id: str, report: VerificationReport) -> str:
 def deleted_page() -> str:
     return page(
         "삭제됨", "<h1>프로젝트를 삭제했습니다</h1><p><a href='/new'>새 프로젝트 만들기</a></p>"
+    )
+
+
+# --------------------------------------------------------------------------- WEB-002 pages
+
+
+def facts_page(
+    project_id: str,
+    media: dict[str, object],
+    csrf: str,
+    error: str = "",
+    codes: Sequence[str] = (),
+    values: dict[str, str] | None = None,
+) -> str:
+    pid = e(project_id)
+    v = values or {}
+    need_rate = media.get("rate") is None
+    tag = media.get("timecode_tag")
+    rate_options = "".join(
+        f'<option value="{e(key)}"{" selected" if v.get("rate", "24000/1001") == key else ""}>'
+        f"{e(label)}</option>"
+        for key, label in RATE_CHOICES
+    )
+    rate_field = (
+        '<label for="rate">타임라인 프레임레이트 (영상 트랙 없는 오디오 파일)</label>'
+        f'<select id="rate" name="rate">{rate_options}</select>'
+        if need_rate
+        else ""
+    )
+    tag_note = (
+        f"<p class='warn'>파일의 시작 타임코드 태그 <code>{e(tag)}</code>를 읽을 수 없었습니다.</p>"
+        if isinstance(tag, str)
+        else "<p>이 파일에는 시작 타임코드 정보(태그)가 없습니다.</p>"
+    )
+    profile = v.get("profile", "RESOLVE")
+    body = f"""
+<h1>미디어 정보 확인</h1>
+{_error_box(error, codes)}
+<div class="card">
+<p>파일 <code>{e(media.get("original_filename", ""))}</code> ·
+프레임레이트 {e(media.get("rate") or "선택 필요")} · 길이 {e(media.get("duration_text", ""))}</p>
+{tag_note}
+<p>Resolve의 미디어 풀에서 클립을 선택하고 메타데이터/Clip Attributes의 <b>Start TC</b>(시작 타임코드)를
+확인해 입력하세요. <b>0으로 가정하지 않습니다.</b> 모르면 "일반" 프로필을 고를 수 있지만, 그 경우 XML에
+시작 타임코드를 쓰지 않으므로 Resolve가 클립 위치를 다르게 잡을 수 있습니다.</p>
+</div>
+<form class="card" method="post" action="/p/{pid}/facts">
+{csrf_field(csrf)}
+{rate_field}
+<label for="media_start">미디어 시작 타임코드 또는 프레임</label>
+<input id="media_start" type="text" name="media_start" value="{e(v.get("media_start", ""))}" placeholder="00:00:00:00">
+<label for="profile">프로필</label>
+<select id="profile" name="profile">
+<option value="RESOLVE"{" selected" if profile == "RESOLVE" else ""}>DaVinci Resolve (시작 타임코드 필요)</option>
+<option value="GENERIC"{" selected" if profile == "GENERIC" else ""}>일반 (시작 타임코드 모름)</option>
+</select>
+<label for="timeline_start">새 타임라인 시작 타임코드</label>
+<input id="timeline_start" type="text" name="timeline_start" value="{e(v.get("timeline_start", "01:00:00:00"))}">
+<button type="submit">저장하고 전사 시작</button>
+</form>
+<form method="post" action="/p/{pid}/delete">{csrf_field(csrf)}<button class="danger" type="submit">이 프로젝트 삭제</button></form>
+"""
+    return page(
+        "미디어 정보",
+        body + studio("프레임레이트와 시작 타임코드를 타임라인에서 직접 읽으므로 묻지 않습니다."),
+    )
+
+
+def status_page(
+    project_id: str, job: dict[str, object], csrf: str, filename: str, notice: str = ""
+) -> str:
+    pid = e(project_id)
+    state = str(job.get("state", ""))
+    progress = job.get("progress")
+    percent = int(float(progress) * 100) if isinstance(progress, (int, float)) else 0
+    active = state in ("QUEUED", "RUNNING")
+    head = '<meta http-equiv="refresh" content="3">' if active else ""
+    if state == "QUEUED":
+        text = "<p>대기 중입니다. 전사는 서버 전체에서 한 번에 하나씩 처리합니다.</p>"
+    elif state == "RUNNING":
+        text = (
+            f"<p>전사 중… <b>{percent}%</b> (CPU에서 실행되어 영상 길이만큼 걸릴 수 있습니다)</p>"
+            f'<progress max="100" value="{percent}">{percent}%</progress>'
+        )
+    elif state == "FAILED":
+        raw_codes = job.get("codes")
+        items = "".join(
+            f"<li><code>{e(c)}</code></li>"
+            for c in (raw_codes if isinstance(raw_codes, list) else [])
+        )
+        text = (
+            f'<div class="err"><p>{e(job.get("message", ""))}</p>'
+            f"{'<ul>' + items + '</ul>' if items else ''}</div>"
+            "<p>부분 결과는 남기지 않았고 올린 파일도 지웠습니다. "
+            '<a href="/new">다른 파일로 다시 시도</a></p>'
+        )
+    else:
+        text = f'<p>완료되었습니다. <a href="/p/{pid}">후보 목록 보기</a></p>'
+    refresh = "<p class='hint'>이 페이지는 3초마다 새로 고쳐집니다.</p>" if active else ""
+    body = f"""
+<h1>전사 상태</h1>
+<div class="card">
+<p class="muted">파일 <code>{e(filename)}</code> · 상태 <code>{e(state)}</code></p>
+{text}
+{refresh}
+</div>
+{notice}
+<form method="post" action="/p/{pid}/delete">{csrf_field(csrf)}<button class="danger" type="submit">이 프로젝트 삭제</button></form>
+"""
+    return page(
+        "전사 상태",
+        body + studio("Resolve 내장 전사(쓸 수 있는 경우) 또는 같은 서버 ASR을 씁니다."),
+        head=head,
+    )
+
+
+def studio_page() -> str:
+    rows = (
+        (
+            "컷 적용",
+            "새 타임라인 파일을 가져옴. 이전 타임라인의 색보정·이펙트·믹스는 넘어오지 않음",
+            "<b>현재 타임라인</b>에 바로 적용. 그레이드·이펙트·믹스·빈 구성 유지 (계획, 네이티브 검증 대기)",
+        ),
+        (
+            "사람 편집 보호",
+            "업로드한 XML을 내보낸 순간 기준",
+            "실행할 때마다 타임라인에서 직접 읽음. 내보내기 없이 반복 실행",
+        ),
+        ("검증", "파일 왕복 증거 (FILE_ROUNDTRIP)", "편집 직후 네이티브 타임라인을 다시 읽어 비교"),
+        ("승인 UI", "Resolve 안 마커 이름 + 브라우저 확인", "마커 이름 + Resolve 안 확인 대화상자"),
+        (
+            "정밀도",
+            "Whisper 단어 타이밍 (서버 시계, 허용 오차 ≥ 1프레임)",
+            "프레임 단위 네이티브 클립 경계, 링크·트랙 상태 인식",
+        ),
+        ("범위", "왕복 한 번에 타임라인 하나", "여러 타임라인, 트랙별 정책, 네이티브 보호 구간"),
+        (
+            "전사",
+            "서버 ASR (이 체험: faster-whisper small)",
+            "Resolve 내장 전사(가능한 경우) 또는 서버 ASR",
+        ),
+        ("렌더링", "없음 — 최종 렌더는 Deliver", "없음 — 최종 렌더는 Deliver"),
+    )
+    table = "".join(
+        f"<tr><td><b>{e(a)}</b></td><td>{e(b)}</td><td>{c}</td></tr>" for a, b, c in rows
+    )
+    body = f"""
+<h1>Free 체험과 Studio</h1>
+<p>Free 체험은 흐름이 끝까지 동작하는 것을 보여 주는 데모입니다. 실제 제품은 <b>Resolve Studio 안에서</b>
+동작하도록 개발 중이며, 같은 후보·같은 승인 규칙·같은 적용 결과·같은 검증 용어를 씁니다.</p>
+<div class="card scroll"><table><tr><th>영역</th><th>Free 체험 (이 웹)</th><th>Studio (Resolve 안)</th></tr>{table}</table></div>
+<div class="card"><h2>현재 상태 (정직하게)</h2>
+<ul>
+<li>Studio 경로는 <b>개발 중</b>입니다. Resolve 안에서의 적용과 사후 검증은 <b>아직 네이티브 검증을 통과하지 않았습니다</b>.</li>
+<li>"그레이드·이펙트 유지"는 Resolve가 지원하는 범위에서, 실제 Resolve로 검증된 뒤에만 약속합니다.
+그 전까지 권장 사용법은 Free와 같습니다: <b>컷 확정은 색보정 전에.</b></li>
+<li>이 Free 체험의 결과 파일도 Expected 산출물이며, 검증 리포트가 MATCH일 때만 의도와 일치함을 뜻합니다.</li>
+</ul></div>
+"""
+    return page("Studio", body)
+
+
+def guide_page() -> str:
+    body = """
+<h1>DaVinci Resolve 무료 버전으로 체험하기</h1>
+<ol class="card">
+<li><b>CFR 영상 준비</b>: 1~10분짜리 말하는 영상. 휴대폰 영상은 대개 가변 프레임레이트(VFR)이므로
+Resolve(Deliver에서 같은 프레임레이트로 렌더)나 HandBrake("Constant Framerate")로 <b>CFR로 변환</b>하세요.</li>
+<li><b>Resolve 프로젝트 프레임레이트</b>: 새 프로젝트를 만들고 <b>File &gt; Project Settings &gt; Master Settings</b>에서
+Timeline frame rate를 영상과 <b>같은 값</b>으로 맞춥니다(타임라인을 만들기 전에).</li>
+<li><b>업로드</b>: <a href="/new">새 프로젝트</a>에서 영상을 올립니다. 원본이 있는 폴더 경로를 Resolve에서 보이는
+그대로 적으면 바로 연결되고, 비워 두면 다음 단계에서 Relink 합니다. 시작 타임코드 태그가 없으면
+Resolve 클립 속성의 Start TC를 물어봅니다.</li>
+<li><b>XML 가져오기</b>: 전사가 끝나면 후보 목록에서 <b>FCP7 XML</b>을 받아 <b>File &gt; Import &gt; Timeline…</b> 으로 가져옵니다.</li>
+<li><b>Relink</b>: 클립이 빨간색(오프라인)이면 미디어 풀에서 클립 우클릭 &gt; <b>Relink Selected Clips…</b> 로 원본 폴더를 지정합니다.</li>
+<li><b>마커 이름으로 선택</b>: 타임라인의 <code>AIE-0001 ?</code> 마커를 더블클릭해 이름을 <code>AIE-0001 OK</code>(적용)
+또는 <code>AIE-0001 X</code>(제외)로 바꿉니다. 마커를 옮기거나 지우지 마세요.</li>
+<li><b>내보내기</b>: 타임라인을 선택하고 <b>File &gt; Export &gt; Timeline…</b> 에서 <b>FCP 7 XML (.xml)</b> 로 저장합니다.</li>
+<li><b>업로드 → 확인</b>: 프로젝트 페이지에서 그 XML을 올리고, 확인 요약을 읽은 뒤 <b>확인</b> 버튼을 누릅니다.</li>
+<li><b>적용된 타임라인</b>: <code>… AIE v2</code> XML을 받아 다시 Import &gt; Timeline 으로 가져옵니다(새 타임라인).</li>
+<li><b>검증</b>: 가져온 새 타임라인을 고치지 않고 다시 FCP 7 XML로 내보내 올리면 MATCH / MISMATCH / UNVERIFIED 리포트가 나옵니다.</li>
+</ol>
+<p class="muted">Resolve의 FCP7 XML 가져오기/내보내기 세부 동작은 실제 Resolve에서 아직 검증 중입니다.
+결과가 이상하면 검증 리포트의 코드를 알려 주세요.</p>
+"""
+    return page(
+        "Resolve 안내",
+        body + studio("가져오기·내보내기·Relink 없이 Resolve 안에서 바로 후보를 보고 승인합니다."),
     )

@@ -1,5 +1,9 @@
 # WEB-001 — Free Web Flow (Local Development Server)
 
+> **WEB-002 update:** media upload, local ASR, trial mode and CSRF tokens on all forms are
+> described in docs/WEB_002_STATUS.md. The "no media upload / no ASR" statements below
+> describe WEB-001 as it was committed.
+
 Qualification: **CODE_COMPLETE / TEST_ONLY_SUPPORT**. Not native qualification.
 Nothing here has been exercised against DaVinci Resolve. In the tests, every
 "editor" action is a text edit of our own XML output.
