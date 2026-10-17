@@ -1,4 +1,4 @@
-"""Deterministic FAKE Resolve object graph for STUDIO-T0 (TEST_ONLY_SUPPORT).
+"""Deterministic FAKE Resolve object graph for STUDIO-T0/T1 (TEST_ONLY_SUPPORT).
 
 Not DaVinci Resolve and not a model of its verified behaviour: it implements the
 getter/mutator *names* the Studio transport allowlists, with the semantics the
@@ -11,12 +11,29 @@ failing DeleteClips and a post-mutation geometry error.
 ``AieTestOnlySplitAt`` is NOT a Resolve API (no split API exists; see
 ``studio_capabilities.SPLIT_ITEM_AT_FRAME``). It exists only so the transport's
 capability-flag path can be tested, and only when ``FakeBehavior.split_enabled``.
+
+STUDIO-T1 additions (all modelled on the DOCUMENTED claims and the OSS-measured
+quirks recorded in ``studio_capabilities``, never on verified behaviour):
+
+- ``MediaPool.ImportTimelineFromFile`` reads our own FCP7 XML with the repo's
+  reader and builds a NEW timeline: the file's internal sequence name wins over
+  ``timelineName``; an existing name returns that EXISTING timeline; markers
+  lose colour and customData; track names reset to defaults unless
+  ``import_keeps_track_names``; new items carry no grade; pool media are reused
+  by name (importSourceClips=False).
+- Grades are structural (:class:`FakeGrade`: node layers, versions) and Fusion
+  comps are name -> content. ``CopyGrades`` copies the CURRENT (first) layer to
+  each target, replacing it, and creates no version.
+- ``SetCurrentTimecode`` / ``GetCurrentTimecode`` move and read a playhead;
+  ``_blade`` simulates the editor's razor (a UI action, not an API).
 """
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
-from davinci_ai_editor.handoff_model import HandoffClip, HandoffTimeline, HandoffTrackKind
+from davinci_ai_editor.handoff_model import HandoffClip, HandoffTrackKind, TimelineStructure
+from davinci_ai_editor.xmeml_reader import read_xmeml
 
 _COLOR_NAMES = {
     "RED": "Red",
@@ -37,6 +54,9 @@ _RATE_STRINGS = {
     (60000, 1001): "59.94",
     (60, 1): "60",
 }
+_TC_BASE = {"23.976": 24, "24": 24, "25": 25, "30": 30, "50": 50, "60": 60}
+
+Node = tuple[str, tuple[str, ...]]  # (label, tools)
 
 
 @dataclass
@@ -51,6 +71,15 @@ class FakeBehavior:
     ripple_extra_shift: int = 0  # post-mutation geometry error (frames)
     split_enabled: bool = False
     no_current_timeline: bool = False
+    # STUDIO-T1 knobs
+    import_result_none: bool = False
+    import_returns_existing: bool = False  # simulate the FCP7 "returns existing" quirk
+    import_keeps_track_names: bool = False
+    import_extra_shift: int = 0  # imported geometry error (frames, from the 2nd item on)
+    copy_grades_result: bool | None = None  # force a return value and do nothing
+    copy_grades_partial: bool = False  # only the first target receives the grade
+    node_stack_layers: str = "1"
+    playhead_offset: int = 0  # playhead lands this many frames off
     calls: list[tuple[str, tuple[Any, ...]]] = field(default_factory=list)
     _seen: dict[tuple[int, str], int] = field(default_factory=dict)
 
@@ -124,6 +153,47 @@ class FakeMediaPoolItem(_FakeObject):
         return values.get(key, "")
 
 
+@dataclass
+class FakeGrade:
+    """Structural grade: node layers (first = current), colour versions."""
+
+    layers: tuple[tuple[Node, ...], ...] = ((("", ()),),)
+    versions: tuple[str, ...] = ("Version 1",)
+    current_version: str = "Version 1"
+
+
+GRADED = FakeGrade(layers=((("Primary", ("Primaries",)), ("Skin", ("Qualifier", "Window"))),))
+
+
+class FakeGraph(_FakeObject):
+    KIND = "Graph"
+
+    def __init__(self, behavior: FakeBehavior, nodes: tuple[Node, ...]) -> None:
+        super().__init__(behavior)
+        self._nodes = nodes
+
+    def GetNumNodes(self) -> int:
+        return len(self._nodes)
+
+    def GetNodeLabel(self, index: int) -> str:
+        return self._nodes[index - 1][0]
+
+    def GetToolsInNode(self, index: int) -> list[str]:
+        return list(self._nodes[index - 1][1])
+
+
+class FakeFusionComp(_FakeObject):
+    KIND = "FusionComp"
+
+    def __init__(self, behavior: FakeBehavior, name: str) -> None:
+        super().__init__(behavior)
+        self._name = name
+
+
+class FakeFolder(_FakeObject):
+    KIND = "Folder"
+
+
 class FakeTimelineItem(_FakeObject):
     KIND = "TimelineItem"
 
@@ -147,6 +217,8 @@ class FakeTimelineItem(_FakeObject):
         self._uid = uid
         self._enabled = enabled
         self._markers: dict[float, dict[str, Any]] = {}
+        self._grade = FakeGrade()
+        self._comps: dict[str, str] = {}
 
     # getters -------------------------------------------------------------
     def GetName(self) -> str:
@@ -179,6 +251,61 @@ class FakeTimelineItem(_FakeObject):
 
     def GetMarkers(self) -> dict[float, dict[str, Any]]:
         return {frame: dict(info) for frame, info in self._markers.items()}
+
+    # grade / Fusion (STUDIO-T1) ---------------------------------------------
+    def GetNodeGraph(self, layer: int = 1) -> FakeGraph | None:
+        if not 1 <= layer <= len(self._grade.layers):
+            return None
+        behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
+        return FakeGraph(behavior, self._grade.layers[layer - 1])
+
+    def GetVersionNameList(self, version_type: int) -> list[str]:
+        return list(self._grade.versions) if version_type == 0 else []
+
+    def GetCurrentVersion(self) -> dict[str, Any]:
+        return {"versionName": self._grade.current_version, "versionType": 0}
+
+    def GetFusionCompCount(self) -> int:
+        return len(self._comps)
+
+    def GetFusionCompNameList(self) -> list[str]:
+        return list(self._comps)
+
+    def ExportFusionComp(self, path: str, index: int) -> bool:
+        names = list(self._comps)
+        if not 1 <= index <= len(names):
+            return False
+        name = names[index - 1]
+        Path(path).write_text(f"{name}\n{self._comps[name]}", encoding="utf-8")
+        return True
+
+    def ImportFusionComp(self, path: str) -> FakeFusionComp | None:
+        try:
+            name, content = Path(path).read_text(encoding="utf-8").split("\n", 1)
+        except (OSError, ValueError):
+            return None
+        behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
+        unique = name
+        serial = 1
+        while unique in self._comps:
+            serial += 1
+            unique = f"{name} {serial}"
+        self._comps[unique] = content
+        return FakeFusionComp(behavior, unique)
+
+    def CopyGrades(self, targets: list["FakeTimelineItem"]) -> bool:
+        behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
+        if behavior.copy_grades_result is not None:
+            return behavior.copy_grades_result
+        chosen = targets[:1] if behavior.copy_grades_partial else targets
+        for target in chosen:
+            current = self._grade.layers[0]
+            target._grade = FakeGrade(
+                layers=(current, *target._grade.layers[1:]),
+                versions=target._grade.versions,  # no version is created or copied
+                current_version=target._grade.current_version,
+            )
+        return True
 
     # mutators ------------------------------------------------------------
     def AddMarker(
@@ -248,6 +375,11 @@ class FakeTimeline(_FakeObject):
         self._tracks = {"video": video, "audio": audio}
         self._uid = uid
         self._markers: dict[float, dict[str, Any]] = {}
+        self._track_names = {
+            "video": [f"Video {n}" for n in range(1, len(video) + 1)],
+            "audio": [f"Audio {n}" for n in range(1, len(audio) + 1)],
+        }
+        self._playhead = start_frame
 
     def GetName(self) -> str:
         return self._name
@@ -276,6 +408,43 @@ class FakeTimeline(_FakeObject):
 
     def GetMarkers(self) -> dict[float, dict[str, Any]]:
         return dict(self._markers)
+
+    def GetTrackName(self, track_type: str, index: int) -> str:
+        names = self._track_names.get(track_type, [])
+        return names[index - 1] if 1 <= index <= len(names) else ""
+
+    def SetTrackName(self, track_type: str, index: int, name: str) -> bool:
+        names = self._track_names.get(track_type, [])
+        if not 1 <= index <= len(names):
+            return False
+        names[index - 1] = name
+        return True
+
+    # playhead (STUDIO-T1 razor assist) ---------------------------------------
+    def SetCurrentTimecode(self, timecode: str) -> bool:
+        base = _TC_BASE.get(self._rate)
+        parts = timecode.split(":")
+        if base is None or len(parts) != 4 or not all(p.isdigit() for p in parts):
+            return False
+        hours, minutes, seconds, frames = (int(p) for p in parts)
+        behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
+        self._playhead = ((hours * 60 + minutes) * 60 + seconds) * base + frames
+        self._playhead += behavior.playhead_offset
+        return True
+
+    def GetCurrentTimecode(self) -> str:
+        base = _TC_BASE[self._rate]
+        seconds, frames = divmod(self._playhead, base)
+        minutes, seconds = divmod(seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}:{frames:02d}"
+
+    def GetCurrentVideoItem(self) -> FakeTimelineItem | None:
+        for track in reversed(self._tracks["video"]):
+            for item in track:
+                if item._start <= self._playhead < item._end:
+                    return item
+        return None
 
     def DeleteClips(self, items: list[FakeTimelineItem], ripple: bool = False) -> bool:
         behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
@@ -314,11 +483,8 @@ class FakeTimeline(_FakeObject):
                 tracks[index] = kept
         return True
 
-    def AieTestOnlySplitAt(self, track_type: str, index: int, frame: int) -> bool:
-        """NOT a Resolve API. Present only when ``FakeBehavior.split_enabled``."""
+    def _split(self, track_type: str, index: int, frame: int) -> bool:
         behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
-        if not behavior.split_enabled:
-            raise AttributeError("AieTestOnlySplitAt")
         tracks = self._tracks.get(track_type, [])
         if not 1 <= index <= len(tracks):
             return False
@@ -336,6 +502,10 @@ class FakeTimeline(_FakeObject):
                     f"{item._uid}+{offset}",
                     item._enabled,
                 )
+                right._grade = FakeGrade(
+                    item._grade.layers, item._grade.versions, item._grade.current_version
+                )
+                right._comps = dict(item._comps)
                 for key, info in list(item._markers.items()):
                     if key >= offset:
                         del item._markers[key]
@@ -345,9 +515,20 @@ class FakeTimeline(_FakeObject):
                 return True
         return False
 
+    def AieTestOnlySplitAt(self, track_type: str, index: int, frame: int) -> bool:
+        """NOT a Resolve API. Present only when ``FakeBehavior.split_enabled``."""
+        behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
+        if not behavior.split_enabled:
+            raise AttributeError("AieTestOnlySplitAt")
+        return self._split(track_type, index, frame)
+
     # test-only helpers (simulated editor actions; not allowlisted) ----------
     def _item(self, track_type: str, index: int, position: int) -> FakeTimelineItem:
         return self._tracks[track_type][index - 1][position]
+
+    def _blade(self, track_type: str, index: int) -> bool:
+        """The editor presses blade at the playhead on one track (a UI action)."""
+        return self._split(track_type, index, self._playhead)
 
     def _find_marker_item(self, custom_data: str) -> FakeTimelineItem:
         for tracks in self._tracks.values():
@@ -366,77 +547,153 @@ class FakeTimeline(_FakeObject):
         item._end -= frames
 
 
+class FakeMediaPool(_FakeObject):
+    KIND = "MediaPool"
+
+    def __init__(self, behavior: FakeBehavior, project: "FakeProject") -> None:
+        super().__init__(behavior)
+        self._project = project
+        self._root = FakeFolder(behavior)
+
+    def GetRootFolder(self) -> FakeFolder:
+        return self._root
+
+    def ImportTimelineFromFile(
+        self, path: str, options: dict[str, Any] | None = None
+    ) -> FakeTimeline | None:
+        behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
+        project = self._project
+        if behavior.import_result_none:
+            return None
+        if behavior.import_returns_existing:
+            return project._timelines[0]
+        result = read_xmeml(Path(path).read_text(encoding="utf-8"))
+        if result.timeline is None:
+            return None
+        name = result.timeline.name  # FCP7: the internal sequence name wins
+        for existing in project._timelines:
+            if existing._name == name:
+                return existing  # documented quirk: the EXISTING timeline is returned
+        timeline = project._build(result.timeline, colours=False)
+        if behavior.import_extra_shift:
+            for tracks in timeline._tracks.values():
+                for track in tracks:
+                    for item in track[1:]:
+                        item._start += behavior.import_extra_shift
+                        item._end += behavior.import_extra_shift
+        project._timelines.append(timeline)
+        return timeline
+
+
 class FakeProject(_FakeObject):
     KIND = "Project"
 
-    def __init__(self, behavior: FakeBehavior, timeline: FakeTimeline) -> None:
+    def __init__(self, behavior: FakeBehavior) -> None:
         super().__init__(behavior)
-        self._timeline = timeline
+        self._timelines: list[FakeTimeline] = []
+        self._current: FakeTimeline | None = None
+        self._media: dict[str, FakeMediaPoolItem] = {}
+        self._serial = 0
+        self._pool = FakeMediaPool(behavior, self)
 
     def GetCurrentTimeline(self) -> FakeTimeline | None:
         behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
-        return None if behavior.no_current_timeline else self._timeline
+        return None if behavior.no_current_timeline else self._current
+
+    def GetTimelineCount(self) -> int:
+        return len(self._timelines)
+
+    def GetTimelineByIndex(self, index: int) -> FakeTimeline | None:
+        return self._timelines[index - 1] if 1 <= index <= len(self._timelines) else None
+
+    def SetCurrentTimeline(self, timeline: FakeTimeline) -> bool:
+        if timeline not in self._timelines:
+            return False
+        self._current = timeline
+        return True
+
+    def GetMediaPool(self) -> FakeMediaPool:
+        return self._pool
+
+    def GetSetting(self, key: str) -> str:
+        behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
+        return {"nodeStackLayers": behavior.node_stack_layers}.get(key, "")
 
     @property
     def timeline(self) -> FakeTimeline:
-        return self._timeline
+        """The ORIGINAL timeline (first built); not necessarily the current one."""
+        return self._timelines[0]
+
+    @property
+    def current(self) -> FakeTimeline | None:
+        return self._current
+
+    def _build(self, timeline: TimelineStructure, *, colours: bool = True) -> FakeTimeline:
+        behavior: FakeBehavior = object.__getattribute__(self, "_behavior")
+        video: list[list[FakeTimelineItem]] = []
+        audio: list[list[FakeTimelineItem]] = []
+        for track in timeline.tracks:
+            items: list[FakeTimelineItem] = []
+            for start, clip in track.placements():
+                ref = clip.media
+                pool = self._media.get(ref.media_id)
+                if pool is None:
+                    frames = None if ref.available_range is None else ref.available_range.end
+                    pool = FakeMediaPoolItem(
+                        behavior,
+                        ref.media_id,
+                        ref.target_path,
+                        frames,
+                        ref.media_start_frame,
+                        f"mpi-{len(self._media) + 1}",
+                    )
+                    self._media[ref.media_id] = pool
+                self._serial += 1
+                absolute = timeline.start_frame + start
+                item = FakeTimelineItem(
+                    behavior,
+                    clip.name,
+                    pool,
+                    absolute,
+                    absolute + clip.duration,
+                    clip.source_range.start,
+                    f"ti-{self._serial}",
+                    clip.enabled,
+                )
+                _copy_markers(item, clip, colours)
+                items.append(item)
+            if track.kind is HandoffTrackKind.VIDEO:
+                video.append(items)
+            elif track.kind is HandoffTrackKind.AUDIO:
+                audio.append(items)
+            else:
+                raise ValueError("Fake supports VIDEO and AUDIO tracks only")
+        rate = _RATE_STRINGS[(timeline.rate.numerator, timeline.rate.denominator)]
+        uid = f"fake-timeline-{len(self._timelines) + 1}"
+        built = FakeTimeline(behavior, timeline.name, timeline.start_frame, rate, video, audio, uid)
+        if behavior.import_keeps_track_names and self._timelines:
+            for kind, names in self._timelines[0]._track_names.items():
+                built._track_names[kind] = list(names)
+        return built
 
 
 def fake_project_from_handoff(
-    timeline: HandoffTimeline, behavior: FakeBehavior | None = None
+    timeline: TimelineStructure, behavior: FakeBehavior | None = None
 ) -> FakeProject:
     """Build the fake graph from a HandoffTimeline (markers included, colours mapped)."""
     behavior = FakeBehavior() if behavior is None else behavior
-    media: dict[str, FakeMediaPoolItem] = {}
-    video: list[list[FakeTimelineItem]] = []
-    audio: list[list[FakeTimelineItem]] = []
-    serial = 0
-    for track in timeline.tracks:
-        items: list[FakeTimelineItem] = []
-        for start, clip in track.placements():
-            ref = clip.media
-            pool = media.get(ref.media_id)
-            if pool is None:
-                frames = None if ref.available_range is None else ref.available_range.end
-                pool = FakeMediaPoolItem(
-                    behavior,
-                    ref.media_id,
-                    ref.target_path,
-                    frames,
-                    ref.media_start_frame,
-                    f"mpi-{len(media) + 1}",
-                )
-                media[ref.media_id] = pool
-            serial += 1
-            absolute = timeline.start_frame + start
-            item = FakeTimelineItem(
-                behavior,
-                clip.name,
-                pool,
-                absolute,
-                absolute + clip.duration,
-                clip.source_range.start,
-                f"ti-{serial}",
-                clip.enabled,
-            )
-            _copy_markers(item, clip)
-            items.append(item)
-        if track.kind is HandoffTrackKind.VIDEO:
-            video.append(items)
-        elif track.kind is HandoffTrackKind.AUDIO:
-            audio.append(items)
-        else:
-            raise ValueError("Fake supports VIDEO and AUDIO tracks only")
-    rate = _RATE_STRINGS[(timeline.rate.numerator, timeline.rate.denominator)]
-    fake = FakeTimeline(behavior, timeline.name, timeline.start_frame, rate, video, audio)
-    return FakeProject(behavior, fake)
+    project = FakeProject(behavior)
+    built = project._build(timeline)
+    project._timelines.append(built)
+    project._current = built
+    return project
 
 
-def _copy_markers(item: FakeTimelineItem, clip: HandoffClip) -> None:
+def _copy_markers(item: FakeTimelineItem, clip: HandoffClip, colours: bool) -> None:
     for marker in clip.markers:
         offset = marker.frame_range.start - clip.source_range.start
         item._markers[float(offset)] = {
-            "color": _COLOR_NAMES.get(marker.color.value, "Blue"),
+            "color": _COLOR_NAMES.get(marker.color.value, "Blue") if colours else "Blue",
             "duration": float(marker.frame_range.duration),
             "note": marker.note,
             "name": marker.name,

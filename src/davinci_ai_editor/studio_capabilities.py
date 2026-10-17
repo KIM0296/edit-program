@@ -34,6 +34,15 @@ item, or ripple-deletes a frame sub-range, in any README or OSS note in hand
 Rebuilding a timeline (``CreateTimelineFromClips`` / ``AppendToTimeline``)
 creates new items and would NOT carry grades, effects, Fusion comps or mixes,
 so the Studio transport never rebuilds.
+
+STUDIO-T1 (tiered apply) adds the evidence for the four tiers: importing the
+shared Expected as a NEW version timeline (``ImportTimelineFromFile`` and its
+measured naming quirks), the structural grade read used for tier selection,
+grade / Fusion transfer (``CopyGrades`` replaces wholesale and creates no
+version; other layers and versions are NOT_AVAILABLE; keyframes UNVERIFIED),
+the razor-assist playhead (``SetCurrentTimecode``) and the undocumented
+split/trim surface of Blackmagic's own MCP server (UNVERIFIED). Additional
+read-only sources: ``OSS_PYI`` (typed stubs) and three OSS reference notes.
 """
 
 from collections.abc import Mapping
@@ -51,6 +60,10 @@ OSS_README = (
 OSS_CHANGELOG_21_1 = "OSS davinci-resolve-mcp docs/reference/resolve_scripting_changelog_21.1.md"
 OSS_API_TRUTH = "OSS davinci-resolve-mcp src/utils/api_truth.py"
 REPO_READ_MAP = "docs/RESOLVE_READ_CAPABILITY_MAP.md"
+OSS_PYI = "OSS davinci-resolve-mcp docs/reference/DaVinciResolveScript.pyi (typed stubs)"
+OSS_API_COVERAGE = "OSS davinci-resolve-mcp docs/reference/api-coverage.md"
+OSS_LUT_CONTROLS = "OSS davinci-resolve-mcp docs/reference/lut-file-controls.md"
+OSS_TYPED_API_SEARCH = "OSS davinci-resolve-mcp docs/reference/typed-api-search.md"
 
 
 def _truth(symbol: str) -> str:
@@ -71,6 +84,12 @@ class CapabilityArea(str, Enum):
     CUT_IN_PLACE = "CUT_IN_PLACE"
     CUT_REBUILD = "CUT_REBUILD"
     DETECTION = "DETECTION"
+    # STUDIO-T1 tiered apply
+    NEW_VERSION_IMPORT = "NEW_VERSION_IMPORT"
+    GRADE_READ = "GRADE_READ"
+    GRADE_TRANSFER = "GRADE_TRANSFER"
+    RAZOR_ASSIST = "RAZOR_ASSIST"
+    NATIVE_MCP = "NATIVE_MCP"
 
 
 class StudioCapability(str, Enum):
@@ -124,6 +143,45 @@ class StudioCapability(str, Enum):
     DUPLICATE_TIMELINE = "DUPLICATE_TIMELINE"
     # detection
     HASATTR_DETECTION = "HASATTR_DETECTION"
+    # STUDIO-T1 tier 1/2: import a new timeline version inside Resolve
+    IMPORT_TIMELINE_FROM_FILE = "IMPORT_TIMELINE_FROM_FILE"
+    IMPORT_NAME_AUTHORITY = "IMPORT_NAME_AUTHORITY"
+    IMPORT_TRACK_NAMES_PRESERVED = "IMPORT_TRACK_NAMES_PRESERVED"
+    IMPORT_MEDIA_RELINK_EXACT = "IMPORT_MEDIA_RELINK_EXACT"
+    IMPORT_MARKER_COLOR_AND_CUSTOM_DATA = "IMPORT_MARKER_COLOR_AND_CUSTOM_DATA"
+    LIST_PROJECT_TIMELINES = "LIST_PROJECT_TIMELINES"
+    SET_CURRENT_TIMELINE = "SET_CURRENT_TIMELINE"
+    MEDIA_POOL_ROOT_FOLDER = "MEDIA_POOL_ROOT_FOLDER"
+    READ_TRACK_NAME = "READ_TRACK_NAME"
+    SET_TRACK_NAME = "SET_TRACK_NAME"
+    # STUDIO-T1 grade state read (tier selection)
+    READ_GRADE_GRAPH = "READ_GRADE_GRAPH"
+    READ_GRADE_VERSIONS = "READ_GRADE_VERSIONS"
+    READ_FUSION_COMPS = "READ_FUSION_COMPS"
+    READ_NODE_STACK_LAYERS = "READ_NODE_STACK_LAYERS"
+    GRADE_ABSENCE_INFERENCE = "GRADE_ABSENCE_INFERENCE"
+    # STUDIO-T1 tier 2: grade / Fusion transfer to the new items
+    GRADE_COPY_GRADES = "GRADE_COPY_GRADES"
+    GRADE_COPY_ACROSS_TIMELINES = "GRADE_COPY_ACROSS_TIMELINES"
+    GRADE_COPY_ALL_LAYERS = "GRADE_COPY_ALL_LAYERS"
+    GRADE_COPY_VERSIONS = "GRADE_COPY_VERSIONS"
+    GRADE_COPY_KEYFRAMES = "GRADE_COPY_KEYFRAMES"
+    GRADE_STRUCTURE_FINGERPRINT = "GRADE_STRUCTURE_FINGERPRINT"
+    GRADE_APPLY_DRX = "GRADE_APPLY_DRX"
+    GRADE_APPLY_FROM_STILL = "GRADE_APPLY_FROM_STILL"
+    GRADE_EXPORT_LUT = "GRADE_EXPORT_LUT"
+    GRADE_ADD_VERSION = "GRADE_ADD_VERSION"
+    FUSION_COMP_EXPORT = "FUSION_COMP_EXPORT"
+    FUSION_COMP_IMPORT = "FUSION_COMP_IMPORT"
+    FUSION_COMP_ADD = "FUSION_COMP_ADD"
+    FUSION_COMP_TIME_ALIGNMENT = "FUSION_COMP_TIME_ALIGNMENT"
+    # STUDIO-T1 tier 4: razor assist (the editor presses blade)
+    PLAYHEAD_SET_TIMECODE = "PLAYHEAD_SET_TIMECODE"
+    PLAYHEAD_GET_TIMECODE = "PLAYHEAD_GET_TIMECODE"
+    TIMECODE_STRING_FORMAT = "TIMECODE_STRING_FORMAT"
+    READ_CURRENT_VIDEO_ITEM = "READ_CURRENT_VIDEO_ITEM"
+    # STUDIO-T1 Blackmagic's own (21.1) MCP server
+    NATIVE_MCP_SPLIT_TRIM_TOOLS = "NATIVE_MCP_SPLIT_TRIM_TOOLS"
 
 
 @dataclass(frozen=True)
@@ -641,8 +699,9 @@ STUDIO_CAPABILITY_MATRIX: tuple[CapabilityEntry, ...] = (
         _S.DOCUMENTED_CLAIM,
         _ALL,
         (OSS_README,),
-        "Copies only the current node-stack layer grade; effects, Fusion, audio and "
-        "keyframes are not covered, so a rebuild plus CopyGrades is still not preserving.",
+        "T0 view: as part of a REBUILD it is still not preserving (only the current "
+        "node-stack layer grade; Fusion, audio and other versions are not covered). The "
+        "STUDIO-T1 tier-2 use and its measured traps are recorded as GRADE_COPY_GRADES.",
         False,
     ),
     CapabilityEntry(
@@ -651,8 +710,434 @@ STUDIO_CAPABILITY_MATRIX: tuple[CapabilityEntry, ...] = (
         "Timeline.DuplicateTimeline(name) -> Timeline",
         _S.DOCUMENTED_CLAIM,
         _ALL,
+        (OSS_README, _truth("Timeline.DuplicateTimeline")),
+        "OSS measured on Studio 21.1.0.14 (reconfirmed 2026-09-13): returns the copy but "
+        "SILENTLY moves the project's current-timeline pointer to it, so later mutations land "
+        "in the copy. Not used: tiers 1/2 import a NEW timeline and leave the original "
+        "untouched as the backup. If ever used: capture GetCurrentTimeline() first and "
+        "SetCurrentTimeline() back, checking the bool.",
+        False,
+    ),
+    # ------------------------------------------- STUDIO-T1 tier 1/2: new version import
+    CapabilityEntry(
+        _C.IMPORT_TIMELINE_FROM_FILE,
+        _A.NEW_VERSION_IMPORT,
+        "MediaPool.ImportTimelineFromFile(filePath, {timelineName, importSourceClips, "
+        "sourceClipsPath, sourceClipsFolders, interlaceProcessing}) -> Timeline",
+        _S.DOCUMENTED_CLAIM,
+        "README all versions; OSS measured on Studio 19.1.3.7 / 21.0.4.5",
+        (
+            OSS_README,
+            OSS_PYI,
+            _truth("MediaPool.ImportTimelineFromFile"),
+            _truth("Timeline.Export / ImportTimelineFromFile (format fidelity)"),
+        ),
+        "Creates a NEW timeline from AAF/EDL/XML/FCPXML/DRT/ADL/OTIO. Returns None with no "
+        "error when the requested timelineName already exists. FCP7 XML keeps the cut and the "
+        "tracks frame-exact and relinks when media moved; the OSS-recommended repeatable loop "
+        "is FCP7 XML + a unique name + importSourceClips=False + sourceClipsFolders=[root]. "
+        "OTIO does not relink from the pool; DRT ignores importOptions. Tiers 1/2 use FCP7 XML.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.IMPORT_NAME_AUTHORITY,
+        _A.NEW_VERSION_IMPORT,
+        "Which name the imported timeline gets, and whether a NEW timeline is returned",
+        _S.UNVERIFIED,
+        "OSS measured on Studio 21.0.4.5 (issue #171) and 19.1.3.7",
+        (
+            _truth(
+                "MediaPool.ImportTimelineFromFile (internal sequence name overrides timelineName)"
+            ),
+            _truth("MediaPool.ImportTimelineFromFile"),
+        ),
+        "FCP7 XML IGNORES timelineName: the internal <sequence><name> wins, and when it "
+        "matches an existing timeline the call returns that EXISTING timeline (no error). A "
+        "repeated timelineName returns None. The transport writes the unique name INTO the "
+        "file, refuses a name that already exists before calling, and afterwards requires a "
+        "timeline id absent from the pre-import set carrying the requested name; anything "
+        "else is REFUSED/UNVERIFIED, never success.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.IMPORT_TRACK_NAMES_PRESERVED,
+        _A.NEW_VERSION_IMPORT,
+        "Track names / order after an FCP7 XML import",
+        _S.UNVERIFIED,
+        _ALL,
+        (OSS_README, _truth("Timeline.Export / ImportTimelineFromFile (format fidelity)")),
+        "The OSS reports that FCP7 XML keeps the cut and the tracks; custom track NAMES are "
+        "not documented either way. The read-back compares track count/kind/order and "
+        "GetTrackName per track; a difference is restored with SetTrackName only when "
+        "granted, otherwise MISMATCH. Layers are never merged.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.IMPORT_MEDIA_RELINK_EXACT,
+        _A.NEW_VERSION_IMPORT,
+        "Imported items link to the same media pool clips",
+        _S.UNVERIFIED,
+        "OSS measured on Studio 19.1.3.7",
+        (
+            _truth(
+                "Timeline import MERGES pool media by a coarse identity - similar files can "
+                "silently cross-link"
+            ),
+        ),
+        "Pool media are merged by a coarse identity across imports and similar files can "
+        "cross-link silently. The read-back compares media name and file path per item "
+        "(VER-001); 'linked == total' is not trusted.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.IMPORT_MARKER_COLOR_AND_CUSTOM_DATA,
+        _A.NEW_VERSION_IMPORT,
+        "Marker colour and customData through an FCP7 XML import",
+        _S.NOT_AVAILABLE,
+        _ALL,
+        (OSS_README, REPO_READ_MAP),
+        "FCP7 xmeml markers carry no colour and no customData (APPLY-001 limits). Remaining "
+        "candidate markers on the new version keep their NAME only; the read-back compares "
+        "markers without colour (documented format loss), and marker removal by customData "
+        "is UNSUPPORTED on the imported version.",
+        False,
+    ),
+    CapabilityEntry(
+        _C.LIST_PROJECT_TIMELINES,
+        _A.NEW_VERSION_IMPORT,
+        "Project.GetTimelineCount() -> int; Project.GetTimelineByIndex(idx) -> Timeline",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
         (OSS_README,),
-        "Candidate pre-mutation backup for native qualification; not used in T0.",
+        "Pre-import name/id set (collision refusal and the new-id check).",
+        True,
+    ),
+    CapabilityEntry(
+        _C.SET_CURRENT_TIMELINE,
+        _A.NEW_VERSION_IMPORT,
+        "Project.SetCurrentTimeline(timeline) -> bool",
+        _S.DOCUMENTED_CLAIM,
+        "README all versions; OSS measured on Studio 21.1.0.14",
+        (OSS_README, _truth("Timeline.DuplicateTimeline")),
+        "Opens the new version for the editor after a MATCH read-back; verified by the "
+        "GetCurrentTimeline id. Optional: without the grant the editor opens it by hand.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.MEDIA_POOL_ROOT_FOLDER,
+        _A.NEW_VERSION_IMPORT,
+        "Project.GetMediaPool() -> MediaPool; MediaPool.GetRootFolder() -> Folder",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README, _truth("MediaPool.ImportTimelineFromFile")),
+        "sourceClipsFolders=[root] with importSourceClips=False (no duplicated pool media).",
+        True,
+    ),
+    CapabilityEntry(
+        _C.READ_TRACK_NAME,
+        _A.NEW_VERSION_IMPORT,
+        "Timeline.GetTrackName(trackType, trackIndex) -> str",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README,),
+        "Layer-preservation read-back on both timelines.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.SET_TRACK_NAME,
+        _A.NEW_VERSION_IMPORT,
+        "Timeline.SetTrackName(trackType, trackIndex, name) -> bool",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README,),
+        "Only on the NEW timeline, only to restore the original names; re-read afterwards.",
+        True,
+    ),
+    # ------------------------------------------------------ STUDIO-T1 grade state read
+    CapabilityEntry(
+        _C.READ_GRADE_GRAPH,
+        _A.GRADE_READ,
+        "TimelineItem.GetNodeGraph(layerIdx) -> Graph; Graph.GetNumNodes(), "
+        "GetNodeLabel(i), GetToolsInNode(i)",
+        _S.DOCUMENTED_CLAIM,
+        "README all versions; OSS: read side answers on the Edit page (19.1.3.7)",
+        (
+            OSS_README,
+            _truth("TimelineItem.AddVersion / Graph.ApplyGradeFromDRX (page-dependent)"),
+        ),
+        "Structural only (node count, labels, tool lists), never grade values.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.READ_GRADE_VERSIONS,
+        _A.GRADE_READ,
+        "TimelineItem.GetVersionNameList(versionType) -> [names]; GetCurrentVersion() -> "
+        "{versionName, versionType}",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README, _truth("TimelineItem.CopyGrades")),
+        "More than one local version means GRADED, and the other versions are not "
+        "transferable (GRADE_COPY_VERSIONS).",
+        True,
+    ),
+    CapabilityEntry(
+        _C.READ_FUSION_COMPS,
+        _A.GRADE_READ,
+        "TimelineItem.GetFusionCompCount() -> int; GetFusionCompNameList() -> [names]",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README,),
+        "Any comp counts as work a re-import would lose (GRADED for tier selection).",
+        True,
+    ),
+    CapabilityEntry(
+        _C.READ_NODE_STACK_LAYERS,
+        _A.GRADE_READ,
+        "Project.GetSetting('nodeStackLayers') -> str",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README,),
+        "Named in the GetNodeGraph bound. More than one layer makes CopyGrades partial "
+        "(GRADE_COPY_ALL_LAYERS). Parsed strictly (digits only).",
+        True,
+    ),
+    CapabilityEntry(
+        _C.GRADE_ABSENCE_INFERENCE,
+        _A.GRADE_READ,
+        "'one node, no tools, one version, no comps' implies 'not graded'",
+        _S.UNVERIFIED,
+        _ALL,
+        (OSS_README,),
+        "Not documented: a primary correction inside the single default node may not show "
+        "in GetToolsInNode. Without this grant the grade state is UNKNOWN (never UNGRADED), "
+        "and the planner asks the user (NEEDS_USER_CHOICE) instead of picking tier 1.",
+        True,
+    ),
+    # ------------------------------------------- STUDIO-T1 tier 2: grade / comp transfer
+    CapabilityEntry(
+        _C.GRADE_COPY_GRADES,
+        _A.GRADE_TRANSFER,
+        "TimelineItem.CopyGrades([tgtTimelineItems]) -> bool",
+        _S.DOCUMENTED_CLAIM,
+        "README all versions; OSS measured on Studio 21.1.0.14 (reconfirmed 2026-09-13)",
+        (OSS_README, OSS_PYI, _truth("TimelineItem.CopyGrades")),
+        "Copies the CURRENT node-stack layer grade to the same layer of each target. "
+        "Measured: REPLACES the target grade wholesale (no merge), returns True, and creates "
+        "NO version (GetVersionNameList unchanged), so an overwritten target grade cannot be "
+        "recovered. Tier 2 targets only freshly imported items whose graph is checked to be "
+        "the default before the call.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.GRADE_COPY_ACROSS_TIMELINES,
+        _A.GRADE_TRANSFER,
+        "CopyGrades from an item on the backup timeline to items on the new timeline",
+        _S.UNVERIFIED,
+        _ALL,
+        (OSS_README, _truth("TimelineItem.CopyGrades")),
+        "The README does not say whether source and targets may sit on different timelines; "
+        "the OSS measurement was within one timeline. Tier 2 requires this grant.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.GRADE_COPY_ALL_LAYERS,
+        _A.GRADE_TRANSFER,
+        "(none) copy every node-stack layer / choose the current layer",
+        _S.NOT_AVAILABLE,
+        _ALL,
+        (OSS_README,),
+        "CopyGrades copies the current layer only, and no call selects the current layer. "
+        "With nodeStackLayers > 1 the transfer cannot be complete, so tier 2 is not offered "
+        "(tier 4 keeps the graded items in place).",
+        False,
+    ),
+    CapabilityEntry(
+        _C.GRADE_COPY_VERSIONS,
+        _A.GRADE_TRANSFER,
+        "(none) copy colour versions other than the current one",
+        _S.NOT_AVAILABLE,
+        "OSS measured on Studio 21.1.0.14",
+        (OSS_README, _truth("TimelineItem.CopyGrades")),
+        "CopyGrades copies the current grade and creates no version; other local/remote "
+        "versions are not transferred. An item with more than one version blocks tier 2.",
+        False,
+    ),
+    CapabilityEntry(
+        _C.GRADE_COPY_KEYFRAMES,
+        _A.GRADE_TRANSFER,
+        "Whether CopyGrades carries node keyframes, and how they align on a later piece",
+        _S.UNVERIFIED,
+        _ALL,
+        (OSS_README, _truth("TimelineItem.CopyGrades")),
+        "Not documented. The OSS compared exported (static) LUTs, which cannot show "
+        "keyframes. Tier-2 grade VALUES therefore stay UNVERIFIED even when the structural "
+        "fingerprint matches.",
+        False,
+    ),
+    CapabilityEntry(
+        _C.GRADE_STRUCTURE_FINGERPRINT,
+        _A.GRADE_TRANSFER,
+        "Fingerprint = current-layer node count, labels, tools per node, Fusion comp names",
+        _S.UNVERIFIED,
+        _ALL,
+        (OSS_README,),
+        "Per-item read-back evidence for tier 2 (MATCH / MISMATCH / UNVERIFIED). Equal "
+        "structure does not prove equal values; a value check needs a page-gated ExportLUT "
+        "comparison (GRADE_EXPORT_LUT), left to TASK-020.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.GRADE_APPLY_DRX,
+        _A.GRADE_TRANSFER,
+        "Graph.ApplyGradeFromDRX(path, gradeMode 0|1|2) -> bool",
+        _S.DOCUMENTED_CLAIM,
+        "README all versions; OSS measured on 19.1.3 / Studio 19.1.3.7",
+        (
+            OSS_README,
+            _truth("Graph.ApplyGradeFromDRX (node layout preserved on same-structure apply)"),
+            _truth("TimelineItem.AddVersion / Graph.ApplyGradeFromDRX (page-dependent)"),
+        ),
+        "gradeMode 1 = source-timecode aligned (the keyframe-preserving candidate for a later "
+        "piece). Returns False on the Edit page with no signal and needs a .drx still "
+        "(GrabStill + GalleryStillAlbum.ExportStills, Gallery panel visible). Not used in T1.",
+        False,
+    ),
+    CapabilityEntry(
+        _C.GRADE_APPLY_FROM_STILL,
+        _A.GRADE_TRANSFER,
+        "(none) TimelineItem.ApplyGradeFromStill",
+        _S.NOT_AVAILABLE,
+        "OSS measured on Studio 21.1.0.14",
+        (_truth("TimelineItem.ApplyGradeFromStill"), OSS_PYI),
+        "Does not exist (AttributeError); Graph.ApplyGradeFromDRX is the documented call.",
+        False,
+    ),
+    CapabilityEntry(
+        _C.GRADE_EXPORT_LUT,
+        _A.GRADE_TRANSFER,
+        "TimelineItem.ExportLUT(exportType, path) -> bool",
+        _S.DOCUMENTED_CLAIM,
+        "OSS measured on Studio 21.1.0.14 (reconfirmed 2026-09-13)",
+        (OSS_README, _truth("TimelineItem.ExportLUT")),
+        "Color page only (a bare False elsewhere, no file written). A static LUT: usable as "
+        "a value-level read-back of a transferred grade, never as the transfer. Not used in T1.",
+        False,
+    ),
+    CapabilityEntry(
+        _C.GRADE_ADD_VERSION,
+        _A.GRADE_TRANSFER,
+        "TimelineItem.AddVersion(versionName, versionType) -> bool",
+        _S.DOCUMENTED_CLAIM,
+        "OSS measured on Studio 19.1.3.7",
+        (
+            OSS_README,
+            _truth("TimelineItem.AddVersion / Graph.ApplyGradeFromDRX (page-dependent)"),
+        ),
+        "Color page only. Not needed in T1: the targets are fresh items with nothing to keep.",
+        False,
+    ),
+    CapabilityEntry(
+        _C.FUSION_COMP_EXPORT,
+        _A.GRADE_TRANSFER,
+        "TimelineItem.ExportFusionComp(path, compIndex) -> bool",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README, OSS_PYI),
+        "Exports comp N of the original item to a work file.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.FUSION_COMP_IMPORT,
+        _A.GRADE_TRANSFER,
+        "TimelineItem.ImportFusionComp(path) -> fusionComp",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README, OSS_PYI),
+        "Creates and adds a new comp on each new piece; None is a failure.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.FUSION_COMP_ADD,
+        _A.GRADE_TRANSFER,
+        "TimelineItem.AddFusionComp() -> fusionComp",
+        _S.DOCUMENTED_CLAIM,
+        "OSS measured on Studio 19.1.3.7 / 21.0.x",
+        (OSS_README, _truth("TimelineItem.AddFusionComp / LoadFusionCompByName")),
+        "An API-created comp renders only when MediaOut has a path from MediaIn, and values "
+        "written under a comp lock read back but never render. Not used (import is used).",
+        False,
+    ),
+    CapabilityEntry(
+        _C.FUSION_COMP_TIME_ALIGNMENT,
+        _A.GRADE_TRANSFER,
+        "Comp animation timing on a piece that starts later in the source",
+        _S.UNVERIFIED,
+        _ALL,
+        (OSS_README,),
+        "Not documented whether an imported comp's keyframes follow source or item time; "
+        "comp transfer values stay UNVERIFIED.",
+        False,
+    ),
+    # ------------------------------------------------ STUDIO-T1 tier 4: razor assist
+    CapabilityEntry(
+        _C.PLAYHEAD_SET_TIMECODE,
+        _A.RAZOR_ASSIST,
+        "Timeline.SetCurrentTimecode(timecode) -> bool",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README, OSS_PYI),
+        "Moves the playhead on the Cut, Edit, Color, Fairlight and Deliver pages. Read back "
+        "with GetCurrentTimecode; a mismatch stops the assist (no retry).",
+        True,
+    ),
+    CapabilityEntry(
+        _C.PLAYHEAD_GET_TIMECODE,
+        _A.RAZOR_ASSIST,
+        "Timeline.GetCurrentTimecode() -> str",
+        _S.DOCUMENTED_CLAIM,
+        _ALL,
+        (OSS_README,),
+        "Playhead read-back after SetCurrentTimecode.",
+        True,
+    ),
+    CapabilityEntry(
+        _C.TIMECODE_STRING_FORMAT,
+        _A.RAZOR_ASSIST,
+        "Timecode string accepted by SetCurrentTimecode ('HH:MM:SS:FF'; drop-frame ';')",
+        _S.UNVERIFIED,
+        _ALL,
+        (OSS_README,),
+        "The string format is not specified. The transport emits non-drop 'HH:MM:SS:FF' for "
+        "integer and 23.976 rates and refuses 29.97/59.94 (drop-frame setting unknown).",
+        True,
+    ),
+    CapabilityEntry(
+        _C.READ_CURRENT_VIDEO_ITEM,
+        _A.RAZOR_ASSIST,
+        "Timeline.GetCurrentVideoItem() -> TimelineItem",
+        _S.DOCUMENTED_CLAIM,
+        "README all versions; OSS observed it on the Color page (19.1.3.7)",
+        (
+            OSS_README,
+            OSS_PYI,
+            _truth("Timeline.GetCurrentClipThumbnailImage (foreground only)"),
+        ),
+        "Which track's item is 'current' is not documented. Not used for any decision; the "
+        "post-razor timeline read is the only evidence.",
+        False,
+    ),
+    # ------------------------------------------------- native MCP (Blackmagic's own)
+    CapabilityEntry(
+        _C.NATIVE_MCP_SPLIT_TRIM_TOOLS,
+        _A.NATIVE_MCP,
+        "Blackmagic's own (21.1) MCP server: split / trim / razor tools",
+        _S.UNVERIFIED,
+        "21.1 (as referenced by the OSS)",
+        (OSS_API_COVERAGE, OSS_LUT_CONTROLS, OSS_TYPED_API_SEARCH, OSS_CHANGELOG_21_1),
+        "The OSS references Blackmagic's own MCP only for list_luts / generate_lut / "
+        "delete_lut and search_scripting_api. No source in hand lists a split or trim tool "
+        "or documents the server's edition (Studio-only) status, and the 21.1 scripting "
+        "changelog adds no split call. Check on a real Studio (TASK-020) before relying on it.",
         False,
     ),
     # --------------------------------------------------------------- detection

@@ -35,6 +35,18 @@ Evidence labels: the core RT/VER types carry the constant ``FILE_ROUNDTRIP``
 forking the core; the transport-level truth is carried by this module's
 results (``evidence_domain = TEST_ONLY_SUPPORT``, ``native_evidence = False``)
 and by ``RoundTripFormat.STUDIO_API_READ`` on the artifact reference.
+STUDIO-T1 adds the Studio-domain label explicitly: every read and mutation
+result carries ``evidence_label = "STUDIO_API_READ"`` and an
+:class:`StudioEvidence` (``.evidence``) that states the core label it wraps
+(``core_evidence_class = "FILE_ROUNDTRIP"``) is superseded for Studio reads.
+:func:`studio_verification` wraps a VER-001 report the same way.
+
+STUDIO-T1 additions here: :meth:`ResolveReadPort.read` can read an explicit
+timeline object (the imported new version), and
+:meth:`ResolveMutationPort.apply_confirmed_cuts` accepts ``neutral_splits``
+(tier 4): a live timeline that differs from the confirmed Actual only by the
+listed, source-contiguous editor splits (``studio_razor.NEUTRAL_SPLIT``) is
+accepted as the same Actual; anything else stays STALE.
 """
 
 import hashlib
@@ -87,6 +99,7 @@ from .studio_capabilities import (
     StudioCapability,
     StudioCapabilityProfile,
 )
+from .studio_razor import SplitChangeKind, SplitPlan, classify_split_change
 from .temporal_mapping import FrameRate
 from .trust_evidence import artifact_revision, canonical_bytes
 from .xmeml_reader import track_keys
@@ -105,6 +118,9 @@ class ResolveObjectKind(str, Enum):
     TIMELINE = "TIMELINE"
     TIMELINE_ITEM = "TIMELINE_ITEM"
     MEDIA_POOL_ITEM = "MEDIA_POOL_ITEM"
+    # STUDIO-T1 (used only by studio_tiered_apply's own allowlists)
+    MEDIA_POOL = "MEDIA_POOL"
+    GRAPH = "GRAPH"
 
 
 _K = ResolveObjectKind
@@ -180,6 +196,69 @@ _TRACK_API = (
     (HandoffTrackKind.VIDEO, "video", "Video"),
     (HandoffTrackKind.AUDIO, "audio", "Audio"),
 )
+
+
+# --- evidence label (STUDIO-T1) -------------------------------------------------------
+
+STUDIO_EVIDENCE_LABEL: Literal["STUDIO_API_READ"] = "STUDIO_API_READ"
+CORE_EVIDENCE_CLASS: Literal["FILE_ROUNDTRIP"] = "FILE_ROUNDTRIP"
+
+
+@dataclass(frozen=True)
+class StudioEvidence:
+    """Studio-domain evidence label for results built on the reused RT/VER core types.
+
+    The core types hard-code ``FILE_ROUNDTRIP``; for a Studio read that label is
+    wrong (no file was re-read). This wrapper names the real domain
+    (``STUDIO_API_READ``), keeps ``native_evidence = False`` and the
+    ``TEST_ONLY_SUPPORT`` qualification (fake object graph), and records the core
+    label it supersedes. A core change (a non-file evidence class in RT/VER) is
+    the proper fix; until then this annotation is authoritative for Studio.
+    """
+
+    domain: Literal["STUDIO_API_READ"] = STUDIO_EVIDENCE_LABEL
+    qualification: Literal["TEST_ONLY_SUPPORT"] = QUALIFICATION
+    native_evidence: Literal[False] = False
+    core_evidence_class: Literal["FILE_ROUNDTRIP"] = CORE_EVIDENCE_CLASS
+    core_label_superseded: Literal[True] = True
+
+    def __post_init__(self) -> None:
+        if (
+            self.domain != STUDIO_EVIDENCE_LABEL
+            or self.qualification != QUALIFICATION
+            or self.native_evidence is not False
+            or self.core_evidence_class != CORE_EVIDENCE_CLASS
+            or self.core_label_superseded is not True
+        ):
+            raise ValueError("Studio evidence is STUDIO_API_READ, TEST_ONLY_SUPPORT, never native")
+
+
+STUDIO_EVIDENCE = StudioEvidence()
+
+
+@dataclass(frozen=True)
+class StudioVerification:
+    """A VER-001 report re-labelled for the Studio domain (status unchanged)."""
+
+    status: VerificationStatus
+    report: VerificationReport | None
+    evidence: StudioEvidence = STUDIO_EVIDENCE
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.status, VerificationStatus):
+            raise TypeError("Typed verification status required")
+        if self.report is not None and self.report.status is not self.status:
+            raise ValueError("The wrapped report status is not altered")
+        if self.report is None and self.status is VerificationStatus.MATCH:
+            raise ValueError("MATCH needs a report")
+
+
+def studio_verification(report: VerificationReport | None) -> StudioVerification:
+    if report is None:
+        return StudioVerification(VerificationStatus.UNVERIFIED, None)
+    if not isinstance(report, VerificationReport):
+        raise TypeError("A VerificationReport is required")
+    return StudioVerification(report.status, report)
 
 
 # --- diagnostics -------------------------------------------------------------------
@@ -416,8 +495,8 @@ class _Pass:
             self.note(StudioDiagnosticCode.NO_CURRENT_TIMELINE, "Project", "no current timeline")
         return timeline
 
-    def run(self, project: object) -> RawTimelineRead | None:
-        timeline = self.timeline(project)
+    def run(self, project: object, explicit: object | None = None) -> RawTimelineRead | None:
+        timeline = self.timeline(project) if explicit is None else explicit
         if timeline is None:
             return None
         t = _K.TIMELINE
@@ -671,9 +750,16 @@ class StudioReadResult:
     diagnostics: tuple[StudioDiagnostic, ...]
     evidence_domain: Literal["TEST_ONLY_SUPPORT"] = QUALIFICATION
     native_evidence: Literal[False] = False
+    evidence_label: Literal["STUDIO_API_READ"] = STUDIO_EVIDENCE_LABEL
+
+    @property
+    def evidence(self) -> StudioEvidence:
+        return STUDIO_EVIDENCE
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "diagnostics", tuple(self.diagnostics))
+        if self.evidence_label != STUDIO_EVIDENCE_LABEL:
+            raise ValueError("Studio reads carry the STUDIO_API_READ label")
         if not isinstance(self.consistency, CaptureConsistency):
             raise TypeError("Typed capture consistency required")
         if (self.consistency is CaptureConsistency.CONSISTENT) != (self.actual is not None):
@@ -714,14 +800,15 @@ class ResolveReadPort:
     def profile(self) -> StudioCapabilityProfile:
         return self._profile
 
-    def read(self) -> StudioReadResult:
+    def read(self, timeline: object | None = None) -> StudioReadResult:
+        """Read the current timeline, or ``timeline`` when given (e.g. an imported version)."""
         raws: list[RawTimelineRead] = []
         diagnostics: list[StudioDiagnostic] = []
         for _ in range(self._reads):
             single = _Pass(self._profile)
             raw: RawTimelineRead | None
             try:
-                raw = single.run(self._project)
+                raw = single.run(self._project, timeline)
             except _Blocked as blocked:
                 single.diagnostics.append(blocked.diagnostic)
                 raw = None
@@ -819,6 +906,11 @@ class MutationKind(str, Enum):
     ADD_CANDIDATE_MARKERS = "ADD_CANDIDATE_MARKERS"
     REMOVE_CANDIDATE_MARKERS = "REMOVE_CANDIDATE_MARKERS"
     APPLY_CUTS_IN_PLACE = "APPLY_CUTS_IN_PLACE"
+    # STUDIO-T1
+    APPLY_CUTS_AFTER_NEUTRAL_SPLIT = "APPLY_CUTS_AFTER_NEUTRAL_SPLIT"
+    IMPORT_NEW_VERSION = "IMPORT_NEW_VERSION"
+    TRANSFER_GRADES = "TRANSFER_GRADES"
+    RAZOR_ASSIST_PLAYHEAD = "RAZOR_ASSIST_PLAYHEAD"
 
 
 class MutationStatus(str, Enum):
@@ -886,8 +978,19 @@ class MutationOutcome:
     retried: Literal[False] = False
     evidence_domain: Literal["TEST_ONLY_SUPPORT"] = QUALIFICATION
     native_evidence: Literal[False] = False
+    evidence_label: Literal["STUDIO_API_READ"] = STUDIO_EVIDENCE_LABEL
+
+    @property
+    def evidence(self) -> StudioEvidence:
+        return STUDIO_EVIDENCE
+
+    @property
+    def verification(self) -> StudioVerification:
+        return studio_verification(self.report)
 
     def __post_init__(self) -> None:
+        if self.evidence_label != STUDIO_EVIDENCE_LABEL:
+            raise ValueError("Studio mutations carry the STUDIO_API_READ label")
         object.__setattr__(self, "planned", tuple(self.planned))
         object.__setattr__(self, "call_results", tuple(self.call_results))
         if not isinstance(self.status, MutationStatus) or not isinstance(
@@ -1350,8 +1453,15 @@ class ResolveMutationPort:
         *,
         confirmed_digest: str,
         track_policies: Mapping[str, TrackCutPolicy] | None = None,
+        neutral_splits: SplitPlan | None = None,
     ) -> MutationOutcome:
         """Apply APPLY-001 confirmed cuts to the live timeline in place (never a rebuild).
+
+        ``neutral_splits`` (STUDIO-T1 tier 4): the split frames listed to the
+        editor. When the live timeline differs from the confirmed Actual, it is
+        accepted only if ``studio_razor.classify_split_change`` says
+        NEUTRAL_SPLIT (listed, source-contiguous splits and nothing else);
+        INCOMPLETE_SPLIT and HUMAN_EDIT stay STALE and nothing is mutated.
 
         Raises ``apply_cuts.ApplyRefused`` unless ``confirmed_digest`` equals the
         confirmation digest. The Expected is APPLY-001's own result (same
@@ -1363,7 +1473,11 @@ class ResolveMutationPort:
         track, so a non-CUT track overlapping a cut is reported as LAYER_CONFLICT
         (UNSUPPORTED in place) instead of silently diverging from the Expected.
         """
-        kind = MutationKind.APPLY_CUTS_IN_PLACE
+        kind = (
+            MutationKind.APPLY_CUTS_IN_PLACE
+            if neutral_splits is None
+            else MutationKind.APPLY_CUTS_AFTER_NEUTRAL_SPLIT
+        )
         applied = apply_approved_cuts(confirmation, confirmed_digest=confirmed_digest)
         digest = confirmation.confirmation_digest
         expected = replace(applied.timeline, name=confirmation.actual.name)
@@ -1376,14 +1490,27 @@ class ResolveMutationPort:
         if live.actual is None:
             raise AssertionError("live read carries an Actual")
         if timeline_digest(live.actual) != confirmation.actual_digest:
-            return self._outcome(
-                kind,
-                MutationStatus.REFUSED,
-                PortIssueKind.STALE,
-                "live timeline differs from the confirmed Actual (stale); nothing mutated",
-                readback_read=live,
-                confirmation_digest=digest,
+            change = (
+                None
+                if neutral_splits is None
+                else classify_split_change(confirmation.actual, live.actual, neutral_splits)
             )
+            if change is None or change.kind is not SplitChangeKind.NEUTRAL_SPLIT:
+                why = ""
+                if change is not None:
+                    missing = ", ".join(f"{t}@{f}" for t, f in change.missing)
+                    because = "; ".join(change.reasons) or f"missing {missing}"
+                    why = f" ({change.kind.value}: {because})"
+                return self._outcome(
+                    kind,
+                    MutationStatus.REFUSED,
+                    PortIssueKind.STALE,
+                    "live timeline differs from the confirmed Actual (stale)"
+                    + why
+                    + "; nothing mutated",
+                    readback_read=live,
+                    confirmation_digest=digest,
+                )
         cuts = tuple(c.timeline_range for c in confirmation.approved_cuts)
         for cut in cuts:
             if any(lock.frame_range.overlaps(cut) for lock in confirmation.locks):

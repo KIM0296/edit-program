@@ -212,7 +212,9 @@ cut is reported as LAYER_CONFLICT rather than diverging from the Expected.
    on surviving items are untouched.
 4. Re-confirm that no split, trim or range-delete API exists on the target
    build. If one appears, add it behind `SPLIT_ITEM_AT_FRAME`.
-5. Decide the product answer for mid-item cuts. Options: the file path; or ask
+5. (Answered by STUDIO-T1, `docs/STUDIO_T1_STATUS.md`: four-tier apply —
+   import a new version, grade transfer, in place, razor assist.) Decide the
+   product answer for mid-item cuts. Options: the file path; or ask
    the editor to razor at the listed frames, noting that a razor counts as an
    RT-001 SPLIT and therefore a HARD_LOCK today.
 6. Re-run parity after LAYER-001. Add a native `CapabilityGrant` only through
