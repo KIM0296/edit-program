@@ -185,7 +185,7 @@ def test_security_headers_on_public_pages(tmp_path: Path) -> None:
         assert "default-src 'none'" in csp and "frame-ancestors 'none'" in csp
         assert "script-src" not in csp  # no script is ever allowed
         assert headers["x-content-type-options"] == "nosniff"
-        assert headers["referrer-policy"] == "no-referrer"
+        assert headers["referrer-policy"] == "same-origin"
     cookies = _client(tmp_path / "fresh").get("/").headers.get_list("set-cookie")
     assert len(cookies) == 1 and cookies[0].startswith("aie_csrf=")
 

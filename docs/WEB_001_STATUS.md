@@ -113,7 +113,7 @@ Inputs and policy details:
   root; anything else is 404. Download names are a fixed allow-list.
 - Every user-derived value is HTML-escaped. CSP `default-src 'none'; style-src
   'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'`,
-  `nosniff`, `no-referrer`, `no-store`. Trusted Host guard against DNS rebinding.
+  `nosniff`, `same-origin` referrer policy (browsers then send the real `Origin` on same-site form posts; `no-referrer` made Safari/Firefox send `Origin: null`, which the CSRF origin check refused), `no-store`. Trusted Host guard against DNS rebinding.
 
 ## What it does NOT do
 
