@@ -26,6 +26,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from davinci_ai_editor.apply_cuts import AppliedTimeline
+from davinci_ai_editor.layer_policy import TrackEditPolicy
 from davinci_ai_editor.roundtrip_verification import ActualProvenance
 
 from . import render
@@ -50,9 +51,11 @@ from .pipeline import (
     decode_xml,
     parse_frame_or_timecode,
     parse_gap_seconds,
+    parse_overrides,
     parse_rate,
     verify,
 )
+from .ratelimit import AttemptLimiter, LimitPolicy, client_key
 from .security import (
     CSRF_COOKIE,
     TRIAL_COOKIE,
@@ -67,6 +70,7 @@ from .store import (
     CONFIRMED,
     JOB,
     MEDIA,
+    OVERRIDES,
     TRANSCRIPT,
     MediaTooLarge,
     ProjectNotFound,
@@ -138,6 +142,14 @@ async def _read_upload(upload: UploadFile | None, limit: int, label: str) -> byt
     return data
 
 
+def _locked_message(wait: float) -> str:
+    minutes = max(1, int(wait // 60) + (1 if wait % 60 else 0))
+    return (
+        f"잘못된 코드 입력이 많아 잠시 막았습니다. 약 {minutes}분 뒤에 다시 시도하세요."
+        " (TRIAL_RATE_LIMITED)"
+    )
+
+
 def _duration_text(seconds: Fraction) -> str:
     total = float(seconds)
     return f"{int(total // 60)}분 {total % 60:.1f}초"
@@ -148,10 +160,17 @@ def create_app(
     *,
     transcriber: Transcriber | None = None,
     prober: Prober | None = None,
+    limiter: AttemptLimiter | None = None,
 ) -> FastAPI:
     config = settings or Settings.from_env()
     store = ProjectStore(config)
     invites = InviteStore(config.invites_path)
+    attempts = limiter or AttemptLimiter(
+        LimitPolicy(
+            ip_free_failures=config.trial_ip_failures,
+            global_max_failures=config.trial_global_failures,
+        )
+    )
     probe_file: Prober = prober or read_streams
     if config.trial_mode:
         for code in config.invite_codes:
@@ -194,6 +213,7 @@ def create_app(
     )
     app.state.store = store
     app.state.invites = invites
+    app.state.attempts = attempts
     app.state.runner = runner
     app.state.sweep = sweep
 
@@ -277,8 +297,18 @@ def create_app(
         if not config.trial_mode:
             return None
         code = request.cookies.get(TRIAL_COOKIE, "")
-        invite = invites.lookup(code) if code else None
-        return (code, invite) if invite is not None else None
+        if not code:
+            return None
+        # A presented cookie is a code guess too: rate-limited like typed entry, and
+        # never looked up while this client (or everyone) is locked out.
+        key = client_key(request, config)
+        if attempts.retry_after(key) > 0:
+            return None
+        invite = invites.lookup(code)
+        if invite is None:
+            attempts.failure(key)
+            return None
+        return (code, invite)
 
     def require_session(request: Request) -> tuple[str, Invite] | None:
         session = trial_session(request)
@@ -340,6 +370,7 @@ def create_app(
             allow_json=not config.trial_mode,
             notice=notice(request),
             busy=runner.active(),
+            vad_default=config.asr_vad,
         )
 
     # ----------------------------------------------------------------- project helpers
@@ -356,7 +387,8 @@ def create_app(
         raw = store.read(project_id, APPROVAL)
         if raw is None:
             return None
-        return build_approval(build, decode_xml(raw), config.max_xml_bytes)
+        overrides = parse_overrides(store.read(project_id, OVERRIDES))
+        return build_approval(build, decode_xml(raw), config.max_xml_bytes, overrides)
 
     def load_applied(project_id: str, build: ProjectBuild) -> AppliedTimeline | None:
         raw = store.read(project_id, CONFIRMED)
@@ -457,10 +489,22 @@ def create_app(
 
         if consent != "yes":
             return again("동의 체크박스를 선택해야 시작할 수 있습니다.", 400)
+        key = client_key(request, config)
+        wait = attempts.retry_after(key)
+        if wait > 0:
+            locked = again(_locked_message(wait), 429)
+            locked.headers["Retry-After"] = str(int(wait) + 1)
+            return locked
         try:
             invite = invites.start(code)
         except InviteError as exc:
+            wait = attempts.failure(key)
+            if wait > 0:
+                locked = again(exc.message + " " + _locked_message(wait), 429)
+                locked.headers["Retry-After"] = str(int(wait) + 1)
+                return locked
             return again(exc.message, 403)
+        attempts.success(key)
         response = _redirect("/new")
         remaining = (invite.expires_at or time.time()) - time.time()
         response.set_cookie(
@@ -502,14 +546,19 @@ def create_app(
         timeline_name: Annotated[str, Form()] = "",
         timeline_start: Annotated[str, Form()] = "01:00:00:00",
         gap_seconds: Annotated[str, Form()] = "1.0",
+        vad: Annotated[str, Form()] = "",
+        vad_choice: Annotated[str, Form()] = "",
     ) -> Response:
         check_csrf(request, csrf_token)
         session = require_session(request)
+        # VAD stays on by default (AIE_ASR_VAD); the form checkbox can turn it off per project
+        use_vad = (vad == "1") if vad_choice == "1" else config.asr_vad
         values = {
             "media_folder": media_folder,
             "timeline_name": timeline_name,
             "timeline_start": timeline_start,
             "gap_seconds": gap_seconds,
+            "vad": "1" if use_vad else "",
         }
         try:
             if media is None or not media.filename:
@@ -543,6 +592,7 @@ def create_app(
                     "timeline_name": clean_text(timeline_name, 80),
                     "timeline_start": timeline_start.strip(),
                     "gap_seconds": gap_seconds.strip() or "1.0",
+                    "asr_vad": use_vad,
                 },
             }
         )
@@ -790,6 +840,50 @@ def create_app(
         build_approval(build, decode_xml(raw), config.max_xml_bytes)  # refuse before storing
         store.write(project_id, APPROVAL, raw)
         store.remove(project_id, CONFIRMED)  # a new selection makes any old approval stale
+        store.remove(project_id, OVERRIDES)  # track policies were chosen for the old export
+        return _redirect(f"/p/{project_id}/confirm")
+
+    @app.post("/p/{project_id}/policy", response_model=None)
+    async def set_track_policy(
+        request: Request,
+        project_id: str,
+        track: Annotated[str, Form()] = "",
+        policy: Annotated[str, Form()] = "",
+        csrf_token: Annotated[str, Form()] = "",
+    ) -> Response:
+        """LAYER-001 per-track override (e.g. music = 함께 자르기). Changes the digest;
+        any earlier approval becomes stale. Selecting a policy approves nothing."""
+        check_csrf(request, csrf_token)
+        access(request, project_id)
+        build = load_build(project_id)
+        view = load_approval(project_id, build)
+        if view is None:
+            raise PipelineError("먼저 Resolve에서 내보낸 승인 XML을 업로드하세요.")
+        if track not in view.track_names:
+            raise PipelineError("트랙을 목록에서 선택하세요.", ("TRACK_UNKNOWN",))
+        current = {o.track: o.policy.value for o in view.overrides}
+        if policy == "DEFAULT":
+            current.pop(track, None)
+        else:
+            try:
+                chosen = TrackEditPolicy(policy)
+            except ValueError as exc:
+                raise PipelineError("정책을 목록에서 선택하세요.", ("POLICY_UNKNOWN",)) from exc
+            if chosen is TrackEditPolicy.UNKNOWN:
+                raise PipelineError("정책을 목록에서 선택하세요.", ("POLICY_UNKNOWN",))
+            current[track] = chosen.value
+        raw = json.dumps(current, sort_keys=True).encode("utf-8")
+        build_approval(  # refuse (nothing stored) if the core rejects the override
+            build,
+            decode_xml(store.read(project_id, APPROVAL) or b""),
+            config.max_xml_bytes,
+            parse_overrides(raw),
+        )
+        if current:
+            store.write(project_id, OVERRIDES, raw)
+        else:
+            store.remove(project_id, OVERRIDES)
+        store.remove(project_id, CONFIRMED)  # a new digest: any earlier approval is stale
         return _redirect(f"/p/{project_id}/confirm")
 
     @app.get("/p/{project_id}/confirm", response_model=None)

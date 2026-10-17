@@ -70,9 +70,11 @@ class FakeTranscriber:
         self.error = error
         self.gate = gate
         self.calls: list[Path] = []
+        self.vads: list[bool | None] = []
 
-    def transcribe(self, media: Path, progress: Progress) -> AsrOutput:
+    def transcribe(self, media: Path, progress: Progress, *, vad: bool | None = None) -> AsrOutput:
         self.calls.append(media)
+        self.vads.append(vad)
         assert media.name == MEDIA and media.read_bytes() == MEDIA_BYTES
         if self.gate is not None:
             assert self.gate.wait(10)
@@ -84,8 +86,8 @@ class FakeTranscriber:
             tool_version="1.1.1",
             model_id="small (cpu, int8)",
             model_revision="rev-536b0662742c02347bc0e980a01041f333bce120",
-            vad_method=VAD_METHOD,
-            vad_config_digest="sha256:" + "a" * 64,
+            vad_method=VAD_METHOD if vad is not False else None,
+            vad_config_digest="sha256:" + "a" * 64 if vad is not False else None,
             language_requested="ko",
         )
 

@@ -20,9 +20,12 @@ from davinci_ai_editor.roundtrip_verification import (
 
 from .pipeline import (
     KIND_LABELS_KO,
+    POLICY_LABELS_KO,
     RATE_CHOICES,
     ApprovalView,
     ProjectBuild,
+    effect_label,
+    issue_label,
     seconds,
     timecode,
 )
@@ -154,15 +157,16 @@ def landing() -> str:
 <li>짧은 영상 업로드 → 이 서버에서 음성 인식(전사) → 후보를 Resolve 마커로</li>
 <li>Resolve 안에서 마커 이름 변경으로 선택 (<code>AIE-0012 OK</code> / <code>AIE-0012 X</code>)</li>
 <li>내보낸 XML 업로드 → 확인 요약(컷 수, 제거 초, 건너뛴 항목과 이유)</li>
-<li>확인 버튼 → 비디오+오디오가 같은 프레임에서 잘린 새 타임라인(FCP7 XML)</li>
+<li>확인 버튼 → 트랙별로 편집된 새 타임라인(FCP7 XML): 대사와 연결된 A/V는 같은 프레임에서 자르고,
+음악·B-roll·자막 트랙은 자르지 않고 당김(트랙은 병합하지 않음)</li>
 <li>사람이 고친 구간은 보호(HARD_LOCK)되어 건너뜀</li>
 <li>다시 내보낸 XML로 검증 리포트(MATCH / MISMATCH / UNVERIFIED)</li>
 </ul></div>
 <div class="card"><h2>Studio (Resolve 안에서, 개발 중)</h2>
 <p class="muted">실제 작업용 제품입니다. 같은 후보·같은 승인 규칙에 더해:</p>
 <ul>
-<li>파일 주고받기 없이 <b>현재 타임라인</b>에 바로 적용 (새 타임라인 가져오기 없음)</li>
-<li>그레이드·이펙트·믹스 유지 — Resolve가 지원하는 범위에서, 네이티브 검증을 통과한 뒤에만 약속합니다</li>
+<li>파일 주고받기 없이 Resolve 안에서: <b>색보정 전</b>에는 확인 한 번으로 컷을 적용합니다(새 버전 타임라인, 원본은 백업 — tier 1)</li>
+<li><b>색보정 후</b>의 그레이드 이전은 검증 중입니다 — Resolve가 지원하는 범위에서, 네이티브 검증을 통과한 뒤에만 약속합니다</li>
 <li>사람이 고친 구간을 매번 타임라인에서 직접 읽어 보호</li>
 <li>Resolve 안 확인 대화상자, 네이티브 사후 검증</li>
 </ul>
@@ -184,7 +188,10 @@ def landing() -> str:
     return page(
         "소개",
         body
-        + studio("같은 후보와 같은 승인 규칙을 Resolve 안에서 파일 없이 현재 타임라인에 씁니다."),
+        + studio(
+            "같은 후보와 같은 승인 규칙을 Resolve 안에서 파일 없이 씁니다. "
+            "네이티브 검증 전이며, 색보정 전에는 확인 한 번으로 컷을 적용합니다."
+        ),
     )
 
 
@@ -281,6 +288,7 @@ def new_project(
     allow_json: bool = True,
     notice: str = "",
     busy: bool = False,
+    vad_default: bool = True,
 ) -> str:
     v = values or {}
 
@@ -294,6 +302,8 @@ def new_project(
         f'<option value="{e(key)}"{selected("rate", key, "24000/1001")}>{e(label)}</option>'
         for key, label in RATE_CHOICES
     )
+    vad_on = v.get("vad", "1" if vad_default else "") == "1"
+    vad_checked = " checked" if vad_on else ""
     busy_note = (
         "<p class='warn'>지금 다른 전사 작업이 진행 중입니다. 한 번에 하나만 처리하므로 잠시 후 올려 주세요.</p>"
         if busy
@@ -313,6 +323,10 @@ CFR로 변환 후 올려 주세요. 전사: {e(asr_label)}, 단어 타임스탬�
 <p class="hint">XML의 미디어 경로 = 이 폴더 + 원본 파일 이름. 비워 두면 파일 이름만 쓰므로, Resolve로
 가져온 뒤 미디어가 오프라인이면 <b>Relink</b>로 원본을 연결하세요.</p>
 {_timeline_fields(val, "m_")}
+<input type="hidden" name="vad_choice" value="1">
+<label><input type="checkbox" name="vad" value="1"{vad_checked}> 음성 구간 필터(VAD) 사용 — 기본 켬</label>
+<p class="hint">VAD는 긴 무음과 잡음 구간의 잘못된 인식을 줄이지만, 아주 작은 목소리를 빠뜨릴 수 있습니다.
+작게 말하는 부분이 전사에서 빠지면 끄고 다시 올려 보세요. 결과의 전사 정보에 VAD 사용 여부가 기록됩니다.</p>
 <button type="submit">올리고 전사 시작</button>
 </form>"""
     if not allow_json:
@@ -566,14 +580,23 @@ def confirm_page(project_id: str, build: ProjectBuild, view: ApprovalView, csrf:
             + e(", ".join(view.selection.unexpected_tokens))
         )
     warn_html = "".join(f"<p class='warn'>{w}</p>" for w in warnings)
-    if c.approved_cuts:
+    tracks_html = _track_section(pid, view, csrf)
+    layer_html = _layer_notes(view)
+    if c.loss_risks:
+        action = (
+            "<div class='card'><p class='warn'><b>적용할 수 없습니다 (LAYER_LOSS_RISK).</b> "
+            "새 파일이 담을 수 없는 항목이 있어, 그 항목을 잃지 않도록 아무것도 만들지 않습니다. "
+            "위 레이어 메모를 확인하세요.</p></div>"
+        )
+    elif c.approved_cuts:
         action = f"""
 <form class="card" method="post" action="/p/{pid}/confirm">
 {csrf_field(csrf)}
 <input type="hidden" name="digest" value="{e(c.confirmation_digest)}">
 <p>위 내용대로 <b>{len(c.approved_cuts)}개 컷</b>, 총 <b>{e(seconds(c.removed_frames, rate))}초</b>를
-비디오와 오디오 모든 트랙에서 같은 프레임으로 잘라 <b>새 타임라인 파일</b>을 만듭니다.</p>
-<p class="muted">확인 코드 <code>{e(c.confirmation_digest[:16])}…</code> — 이 버튼이 승인입니다. 내용이 바뀌면 코드도 바뀌어 거부됩니다.</p>
+<b>트랙별 결과</b> 표대로 적용한 <b>새 타임라인 파일</b>을 만듭니다. 트랙(레이어)은 병합하지 않습니다.</p>
+<p class="muted">확인 코드 <code>{e(c.confirmation_digest[:16])}…</code> — 이 버튼이 승인입니다. 트랙 정책을
+바꾸거나 내용이 바뀌면 코드도 바뀌어, 이전 코드는 거부됩니다.</p>
 <button type="submit">확인 — 승인한 컷 적용</button>
 </form>"""
     else:
@@ -591,16 +614,89 @@ def confirm_page(project_id: str, build: ProjectBuild, view: ApprovalView, csrf:
 <h2>건너뛴 항목과 이유</h2>
 <div class="card scroll"><table><tr><th>ID</th><th>코드</th><th>뜻</th><th>세부</th></tr>
 {skip_rows or "<tr><td colspan=4>없음</td></tr>"}</table>
-<p class="hint">HUMAN_EDIT_LOCKED = 사람이 고친 구간(보호), MARKER_CONFLICT = 다른 마커와 겹침, UNKNOWN = 판단 불가(적용 안 함).</p></div>
+<p class="hint">HUMAN_EDIT_LOCKED = 사람이 고친 구간(보호), MARKER_CONFLICT = 다른 마커와 겹침,
+LAYER_CONFLICT = 다른 트랙(음악·자막 등)의 항목이 컷에 걸침(자르지 않음), UNKNOWN = 판단 불가(적용 안 함).</p></div>
 {"<h2>보호 구간 이동</h2><div class='card'><p>아래 보호 구간은 편집하지 않지만 앞쪽 컷 때문에 왼쪽으로 이동합니다.</p><ul>" + shifted_rows + "</ul></div>" if shifted_rows else ""}
+{tracks_html}
+{layer_html}
 {action}
 <h2>읽은 마커</h2>
 <div class="card scroll"><table><tr><th>ID</th><th>마커 이름</th><th>선택</th><th>문제</th></tr>{sel_rows}</table></div>
 <details class="card"><summary>확인 요약 원문 (결정적 텍스트)</summary><pre>{e(c.summary)}</pre></details>
-{studio("같은 요약을 Resolve 안의 확인 대화상자로 보고, 승인하면 현재 타임라인에 그대로 적용됩니다.")}
+{studio("같은 요약과 같은 트랙별 결과를 Resolve 안에서 보고, 색보정 전에는 확인 한 번으로 새 버전 타임라인에 적용합니다(원본은 백업). 실기(네이티브) 검증 전입니다.")}
 <p><a href="/p/{pid}">← 후보 목록</a></p>
 """
     return page("확인 요약", body)
+
+
+def _track_section(pid: str, view: ApprovalView, csrf: str) -> str:
+    """LAYER-001 per-track effect, with a per-track policy override form."""
+    c = view.confirmation
+    effects = {effect.track_name: effect for effect in c.track_effects}
+    rows: list[str] = []
+    for name in view.track_names:
+        effect = effects.get(name)
+        current = view.override_for(name)
+        policy_text = (
+            f"변경: {e(POLICY_LABELS_KO[current])}"
+            if current is not None
+            else "기본 (원본 클립과 같은 소스면 함께 자르기, 아니면 뒤만 당기기)"
+        )
+        options = "".join(
+            f'<option value="{e(p.value)}"{" selected" if current is p else ""}>{e(label)}</option>'
+            for p, label in POLICY_LABELS_KO.items()
+        )
+        default_selected = " selected" if current is None else ""
+        rows.append(
+            f"<tr><td><b>{e(name)}</b></td><td>{policy_text}</td>"
+            f"<td>{e(effect_label(effect)) if effect is not None else '—'}</td>"
+            f'<td><form method="post" action="/p/{pid}/policy">{csrf_field(csrf)}'
+            f'<input type="hidden" name="track" value="{e(name)}">'
+            f'<select name="policy" aria-label="{e(name)} 정책">'
+            f'<option value="DEFAULT"{default_selected}>기본</option>{options}</select> '
+            f'<button type="submit">바꾸기</button></form></td></tr>'
+        )
+    return f"""
+<h2>트랙별 결과</h2>
+<div class="card scroll"><table><tr><th>트랙</th><th>정책</th><th>결과</th><th>정책 바꾸기</th></tr>
+{"".join(rows)}</table>
+<p class="hint">자름 = 승인한 구간을 이 트랙에서도 잘라 냄 · 당김 N프레임 = 자르지 않고 뒤쪽 항목만 앞으로 당김 ·
+그대로 = 자르지도 당기지도 않음 · 보류: LAYER_CONFLICT = 이 트랙의 항목(예: 음악)이 컷에 걸쳐 있어 그 컷을
+적용하지 않음. 음악을 컷과 함께 자르려면 그 트랙을 <b>함께 자르기</b>로 바꾸세요. 정책을 바꾸면 확인 코드가 바뀝니다.
+Resolve에서 사람이 새로 넣은 항목은 함께 자르기로 바꿔도 보호(HUMAN_EDIT_LOCKED)되어 잘리지 않습니다.</p></div>"""
+
+
+def _layer_notes(view: ApprovalView) -> str:
+    c = view.confirmation
+    items = [
+        f"<li><code>{e(issue.code.value)}</code> {e(issue_label(issue))} — {e(issue.render())}</li>"
+        for issue in (*c.layer_warnings, *c.loss_risks)
+    ]
+    items += [
+        f"<li><code>LINK_NOT_PRESERVED</code> A/V 링크를 유지할 수 없어 링크 없이 씁니다 — {e(w)}</li>"
+        for w in view.link_warnings
+    ]
+    if not items:
+        return ""
+    return (
+        "<h2>레이어 메모</h2><div class='card'><ul>"
+        + "".join(items)
+        + "</ul><p class='hint'>MARKER_MOVED_TO_CUT = 지워지는 구간 안의 타임라인 마커는 버리지 않고 "
+        "컷 지점으로 옮깁니다. LINK_NOT_PRESERVED = 한쪽만 잘리는 링크(J/L 컷 등)는 링크 없이 씁니다 — "
+        "가져온 뒤 A/V 링크를 확인하세요.</p></div>"
+    )
+
+
+def _applied_tracks(applied: AppliedTimeline) -> str:
+    if not applied.track_effects:
+        return ""
+    rows = "".join(
+        f"<tr><td>{e(effect.track_name)}</td><td>{e(effect_label(effect))}</td></tr>"
+        for effect in applied.track_effects
+    )
+    return (
+        "<div class='scroll'><table><tr><th>트랙</th><th>결과</th></tr>" + rows + "</table></div>"
+    )
 
 
 def applied_page(project_id: str, applied: AppliedTimeline, csrf: str = "") -> str:
@@ -612,14 +708,15 @@ def applied_page(project_id: str, applied: AppliedTimeline, csrf: str = "") -> s
 <h1>적용된 새 타임라인</h1>
 <div class="card">
 <p>새 타임라인 <b>{e(applied.timeline.name)}</b> · 적용 컷 {len(applied.applied_cuts)}개 ·
-제거 {removed}프레임 ({e(seconds(removed, rate))}초) · 비디오+오디오 같은 프레임, 리플, A/V 링크</p>
+제거 {removed}프레임 ({e(seconds(removed, rate))}초) · 트랙별 정책대로 편집(트랙 병합 없음), 연결된 A/V는 같은 프레임</p>
+{_applied_tracks(applied)}
 <p class="warn">이 파일은 <b>검증되지 않은 Expected 산출물</b>입니다(verified = False). 아래 검증 단계를 거치세요.</p>
 <p><a href="/p/{pid}/download/applied.xml">적용된 타임라인 — FCP7 XML 다운로드</a></p>
 <p class="muted">남은 후보 마커: {e(remaining)}</p>
 <h3>가져오기</h3>{import_steps()}
 <p><b>주의:</b> 새 타임라인으로 가져와지므로 이전 타임라인의 색보정·이펙트·믹스는 넘어오지 않습니다.</p>
 </div>
-{studio("새 파일 없이 현재 타임라인에 바로 적용되어 색보정·이펙트·믹스·빈 구성이 그대로 유지됩니다.")}
+{studio("파일을 주고받지 않습니다. 색보정 전에는 Resolve 안에서 확인 한 번으로 새 버전 타임라인을 만들고 원본은 백업으로 둡니다. 색보정 후 그레이드 이전은 검증 중입니다.")}
 <h2>4. 검증</h2>
 <form class="card" method="post" action="/p/{pid}/verify" enctype="multipart/form-data">
 {csrf_field(csrf)}
@@ -802,12 +899,32 @@ def status_page(
     )
 
 
+# docs/EDITION_DELIVERY_STRATEGY.md §7 (customer-safe claim until native verification)
+STUDIO_STATUS_KO = (
+    "네이티브 검증 대기 중입니다. 색보정 전에는 Studio가 확인 클릭 한 번으로 컷을 적용합니다(tier 1). "
+    "색보정 후의 그레이드 이전은 검증 중입니다."
+)
+STUDIO_STATUS_EN = (
+    "Native verification pending; before grading, Studio applies cuts with a confirm click "
+    "(tier 1); after grading, grade transfer is being verified."
+)
+
+
 def studio_page() -> str:
     rows = (
         (
             "컷 적용",
             "새 타임라인 파일을 가져옴. 이전 타임라인의 색보정·이펙트·믹스는 넘어오지 않음",
-            "<b>현재 타임라인</b>에 바로 적용. 그레이드·이펙트·믹스·빈 구성 유지 (계획, 네이티브 검증 대기)",
+            (
+                "<b>색보정 전</b>: Resolve 안에서 확인 한 번으로 적용 (새 버전 타임라인, 원본은 백업 — tier 1). "
+                "<b>색보정 후</b>: 그레이드 이전은 검증 중. 클립 경계와 맞는 컷은 현재 타임라인에서 바로 삭제 "
+                "(tier 3), 그 밖에는 지정 위치 블레이드 안내(tier 4). 모두 네이티브 검증 대기"
+            ),
+        ),
+        (
+            "트랙(레이어)",
+            "트랙별 정책: 대사 A/V는 자르고 음악·B-roll·자막은 당김, 병합 없음",
+            "같은 트랙별 정책. '그대로 두기'는 Resolve API로 제자리 적용이 안 되어 새 버전으로만 적용",
         ),
         (
             "사람 편집 보호",
@@ -838,9 +955,13 @@ def studio_page() -> str:
 동작하도록 개발 중이며, 같은 후보·같은 승인 규칙·같은 적용 결과·같은 검증 용어를 씁니다.</p>
 <div class="card scroll"><table><tr><th>영역</th><th>Free 체험 (이 웹)</th><th>Studio (Resolve 안)</th></tr>{table}</table></div>
 <div class="card"><h2>현재 상태 (정직하게)</h2>
+<p><b>{e(STUDIO_STATUS_KO)}</b></p>
+<p class="muted" lang="en">{e(STUDIO_STATUS_EN)}</p>
 <ul>
-<li>Studio 경로는 <b>개발 중</b>입니다. Resolve 안에서의 적용과 사후 검증은 <b>아직 네이티브 검증을 통과하지 않았습니다</b>.</li>
-<li>"그레이드·이펙트 유지"는 Resolve가 지원하는 범위에서, 실제 Resolve로 검증된 뒤에만 약속합니다.
+<li>Studio 경로는 <b>개발 중</b>입니다. Resolve 안에서의 적용과 사후 검증은 <b>아직 네이티브 검증(실기 검증)을 통과하지 않았습니다</b>.</li>
+<li>색보정 전: Resolve 안에서 새 버전 타임라인을 가져와 <b>확인 한 번</b>으로 컷을 적용합니다(tier 1). 원래 타임라인은 수정하지 않고 백업으로 둡니다.
+네이티브 검증 전까지 "확인만 누르면 된다"는 약속은 이 경우(tier 1)에만 합니다.</li>
+<li>색보정 후: 그레이드·Fusion 이전은 <b>검증 중</b>입니다. Resolve가 지원하는 범위에서, 실제 Resolve로 검증된 뒤에만 약속합니다.
 그 전까지 권장 사용법은 Free와 같습니다: <b>컷 확정은 색보정 전에.</b></li>
 <li>이 Free 체험의 결과 파일도 Expected 산출물이며, 검증 리포트가 MATCH일 때만 의도와 일치함을 뜻합니다.</li>
 </ul></div>

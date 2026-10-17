@@ -76,6 +76,7 @@ from .handoff_model import (
     ARTIFACT_KIND,
     EVIDENCE_CLASS,
     HandoffClip,
+    HandoffDiagnosticCode,
     HandoffTimeline,
     HandoffTrack,
     HandoffTrackKind,
@@ -114,6 +115,7 @@ from .roundtrip_diff import (
 from .timecode import frames_to_seconds
 from .trust_evidence import PreparedArtifactRevision, artifact_revision, canonical_bytes
 from .xmeml_reader import TrackKey, track_keys
+from .xmeml_writer import write_xmeml
 
 _VERSION_RE = re.compile(r"^(.*) AIE v(\d+)$")
 
@@ -798,6 +800,35 @@ def apply_approved_cuts(
     if confirmation.loss_risks:
         listed = "; ".join(issue.detail for issue in confirmation.loss_risks)
         raise ApplyRefused(f"LAYER_LOSS_RISK: {listed}; nothing applied")
+    timeline, displacements = _cut_timeline(confirmation)
+    tracks = timeline.tracks
+    applied_ids = {c.candidate_id for c in confirmation.approved_cuts}
+    tokens = {
+        parse_candidate_marker_name(m.name)[0]
+        for track in tracks
+        for item in track.items
+        if isinstance(item, HandoffClip)
+        for m in item.markers
+    }
+    remaining = sorted(t for t in tokens if t is not None and t not in applied_ids)
+    return AppliedTimeline(
+        timeline,
+        confirmation.expected_digest,
+        confirmation.actual_digest,
+        confirmation.confirmation_digest,
+        confirmation.approved_cuts,
+        tuple(displacements),
+        tuple(remaining),
+        confirmation.track_effects,
+        confirmation.layer_warnings,
+    )
+
+
+def _cut_timeline(
+    confirmation: ApplyConfirmation,
+) -> tuple[HandoffTimeline, tuple[RippleDisplacement, ...]]:
+    """The per-track cut result (pure). Only :func:`apply_approved_cuts` turns it into an
+    artifact, after the digest echo; :func:`predicted_link_warnings` only inspects it."""
     actual = confirmation.actual
     all_cuts = tuple(c.timeline_range for c in confirmation.approved_cuts)
     tracks: list[HandoffTrack] = []
@@ -825,25 +856,26 @@ def apply_approved_cuts(
         ripple_sequence_markers(actual.markers, all_cuts),
     )
     _check_layers_kept(actual, timeline)
-    applied_ids = {c.candidate_id for c in confirmation.approved_cuts}
-    tokens = {
-        parse_candidate_marker_name(m.name)[0]
-        for track in tracks
-        for item in track.items
-        if isinstance(item, HandoffClip)
-        for m in item.markers
-    }
-    remaining = sorted(t for t in tokens if t is not None and t not in applied_ids)
-    return AppliedTimeline(
-        timeline,
-        confirmation.expected_digest,
-        confirmation.actual_digest,
-        confirmation.confirmation_digest,
-        confirmation.approved_cuts,
-        tuple(displacements),
-        tuple(remaining),
-        confirmation.track_effects,
-        confirmation.layer_warnings,
+    return timeline, tuple(displacements)
+
+
+def predicted_link_warnings(confirmation: ApplyConfirmation) -> tuple[str, ...]:
+    """INT-002 (web confirmation page): the ``LINK_NOT_PRESERVED`` warnings the FCP7
+    writer would give for the confirmed cuts (e.g. a J/L-cut partner that is not split
+    with its clip). Messages only: no timeline or artifact leaves this function, so it
+    approves and applies nothing. Empty when apply would refuse (LAYER_LOSS_RISK)."""
+    if not isinstance(confirmation, ApplyConfirmation):
+        raise TypeError("An ApplyConfirmation is required")
+    if confirmation.loss_risks or not confirmation.approved_cuts:
+        return ()
+    try:
+        timeline, _ = _cut_timeline(confirmation)
+    except ApplyRefused:
+        return ()
+    return tuple(
+        f"{d.code.value} {d.location}: {d.message}"
+        for d in write_xmeml(timeline).diagnostics
+        if d.code is HandoffDiagnosticCode.LINK_NOT_PRESERVED
     )
 
 

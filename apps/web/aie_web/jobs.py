@@ -143,7 +143,11 @@ class JobRunner:
                 raise PipelineError("프로젝트 정보가 완성되지 않았습니다.", ("FACTS_MISSING",))
             facts = MediaFacts.from_json(facts_data)
             base = TranscriptSource.from_json(source_data)
-            output = self._transcriber().transcribe(media, progress)
+            pending = meta.get("pending")
+            vad = pending.get("asr_vad") if isinstance(pending, dict) else None
+            output = self._transcriber().transcribe(
+                media, progress, vad=vad if isinstance(vad, bool) else None
+            )
             source = _with_producer(base, output)
             raw = json.dumps(output.payload, ensure_ascii=False).encode("utf-8")
             build_project(raw, source, facts)  # accepted by the full flow, or refused

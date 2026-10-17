@@ -25,8 +25,13 @@ from davinci_ai_editor.apply_cuts import (
     apply_approved_cuts,
     apply_locks,
     build_apply_confirmation,
+    predicted_link_warnings,
 )
-from davinci_ai_editor.candidate_markers import attach_candidate_markers, read_marker_selections
+from davinci_ai_editor.candidate_markers import (
+    CutCandidate,
+    attach_candidate_markers,
+    read_marker_selections,
+)
 from davinci_ai_editor.domain import FrameRange
 from davinci_ai_editor.handoff_model import (
     HandoffClip,
@@ -60,6 +65,7 @@ from davinci_ai_editor.studio_transport import (
 )
 from davinci_ai_editor.trust_evidence import artifact_revision
 from davinci_ai_editor.xmeml_reader import read_xmeml
+from davinci_ai_editor.xmeml_writer import write_xmeml
 
 CAM = HandoffMediaRef("cam.mov", "C:/media/cam.mov", FrameRange(0, 1000), 0)
 REC = HandoffMediaRef("rec.wav", "C:/media/rec.wav", FrameRange(0, 1000), 0)
@@ -281,3 +287,42 @@ def test_studio_razor_and_rt001_agree_on_neutral_splits() -> None:
     assert cut_geometry(outcome.readback_read.actual) == cut_geometry(applied_file.timeline)
     # without the list the same razor is a human SPLIT (HARD_LOCK)
     assert diff_studio_read(handoff.timeline, live).change("E:VIDEO:1:0").kind is ChangeKind.SPLIT
+
+
+# --- web confirmation helpers ---------------------------------------------------------
+
+
+def test_predicted_link_warnings_flag_a_j_cut_partner_left_unsplit() -> None:
+    video = HandoffClip("cam", CAM, FrameRange(0, 200), link_group="J")
+    audio = HandoffClip("cam", CAM, FrameRange(0, 150), link_group="J")  # J/L-cut: shorter
+    expected = HandoffTimeline(
+        "J",
+        RATE,
+        0,
+        (
+            HandoffTrack("Video 1", HandoffTrackKind.VIDEO, (video,)),
+            HandoffTrack("Audio 1", HandoffTrackKind.AUDIO, (audio,)),
+        ),
+    )
+    handoff = attach_candidate_markers(
+        expected, (CutCandidate("AIE-0001", FrameRange(160, 170), "pause"),)
+    )
+    exported = _rename_xml(_written(handoff.timeline), {"AIE-0001": "OK"})
+    read = read_xmeml(exported)
+    assert read.timeline is not None
+    diff = diff_roundtrip(
+        handoff.timeline,
+        read.timeline,
+        artifact_ref=roundtrip_artifact_ref("j.xml", exported, RoundTripFormat.XMEML),
+    )
+    selection = read_marker_selections(read.timeline, handoff.candidates)
+    confirmation = build_apply_confirmation(selection, handoff.timeline, diff)
+    assert [c.candidate_id for c in confirmation.approved_cuts] == ["AIE-0001"]
+    warnings = predicted_link_warnings(confirmation)
+    assert warnings and all(w.startswith("LINK_NOT_PRESERVED") for w in warnings)
+    # the prediction equals what the writer reports after the approval
+    applied = apply_approved_cuts(confirmation, confirmed_digest=confirmation.confirmation_digest)
+    written = write_xmeml(applied.timeline)
+    assert len(warnings) == sum(
+        1 for d in written.diagnostics if d.code.value == "LINK_NOT_PRESERVED"
+    )

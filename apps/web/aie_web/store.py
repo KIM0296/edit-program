@@ -31,7 +31,8 @@ APPROVAL = "approval.xml"
 CONFIRMED = "confirmed.json"
 MEDIA = "media.bin"
 JOB = "job.json"
-FILES = frozenset({META, TRANSCRIPT, APPROVAL, CONFIRMED, MEDIA, JOB})
+OVERRIDES = "overrides.json"  # INT-002: per-track policy overrides set on the confirm page
+FILES = frozenset({META, TRANSCRIPT, APPROVAL, CONFIRMED, MEDIA, JOB, OVERRIDES})
 MIB = 1024 * 1024
 
 
@@ -93,6 +94,9 @@ class Settings:
     trial_max_projects: int = 5
     invite_codes: tuple[str, ...] = ()
     invites_file: Path | None = None
+    # INT-002 brute-force protection on invite-code entry (see aie_web.ratelimit)
+    trial_ip_failures: int = 5
+    trial_global_failures: int = 50
     # deployment behind an HTTPS tunnel / reverse proxy
     trust_proxy: bool = False
     secure_cookies: bool = False
@@ -131,6 +135,8 @@ class Settings:
             trial_max_projects=_env_int("AIE_WEB_TRIAL_MAX_PROJECTS", 5),
             invite_codes=_env_list("AIE_WEB_INVITE_CODES"),
             invites_file=Path(invites) if invites else None,
+            trial_ip_failures=_env_int("AIE_WEB_TRIAL_IP_FAILURES", 5),
+            trial_global_failures=_env_int("AIE_WEB_TRIAL_GLOBAL_FAILURES", 50),
             trust_proxy=_env_bool("AIE_WEB_TRUST_PROXY", False),
             secure_cookies=_env_bool("AIE_WEB_SECURE_COOKIES", False),
         )

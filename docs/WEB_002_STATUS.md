@@ -75,15 +75,17 @@ model gives the Korean error `ASR_MODEL_MISSING` (no download).
 | `AIE_WEB_ALLOWED_HOSTS` | `127.0.0.1,localhost` | accepted Host headers (add the tunnel/proxy hostname) |
 | `AIE_WEB_TRUST_PROXY` | 0 | honour `X-Forwarded-Proto` (cookie `Secure` flag) |
 | `AIE_WEB_SECURE_COOKIES` | 0 | always mark cookies `Secure` |
-| `AIE_WEB_MAX_MEDIA_MB` | 1024 | upload byte cap |
+| `AIE_WEB_MAX_MEDIA_MB` | 1024 | upload byte cap — set **95** behind the Cloudflare quick tunnel (100 MB request-body cap on the free plan) |
 | `AIE_WEB_MAX_MEDIA_MINUTES` | 10 | media duration cap |
-| `AIE_ASR_MODEL` / `AIE_ASR_LANGUAGE` / `AIE_ASR_VAD` | `small` / `ko` / 1 | faster-whisper model, language, `vad_filter` |
+| `AIE_ASR_MODEL` / `AIE_ASR_LANGUAGE` / `AIE_ASR_VAD` | `small` / `ko` / 1 | faster-whisper model, language, default `vad_filter` (INT-002: the upload form has a per-project VAD checkbox, ticked by default) |
 | `AIE_ASR_DEVICE` / `AIE_ASR_COMPUTE_TYPE` / `AIE_ASR_MODEL_DIR` | `cpu` / `int8` / HF cache | model loading |
 | `AIE_WEB_TRIAL` | 0 | trial mode on |
 | `AIE_WEB_TRIAL_CODE_HOURS` | 72 | code validity from first use |
 | `AIE_WEB_TRIAL_MAX_PROJECTS` | 5 | projects per code |
 | `AIE_WEB_INVITE_CODES` | — | comma list of codes seeded at startup (label `env`) |
 | `AIE_WEB_INVITES_FILE` | `<root>/invites.json` | invite store |
+| `AIE_WEB_TRIAL_IP_FAILURES` | 5 | INT-002: wrong codes per client before exponential lockout (30 s doubling, max 1 h) |
+| `AIE_WEB_TRIAL_GLOBAL_FAILURES` | 50 | INT-002: wrong codes from all clients in 10 min before a 5-min global lock |
 
 ## Flow additions
 
@@ -133,8 +135,9 @@ project is given back to its code.
   python-multipart spools the upload to the system temp dir first (deleted when
   the request ends).
 - Invite codes: 12 random characters from a 31-letter alphabet (~59 bits),
-  stored only as SHA-256 (fixed prefix); wrong codes get one generic message. No
-  brute-force rate limiting (see open questions).
+  stored only as SHA-256 (fixed prefix); wrong codes get one generic message.
+  INT-002 adds brute-force protection (per-client and global attempt limits with
+  backoff, in memory; a guessed trial cookie counts too) — see docs/INT_002_STATUS.md.
 - Retention: sweep at startup and at most once a minute on requests; non-trial
   projects after `AIE_WEB_MAX_AGE_HOURS`, trial projects when their code
   expires or is revoked. Revoke via CLI deletes immediately.
@@ -203,7 +206,7 @@ downloaded at build time only. Cost and provider choice are open.
   no Resolve API / UI automation, no rendering.
 - No acoustic silence detection (transcript gaps only), no diarization, no
   model other than the configured faster-whisper model; no GPU path tested.
-- No brute-force rate limiting on invite codes, no virus scanning of uploads
+- No virus scanning of uploads (invite-code rate limiting: INT-002)
   (files are only demuxed/decoded by PyAV/FFmpeg, never executed), no
   multi-process deployment (single worker thread and in-process locks).
 - The user's own test video was not processed here (only synthetic media).

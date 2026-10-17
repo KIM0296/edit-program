@@ -51,7 +51,12 @@ class AsrOutput:
 
 
 class Transcriber(Protocol):
-    def transcribe(self, media: Path, progress: Progress) -> AsrOutput: ...
+    """``vad``: per-project faster-whisper ``vad_filter`` (None = the server default,
+    ``AIE_ASR_VAD``, which is on unless set to 0)."""
+
+    def transcribe(
+        self, media: Path, progress: Progress, *, vad: bool | None = None
+    ) -> AsrOutput: ...
 
 
 def config_digest(config: dict[str, Any]) -> str:
@@ -211,18 +216,19 @@ class FasterWhisperTranscriber:
         self._version = str(getattr(module, "__version__", FASTER_WHISPER_VERSION))
         return self._model
 
-    def transcribe(self, media: Path, progress: Progress) -> AsrOutput:
+    def transcribe(self, media: Path, progress: Progress, *, vad: bool | None = None) -> AsrOutput:
+        use_vad = self.vad if vad is None else vad
         with self._lock:
             model = self._load()
             segments, info = model.transcribe(
                 decode_audio_16k(media),
                 language=self.language or None,
                 word_timestamps=True,
-                vad_filter=self.vad,
+                vad_filter=use_vad,
             )
             payload = serialize_result(segments, info, progress)
         vad_digest = None
-        if self.vad:
+        if use_vad:
             options: Any = getattr(info, "vad_options", None)
             is_instance = dataclasses.is_dataclass(options) and not isinstance(options, type)
             raw = dataclasses.asdict(options) if is_instance else {}
@@ -232,7 +238,7 @@ class FasterWhisperTranscriber:
             tool_version=self._version,
             model_id=f"{self.model_name} ({self.device}, {self.compute_type})",
             model_revision=self._revision,
-            vad_method=VAD_METHOD if self.vad else None,
+            vad_method=VAD_METHOD if use_vad else None,
             vad_config_digest=vad_digest,
             language_requested=self.language or None,
         )

@@ -28,6 +28,7 @@ from davinci_ai_editor.apply_cuts import (
     ApplyRefused,
     apply_approved_cuts,
     build_apply_confirmation,
+    predicted_link_warnings,
 )
 from davinci_ai_editor.candidate_markers import (
     MAX_REASON_CHARS,
@@ -51,6 +52,14 @@ from davinci_ai_editor.handoff_model import (
 from davinci_ai_editor.korean_text_candidates import (
     KoreanTextCandidatePolicy,
     produce_korean_text_candidates,
+)
+from davinci_ai_editor.layer_policy import (
+    LayerIssue,
+    LayerIssueCode,
+    TrackEditPolicy,
+    TrackEffect,
+    TrackEffectKind,
+    TrackPolicyOverride,
 )
 from davinci_ai_editor.otio_json import OtioProfile, write_otio
 from davinci_ai_editor.roundtrip_diff import (
@@ -695,15 +704,89 @@ def _read(text: str, max_chars: int) -> XmemlReadResult:
     return result
 
 
+# LAYER-001 per-track policy choices the user can set on the confirmation page.
+POLICY_LABELS_KO: dict[TrackEditPolicy, str] = {
+    TrackEditPolicy.CUT_WITH_SOURCE: "함께 자르기",
+    TrackEditPolicy.SHIFT_WITH_RIPPLE: "자르지 않고 뒤만 당기기",
+    TrackEditPolicy.KEEP_IN_PLACE: "그대로 두기 (당기지 않음)",
+}
+LAYER_ISSUE_LABELS_KO: dict[LayerIssueCode, str] = {
+    LayerIssueCode.MARKER_MOVED_TO_CUT: "컷 안의 타임라인 마커는 지우지 않고 컷 지점으로 옮김",
+    LayerIssueCode.SYNC_SHIFT: "그대로 둔 트랙과 당겨진 트랙의 싱크가 어긋남",
+    LayerIssueCode.EFFECT_SPLIT_REVIEW: "이펙트가 있는 클립이 잘림 - 키프레임 확인 필요",
+    LayerIssueCode.LAYER_LOSS_RISK: "새 파일이 담을 수 없는 항목 - 적용 거부",
+}
+MAX_OVERRIDE_TRACKS = 64
+
+
+def parse_overrides(raw: bytes | None) -> tuple[TrackPolicyOverride, ...]:
+    """Stored per-track overrides (``{"Audio 2": "CUT_WITH_SOURCE"}``), validated."""
+    if raw is None:
+        return ()
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise PipelineError("저장된 트랙 정책을 읽을 수 없습니다.", ("OVERRIDES_CORRUPT",)) from exc
+    if not isinstance(data, dict) or len(data) > MAX_OVERRIDE_TRACKS:
+        raise PipelineError("저장된 트랙 정책을 읽을 수 없습니다.", ("OVERRIDES_CORRUPT",))
+    result: list[TrackPolicyOverride] = []
+    for track, value in sorted(data.items()):
+        try:
+            policy = TrackEditPolicy(value)
+            result.append(TrackPolicyOverride(str(track), policy))
+        except (ValueError, TypeError) as exc:
+            raise PipelineError(
+                "저장된 트랙 정책을 읽을 수 없습니다.", ("OVERRIDES_CORRUPT",)
+            ) from exc
+    return tuple(result)
+
+
+def effect_label(effect: TrackEffect) -> str:
+    """Korean per-track effect: 자름 / 당김 N프레임 / 그대로 / 보류: LAYER_CONFLICT."""
+    parts: list[str] = []
+    if effect.effect is TrackEffectKind.CUT:
+        parts.append(f"자름 ({effect.cut_frames}프레임)")
+    elif effect.effect is TrackEffectKind.SHIFTED:
+        parts.append(f"당김 {effect.shift_frames}프레임")
+    elif effect.effect is TrackEffectKind.UNCHANGED:
+        parts.append("그대로")
+    elif effect.effect is not TrackEffectKind.CONFLICT:
+        parts.append("판단 불가")
+    if effect.conflicts:
+        parts.append("보류: LAYER_CONFLICT (" + ", ".join(effect.conflicts) + ")")
+    return " · ".join(parts)
+
+
+def issue_label(issue: LayerIssue) -> str:
+    return LAYER_ISSUE_LABELS_KO.get(issue.code, issue.code.value)
+
+
 @dataclass(frozen=True)
 class ApprovalView:
     selection: MarkerSelectionSet
     diff: RoundTripDiff
     confirmation: ApplyConfirmation
     unknown_region_count: int
+    overrides: tuple[TrackPolicyOverride, ...] = ()
+    link_warnings: tuple[str, ...] = ()
+
+    @property
+    def track_names(self) -> tuple[str, ...]:
+        return tuple(t.name for t in self.confirmation.actual.tracks)
+
+    def override_for(self, track_name: str) -> TrackEditPolicy | None:
+        for override in self.overrides:
+            if override.track == track_name:
+                return override.policy
+        return None
 
 
-def build_approval(build: ProjectBuild, text: str, max_chars: int) -> ApprovalView:
+def build_approval(
+    build: ProjectBuild,
+    text: str,
+    max_chars: int,
+    overrides: tuple[TrackPolicyOverride, ...] = (),
+) -> ApprovalView:
     result = _read(text, max_chars)
     timeline = result.timeline
     if timeline is None:  # pragma: no cover - _read refuses
@@ -712,12 +795,21 @@ def build_approval(build: ProjectBuild, text: str, max_chars: int) -> ApprovalVi
     diff = diff_xmeml_roundtrip(build.handoff.timeline, result, artifact_ref=artifact)
     selection = read_marker_selections(timeline, build.handoff.candidates)
     try:
-        confirmation = build_apply_confirmation(selection, build.handoff.timeline, diff)
+        confirmation = build_apply_confirmation(
+            selection, build.handoff.timeline, diff, track_overrides=overrides
+        )
     except ValueError as exc:
         raise PipelineError(
             "확인 요약을 만들 수 없습니다 (입력이 서로 맞지 않음).", (str(exc)[:200],)
         ) from exc
-    return ApprovalView(selection, diff, confirmation, len(result.unknown_regions))
+    return ApprovalView(
+        selection,
+        diff,
+        confirmation,
+        len(result.unknown_regions),
+        overrides,
+        predicted_link_warnings(confirmation),
+    )
 
 
 def apply(view: ApprovalView, digest: str) -> AppliedTimeline:
@@ -758,6 +850,8 @@ def verify(
 
 __all__ = [
     "KIND_LABELS_KO",
+    "LAYER_ISSUE_LABELS_KO",
+    "POLICY_LABELS_KO",
     "RATE_CHOICES",
     "SKIP_LABELS_KO",
     "ApprovalView",
@@ -777,7 +871,10 @@ __all__ = [
     "candidate_otio",
     "candidate_xml",
     "decode_xml",
+    "effect_label",
+    "issue_label",
     "parse_frame_or_timecode",
+    "parse_overrides",
     "parse_rate",
     "rate_key",
     "verify",
