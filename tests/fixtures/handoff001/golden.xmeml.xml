@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xmeml>
+<xmeml version="5">
+  <sequence id="sequence-1">
+    <name>Golden &lt;xml&gt;</name>
+    <duration>5</duration>
+    <rate>
+      <timebase>30</timebase>
+      <ntsc>TRUE</ntsc>
+    </rate>
+    <in>0</in>
+    <out>5</out>
+    <timecode>
+      <rate>
+        <timebase>30</timebase>
+        <ntsc>TRUE</ntsc>
+      </rate>
+      <string>01:00:00;00</string>
+      <frame>107892</frame>
+      <displayformat>DF</displayformat>
+    </timecode>
+    <media>
+      <video>
+        <track>
+          <clipitem id="clipitem-1">
+            <name>c1</name>
+            <enabled>TRUE</enabled>
+            <duration>3</duration>
+            <start>2</start>
+            <end>5</end>
+            <in>10</in>
+            <out>13</out>
+            <file id="file-1">
+              <name>m1</name>
+              <pathurl>file:///media/a%20%26%20b.mov</pathurl>
+              <rate>
+                <timebase>30</timebase>
+                <ntsc>TRUE</ntsc>
+              </rate>
+              <duration>100</duration>
+              <timecode>
+                <rate>
+                  <timebase>30</timebase>
+                  <ntsc>TRUE</ntsc>
+                </rate>
+                <string>01:00:00;00</string>
+                <frame>107892</frame>
+                <displayformat>DF</displayformat>
+              </timecode>
+            </file>
+          </clipitem>
+        </track>
+      </video>
+      <audio>
+        <track>
+          <clipitem id="clipitem-2">
+            <name>c1a</name>
+            <enabled>FALSE</enabled>
+            <duration>5</duration>
+            <start>0</start>
+            <end>5</end>
+            <in>10</in>
+            <out>15</out>
+            <file id="file-1" />
+          </clipitem>
+        </track>
+      </audio>
+    </media>
+  </sequence>
+</xmeml>

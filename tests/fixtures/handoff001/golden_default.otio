@@ -1,0 +1,121 @@
+{
+  "OTIO_SCHEMA": "Timeline.1",
+  "global_start_time": {
+    "OTIO_SCHEMA": "RationalTime.1",
+    "rate": 29.97002997002997,
+    "value": 0.0
+  },
+  "metadata": {
+    "davinci_ai_editor": {
+      "artifact_kind": "EXPECTED_TIMELINE_ARTIFACT",
+      "authorizes_import": false,
+      "profile": "DEFAULT",
+      "rate": [
+        30000,
+        1001
+      ]
+    }
+  },
+  "name": "Golden",
+  "tracks": {
+    "OTIO_SCHEMA": "Stack.1",
+    "children": [
+      {
+        "OTIO_SCHEMA": "Track.1",
+        "children": [
+          {
+            "OTIO_SCHEMA": "Gap.1",
+            "effects": [],
+            "enabled": true,
+            "markers": [],
+            "metadata": {},
+            "name": "",
+            "source_range": {
+              "OTIO_SCHEMA": "TimeRange.1",
+              "duration": {
+                "OTIO_SCHEMA": "RationalTime.1",
+                "rate": 29.97002997002997,
+                "value": 2.0
+              },
+              "start_time": {
+                "OTIO_SCHEMA": "RationalTime.1",
+                "rate": 29.97002997002997,
+                "value": 0.0
+              }
+            }
+          },
+          {
+            "OTIO_SCHEMA": "Clip.2",
+            "active_media_reference_key": "DEFAULT_MEDIA",
+            "effects": [],
+            "enabled": true,
+            "markers": [
+              {
+                "OTIO_SCHEMA": "Marker.2",
+                "color": "GREEN",
+                "comment": "note",
+                "marked_range": {
+                  "OTIO_SCHEMA": "TimeRange.1",
+                  "duration": {
+                    "OTIO_SCHEMA": "RationalTime.1",
+                    "rate": 29.97002997002997,
+                    "value": 1.0
+                  },
+                  "start_time": {
+                    "OTIO_SCHEMA": "RationalTime.1",
+                    "rate": 29.97002997002997,
+                    "value": 11.0
+                  }
+                },
+                "metadata": {},
+                "name": "beat"
+              }
+            ],
+            "media_references": {
+              "DEFAULT_MEDIA": {
+                "OTIO_SCHEMA": "ExternalReference.1",
+                "available_range": null,
+                "metadata": {
+                  "davinci_ai_editor": {
+                    "media_id": "m1",
+                    "media_start_frame": null
+                  }
+                },
+                "name": "m1",
+                "target_url": "file:///media/a.mov"
+              }
+            },
+            "metadata": {},
+            "name": "c1",
+            "source_range": {
+              "OTIO_SCHEMA": "TimeRange.1",
+              "duration": {
+                "OTIO_SCHEMA": "RationalTime.1",
+                "rate": 29.97002997002997,
+                "value": 3.0
+              },
+              "start_time": {
+                "OTIO_SCHEMA": "RationalTime.1",
+                "rate": 29.97002997002997,
+                "value": 10.0
+              }
+            }
+          }
+        ],
+        "effects": [],
+        "enabled": true,
+        "kind": "Video",
+        "markers": [],
+        "metadata": {},
+        "name": "V",
+        "source_range": null
+      }
+    ],
+    "effects": [],
+    "enabled": true,
+    "markers": [],
+    "metadata": {},
+    "name": "tracks",
+    "source_range": null
+  }
+}
