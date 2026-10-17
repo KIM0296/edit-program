@@ -1,4 +1,4 @@
-"""VER-001 plan-vs-actual verification over a file round-trip (FILE_ROUNDTRIP only).
+"""VER-001 plan-vs-actual verification over a re-read Actual (file round-trip or Studio read).
 
 Given the approved Expected artifact (its intended cut list: the clips and gaps
 it was supposed to produce) and the RT-001 diff against a re-imported Actual
@@ -13,7 +13,9 @@ file, produce a :class:`VerificationReport`:
 - overall: MATCH / MISMATCH / UNVERIFIED. Any UNKNOWN item, UNSUPPORTED region
   or whole-UNKNOWN diff makes the report UNVERIFIED; it is never MATCH.
 
-Evidence class is the constant ``FILE_ROUNDTRIP``: the report is explicitly not
+Evidence class is the artifact's: ``FILE_ROUNDTRIP`` for a re-read file, or
+(INT-002) ``STUDIO_API_READ`` for a getter-only Studio read (TEST_ONLY_SUPPORT,
+fake object graph only). Either way the report is explicitly not
 native evidence and not VERIFIED_LIVE, and it never satisfies a Safety gate or
 promotes a candidate.
 
@@ -48,7 +50,16 @@ from enum import Enum
 from typing import Literal
 
 from .domain import FrameRange
-from .handoff_model import EVIDENCE_CLASS, HandoffClip, HandoffTimeline, HandoffTrackKind
+from .handoff_model import (
+    EVIDENCE_CLASS,
+    EVIDENCE_CLASSES,
+    EVIDENCE_QUALIFICATION,
+    STUDIO_EVIDENCE_CLASS,
+    EvidenceClass,
+    HandoffClip,
+    HandoffTimeline,
+    HandoffTrackKind,
+)
 from .layer_policy import LayerFinding, LayerFindingKind
 from .roundtrip_diff import (
     AttributeChange,
@@ -258,7 +269,7 @@ class VerificationReport:
     status: VerificationStatus
     items: tuple[VerificationItem, ...]
     reasons: tuple[str, ...]
-    evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
+    evidence_class: EvidenceClass = EVIDENCE_CLASS
     native_evidence: Literal[False] = False
     verified_live: Literal[False] = False
 
@@ -266,11 +277,15 @@ class VerificationReport:
         object.__setattr__(self, "items", tuple(self.items))
         object.__setattr__(self, "reasons", tuple(self.reasons))
         if (
-            self.evidence_class != EVIDENCE_CLASS
+            self.evidence_class not in EVIDENCE_CLASSES
+            or self.evidence_class != self.artifact.evidence_class
             or self.native_evidence is not False
             or self.verified_live is not False
         ):
-            raise ValueError("Round-trip verification is FILE_ROUNDTRIP: never native, never live")
+            raise ValueError(
+                "Round-trip verification carries its artifact's evidence class "
+                "(FILE_ROUNDTRIP / STUDIO_API_READ): never native, never live"
+            )
         if not isinstance(self.status, VerificationStatus):
             raise TypeError("Typed overall status required")
         has_unknown = any(i.status is ItemStatus.UNKNOWN for i in self.items)
@@ -279,6 +294,10 @@ class VerificationReport:
             raise ValueError("MATCH cannot contain UNKNOWN, defects or unverified reasons")
         if has_unknown and self.status is not VerificationStatus.UNVERIFIED:
             raise ValueError("Any UNKNOWN item makes the report UNVERIFIED")
+
+    @property
+    def evidence_domain(self) -> str:
+        return EVIDENCE_QUALIFICATION[self.evidence_class]
 
     @property
     def human_changed_count(self) -> int:
@@ -404,7 +423,9 @@ class _Observer:
             observed, detail = ItemStatus.UNKNOWN, f"UNKNOWN ({change.reason.value})"
         elif kind in (ChangeKind.REMOVED_BY_HUMAN, ChangeKind.MERGED, ChangeKind.REPLACED):
             observed = ItemStatus.MISSING_CUT
-        elif kind is ChangeKind.SPLIT:
+        elif kind in (ChangeKind.SPLIT, ChangeKind.NEUTRAL_SPLIT):
+            # a neutral (listed) split is not a human edit, but versus the plan the
+            # pieces are still an extra cut
             observed = ItemStatus.EXTRA_CUT
         elif kind is ChangeKind.MOVED and change.track_changed:
             drift = _drift(change)
@@ -502,7 +523,12 @@ class _Observer:
                 else ItemStatus.UNKNOWN
             )
             return result(observed, ids, "Gap filled by cross-track content")
-        if kinds & {ChangeKind.ADDED_BY_HUMAN, ChangeKind.SPLIT, ChangeKind.REPLACED}:
+        if kinds & {
+            ChangeKind.ADDED_BY_HUMAN,
+            ChangeKind.SPLIT,
+            ChangeKind.NEUTRAL_SPLIT,
+            ChangeKind.REPLACED,
+        }:
             return result(ItemStatus.EXTRA_CUT, ids, "Gap filled")
         return result(ItemStatus.FRAME_DRIFT, ids, "Neighbour drifted into gap")
 
@@ -721,6 +747,7 @@ def verify_roundtrip(
         status,
         items,
         tuple(reasons),
+        evidence_class=diff.evidence_class,
     )
 
 
@@ -747,6 +774,12 @@ def _range(frame_range: FrameRange | None) -> str:
     return "-" if frame_range is None else f"[{frame_range.start},{frame_range.end})"
 
 
+_EVIDENCE_TEXT = {
+    EVIDENCE_CLASS: "file round-trip; not native, not live",
+    STUDIO_EVIDENCE_CLASS: "Studio API read, TEST_ONLY_SUPPORT fake; not native, not live",
+}
+
+
 def render_report(report: VerificationReport, *, korean: bool = False) -> str:
     """Deterministic plain text for a review UI. Codes stay English."""
 
@@ -755,7 +788,7 @@ def render_report(report: VerificationReport, *, korean: bool = False) -> str:
 
     lines = [
         "VER-001 round-trip verification",
-        f"Evidence: {report.evidence_class} (file round-trip; not native, not live)",
+        f"Evidence: {report.evidence_class} ({_EVIDENCE_TEXT[report.evidence_class]})",
         f"Overall: {label(report.status.value)}",
         (
             f"Artifact: {report.artifact.ref} {report.artifact.format.value} "

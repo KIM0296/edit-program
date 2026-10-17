@@ -440,7 +440,7 @@ def _non_candidate_markers(
 def _without_candidate_marker_edits(change: RoundTripChange) -> RoundTripChange:
     """Candidate-marker renames/moves are the approval channel, not content edits."""
     if (
-        change.kind is not ChangeKind.UNCHANGED
+        change.kind not in (ChangeKind.UNCHANGED, ChangeKind.NEUTRAL_SPLIT)
         or change.expected is None
         or AttributeChange.MARKERS not in change.attribute_changes
     ):

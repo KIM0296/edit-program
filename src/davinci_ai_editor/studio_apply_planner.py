@@ -30,6 +30,14 @@ tier 1: the plan is ``NEEDS_USER_CHOICE``.
 The plan is bound to the confirmation digest, the live Actual digest and its
 own content (``plan_digest``). Selection != approval != apply: a plan
 authorizes nothing; execution needs both digests echoed exactly.
+
+INT-002 (LAYER-001 merged): per-track policies come from the confirmation
+(each approved cut's ``track_policies``; user overrides go through
+``build_apply_confirmation(track_overrides=...)``), never from a separate
+planner input. The shared Expected now expresses every concrete policy, so the
+import tiers (1/2) carry CUT / SHIFT / KEEP exactly as the file path does; the
+in-place tiers (3/4) carry CUT and SHIFT, and a KEEP_IN_PLACE track makes them
+unavailable (no track-selective ripple, STUDIO-T0).
 """
 
 import hashlib
@@ -39,9 +47,10 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Literal
 
-from .apply_cuts import ApplyConfirmation, next_version_name
+from .apply_cuts import ApplyConfirmation, ApprovedCut, next_version_name
 from .domain import FrameRange
 from .handoff_model import HandoffTrackKind, ReimportedTimeline
+from .layer_policy import TrackEditPolicy
 from .roundtrip_diff import timeline_digest
 from .studio_capabilities import (
     QUALIFICATION,
@@ -53,9 +62,9 @@ from .studio_razor import RazorStep, razor_steps
 from .studio_transport import (
     STUDIO_EVIDENCE_LABEL,
     StudioReadResult,
-    TrackCutPolicy,
 )
 from .trust_evidence import canonical_bytes
+from .xmeml_reader import track_keys
 
 _C = StudioCapability
 
@@ -214,18 +223,14 @@ class CutAssignment:
     covered: bool  # every cut frame on every CUT track holds an item (no gap)
 
 
-def _cut_assignment(
-    actual: ReimportedTimeline,
-    candidate_id: str,
-    cut: FrameRange,
-    policies: Mapping[str, TrackCutPolicy],
-) -> CutAssignment:
+def _cut_assignment(actual: ReimportedTimeline, approved: ApprovedCut) -> CutAssignment:
+    candidate_id, cut = approved.candidate_id, approved.timeline_range
     splits: set[tuple[str, int]] = set()
     spans: list[tuple[int, int]] = []
-    for track in actual.tracks:
+    for key, track in track_keys(actual):
         if track.kind not in (HandoffTrackKind.VIDEO, HandoffTrackKind.AUDIO):
             continue
-        if policies.get(track.name) is not TrackCutPolicy.CUT_WITH_SOURCE:
+        if approved.policy(key) is not TrackEditPolicy.CUT_WITH_SOURCE:
             continue
         for start, clip in track.placements():
             end = start + clip.duration
@@ -248,32 +253,36 @@ def _cut_assignment(
 
 
 def _policy_blockers(
-    actual: ReimportedTimeline, cuts: Sequence[FrameRange], policies: Mapping[str, TrackCutPolicy]
-) -> list[str]:
-    """Policies the shared APPLY-001 Expected cannot express yet (it cuts every track)."""
+    actual: ReimportedTimeline, approved: Sequence[ApprovedCut]
+) -> tuple[list[str], list[str]]:
+    """(blockers for every tier, blockers for the in-place tiers 3/4 only).
+
+    The confirmation never approves a cut with an UNKNOWN policy or a SHIFT/KEEP
+    item across the cut (LAYER_CONFLICT); both are re-checked defensively. KEEP is
+    expressed by the shared Expected (import tiers) but not in place.
+    """
     reasons: list[str] = []
-    first = min((c.start for c in cuts), default=None)
-    for track in actual.tracks:
-        policy = policies.get(track.name, TrackCutPolicy.UNKNOWN)
-        if policy is TrackCutPolicy.UNKNOWN:
-            reasons.append(f"{track.name}: track policy UNKNOWN")
-            continue
-        if policy is TrackCutPolicy.CUT_WITH_SOURCE or first is None:
-            continue
-        for start, clip in track.placements():
-            end = start + clip.duration
-            if policy is TrackCutPolicy.SHIFT_WITH_RIPPLE and any(
-                start < c.end and c.start < end for c in cuts
+    in_place: list[str] = []
+    for cut in approved:
+        for key, track in track_keys(actual):
+            policy = cut.policy(key)
+            where = f"{cut.candidate_id} {track.name}"
+            if policy is TrackEditPolicy.UNKNOWN:
+                reasons.append(f"{where}: track policy UNKNOWN")
+                continue
+            if policy is TrackEditPolicy.CUT_WITH_SOURCE:
+                continue
+            if any(
+                start < cut.timeline_range.end and cut.timeline_range.start < start + clip.duration
+                for start, clip in track.placements()
             ):
-                reasons.append(f"{track.name}: LAYER_CONFLICT (SHIFT_WITH_RIPPLE item at a cut)")
-                break
-            if policy is TrackCutPolicy.KEEP_IN_PLACE and end > first:
-                reasons.append(
-                    f"{track.name}: KEEP_IN_PLACE needs the LAYER-001 Expected "
-                    "(APPLY-001 ripples every track today)"
+                reasons.append(f"{where}: LAYER_CONFLICT ({policy.value} item at the cut)")
+            elif policy is TrackEditPolicy.KEEP_IN_PLACE:
+                in_place.append(
+                    f"{where}: KEEP_IN_PLACE in place needs track-selective ripple "
+                    "(TRACK_SELECTIVE_RIPPLE NOT_AVAILABLE); an imported version expresses it"
                 )
-                break
-    return reasons
+    return reasons, in_place
 
 
 # --- plan ----------------------------------------------------------------------------
@@ -330,7 +339,7 @@ class StudioApplyPlan:
     razor_steps: tuple[RazorStep, ...]
     split_plan: tuple[tuple[str, tuple[int, ...]], ...]
     transfer_items: tuple[str, ...]
-    track_policies: tuple[tuple[str, TrackCutPolicy], ...]
+    track_policies: tuple[tuple[str, str, TrackEditPolicy], ...]  # (candidate, track, policy)
     reasons: tuple[str, ...]
     summary: str
     plan_digest: str
@@ -378,9 +387,6 @@ class StudioApplyPlan:
 
     def split_plan_map(self) -> Mapping[str, frozenset[int]]:
         return MappingProxyType({track: frozenset(frames) for track, frames in self.split_plan})
-
-    def policy_map(self) -> Mapping[str, TrackCutPolicy]:
-        return MappingProxyType(dict(self.track_policies))
 
 
 _DIGEST_FIELDS = (
@@ -452,7 +458,7 @@ class _Draft:
     steps: tuple[RazorStep, ...] = ()
     split_plan: tuple[tuple[str, tuple[int, ...]], ...] = ()
     transfer: tuple[str, ...] = ()
-    policies: tuple[tuple[str, TrackCutPolicy], ...] = ()
+    policies: tuple[tuple[str, str, TrackEditPolicy], ...] = ()
     reasons: list[str] = field(default_factory=list)
 
     def build(self) -> StudioApplyPlan:
@@ -503,9 +509,11 @@ def plan_studio_apply(
     *,
     existing_timeline_names: Sequence[str] | None,
     user_choice: UserChoice = UserChoice.NONE,
-    track_policies: Mapping[str, TrackCutPolicy] | None = None,
 ) -> StudioApplyPlan:
-    """Choose one tier for the confirmed cuts (pure; no call is made)."""
+    """Choose one tier for the confirmed cuts (pure; no call is made).
+
+    Per-track policies are the confirmation's own (LAYER-001); see the module doc.
+    """
     if not isinstance(confirmation, ApplyConfirmation):
         raise TypeError("An ApplyConfirmation is required")
     if not isinstance(live, StudioReadResult) or not isinstance(grade, GradeReadResult):
@@ -523,34 +531,29 @@ def plan_studio_apply(
         draft.reasons.append("STALE: the live timeline is not the confirmed Actual")
         return draft.build()
     actual = live.actual
-    policies: Mapping[str, TrackCutPolicy] = (
-        {t.name: TrackCutPolicy.CUT_WITH_SOURCE for t in actual.tracks}
-        if track_policies is None
-        else dict(track_policies)
+    draft.policies = tuple(
+        (c.candidate_id, a.track_name, a.policy)
+        for c in confirmation.approved_cuts
+        for a in c.track_policies
     )
-    draft.policies = tuple(sorted(policies.items()))
-    cuts = tuple(c.timeline_range for c in confirmation.approved_cuts)
-    if not cuts:
+    if not confirmation.approved_cuts:
         draft.status = PlanStatus.NOTHING_TO_APPLY
         return draft.build()
-    blockers = _policy_blockers(actual, cuts, policies)
+    blockers, in_place_blockers = _policy_blockers(actual, confirmation.approved_cuts)
     if blockers:
         draft.status = PlanStatus.UNSUPPORTED
         draft.action = UserAction.USE_FILE_PATH
         draft.reasons.extend(blockers)
         return draft.build()
-    draft.cuts = tuple(
-        _cut_assignment(actual, c.candidate_id, c.timeline_range, policies)
-        for c in confirmation.approved_cuts
-    )
+    draft.cuts = tuple(_cut_assignment(actual, c) for c in confirmation.approved_cuts)
     # tier availability ------------------------------------------------------------
-    missing_t3 = _granted(profile, *TIER_3_CAPABILITIES)
+    missing_t3 = _granted(profile, *TIER_3_CAPABILITIES) + in_place_blockers
     missing_t1 = _granted(profile, *TIER_1_CAPABILITIES)
     if existing_timeline_names is None:
         missing_t1.append("timeline list UNKNOWN")
     else:
         draft.new_name = _unique_name(actual.name, frozenset(existing_timeline_names))
-    missing_t4 = _granted(profile, *TIER_4_CAPABILITIES)
+    missing_t4 = _granted(profile, *TIER_4_CAPABILITIES) + in_place_blockers
     if not all(c.covered for c in draft.cuts):
         missing_t4.append("a cut spans a gap on a CUT track (gap frames cannot be deleted)")
     split_map: dict[str, set[int]] = {}
@@ -662,7 +665,10 @@ def _summary(draft: _Draft, original: str, new_name: str | None) -> str:
             f" ({_seconds(removed, conf)}초) 제거"
         ),
         f"- grade_state={draft.grade.value} user_choice={draft.choice.value}",
+        "- 트랙별 결과 (LAYER-001, 확인에서 정함):",
     ]
+    for effect in conf.track_effects:
+        lines.append(f"  {effect.render()}")
     tier = draft.tier
     if tier in _IMPORT_TIERS:
         lines += [

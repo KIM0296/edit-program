@@ -16,6 +16,7 @@ from test_studio_parity import Studio, file_path, fixture, profile
 from davinci_ai_editor.apply_cuts import ApplyConfirmation, ApplyRefused
 from davinci_ai_editor.domain import FrameRange
 from davinci_ai_editor.handoff_model import HandoffClip, HandoffTimeline
+from davinci_ai_editor.layer_policy import TrackPolicyOverride
 from davinci_ai_editor.native_snapshot import CaptureConsistency
 from davinci_ai_editor.roundtrip_diff import timeline_digest
 from davinci_ai_editor.roundtrip_verification import VerificationStatus
@@ -89,10 +90,14 @@ class T1:
     def project(self) -> fr.FakeProject:
         return self.studio.project
 
-    def confirm(self, decisions: dict[str, str]) -> ApplyConfirmation:
+    def confirm(
+        self,
+        decisions: dict[str, str],
+        overrides: tuple[TrackPolicyOverride, ...] = (),
+    ) -> ApplyConfirmation:
         handoff = self.studio.handoff()
         self.studio.decide(decisions)
-        _, confirmation = self.studio.confirm(handoff)
+        _, confirmation = self.studio.confirm(handoff, overrides)
         return confirmation
 
     def grade_clip_a(self, *, comp: bool = True, versions: int = 1) -> None:
@@ -429,23 +434,32 @@ def test_plan_and_confirmation_digests_and_staleness_are_enforced(tmp_path: Path
     assert t1.port.plan(confirmation).status is PlanStatus.REFUSED
 
 
-def test_keep_in_place_policy_is_unsupported_until_layer_001(tmp_path: Path) -> None:
+def test_keep_in_place_is_imported_as_a_version_never_in_place(tmp_path: Path) -> None:
+    """INT-002: the LAYER-001 Expected expresses KEEP_IN_PLACE, so the import tier
+    carries it (same geometry as the file path); the in-place tiers cannot."""
+    keep = (TrackPolicyOverride("Video 2", TrackCutPolicy.KEEP_IN_PLACE),)
     t1 = T1(tmp_path)
-    confirmation = t1.confirm(MID)
-    cut = TrackCutPolicy.CUT_WITH_SOURCE
-    plan = t1.port.plan(
-        confirmation,
-        track_policies={
-            "Video 1": cut,
-            "Audio 1": cut,
-            "Video 2": TrackCutPolicy.KEEP_IN_PLACE,
-        },
-    )
-    assert plan.status is PlanStatus.UNSUPPORTED and plan.user_action is UserAction.USE_FILE_PATH
-    assert any("LAYER-001" in r for r in plan.reasons)
-    unknown = t1.port.plan(confirmation, track_policies={"Video 1": cut})
-    assert unknown.status is PlanStatus.UNSUPPORTED
-    assert any("policy UNKNOWN" in r for r in unknown.reasons)
+    confirmation = t1.confirm({"AIE-0001": "OK", "AIE-0002": "OK"}, keep)  # all aligned
+    plan = t1.port.plan(confirmation)
+    # tier 3 would be chosen for aligned cuts, but KEEP is not expressible in place
+    assert plan.status is PlanStatus.READY
+    assert plan.tier is ApplyTier.TIER_1_IMPORT_NEW_VERSION
+    assert ("AIE-0001", "Video 2", TrackCutPolicy.KEEP_IN_PLACE) in plan.track_policies
+    assert "Video 2 [VIDEO:2] KEEP_IN_PLACE (override) -> UNCHANGED" in plan.summary
+    outcome = t1.execute(plan, confirmation)
+    assert outcome.status is MutationStatus.PERFORMED, outcome.detail
+    assert outcome.readback is VerificationStatus.MATCH
+    assert t1.behavior.count("Timeline.DeleteClips") == 0
+    _, _, _, applied_file = file_path({"AIE-0001": "OK", "AIE-0002": "OK"}, overrides=keep)
+    assert outcome.readback_read is not None and outcome.readback_read.actual is not None
+    assert cut_geometry(outcome.readback_read.actual) == cut_geometry(applied_file.timeline)
+    assert cut_geometry(applied_file.timeline)[1] == ("VIDEO", 2, ((300, "broll.mov", 0, 50),))
+    # with the import tier unavailable there is no Studio route: file path
+    blocked = T1(tmp_path / "b", t1_profile(IMPORT_TIMELINE_FROM_FILE=G.ABSENT))
+    (tmp_path / "b").mkdir()
+    plan_b = blocked.port.plan(blocked.confirm({"AIE-0001": "OK", "AIE-0002": "OK"}, keep))
+    assert plan_b.status is PlanStatus.UNSUPPORTED
+    assert any("TRACK_SELECTIVE_RIPPLE" in r for r in plan_b.reasons)
 
 
 def test_plans_and_results_are_deterministic(tmp_path: Path) -> None:
@@ -468,8 +482,11 @@ def test_studio_reads_carry_their_own_evidence_label(tmp_path: Path) -> None:
     assert read.consistency is CaptureConsistency.CONSISTENT
     assert read.evidence_label == "STUDIO_API_READ" and read.native_evidence is False
     assert read.evidence == StudioEvidence()
-    assert read.evidence.core_evidence_class == "FILE_ROUNDTRIP"
-    assert read.evidence.core_label_superseded is True
+    # INT-002: the core types carry the Studio class themselves (nothing superseded)
+    assert read.evidence.core_evidence_class == "STUDIO_API_READ"
+    assert read.evidence.core_label_superseded is False
+    assert read.actual is not None and read.actual.evidence_class == "STUDIO_API_READ"
+    assert read.artifact_ref.evidence_class == "STUDIO_API_READ"
     assert read.evidence.qualification == "TEST_ONLY_SUPPORT"
     assert t1.port.read_grade_state().evidence_label == "STUDIO_API_READ"
     confirmation = t1.confirm(MID)

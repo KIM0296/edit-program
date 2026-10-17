@@ -18,6 +18,11 @@ live timeline is re-read and compared with the confirmed Actual:
   a marker change, a renamed or disabled piece). The cut is not applied; the
   normal RT-001 flow (HARD_LOCK on human edits) decides on the next run.
 - ``NO_CHANGE``: identical timelines (nothing listed and nothing split).
+
+INT-002: the split geometry rule is the core one
+(``roundtrip_diff.contiguous_split_frames``), shared with RT-001's
+``NEUTRAL_SPLIT`` (``diff_roundtrip(..., expected_splits=...)``) so the file path
+and Studio agree on what an editor razor at listed frames is.
 """
 
 from collections.abc import Mapping, Sequence
@@ -26,6 +31,7 @@ from enum import Enum
 from typing import Literal
 
 from .handoff_model import HandoffClip, HandoffMarker, HandoffTrack, ReimportedTimeline
+from .roundtrip_diff import contiguous_split_frames
 from .studio_capabilities import QUALIFICATION
 from .temporal_mapping import FrameRate
 
@@ -148,39 +154,22 @@ def _track_splits(before: HandoffTrack, after: HandoffTrack, planned: frozenset[
     cursor = 0
     for start, original in before.placements():
         end = start + original.duration
-        if cursor >= len(pieces):
-            raise _Human(f"{before.name}@{start}: item missing")
-        first_start, first = pieces[cursor]
-        if (
-            first_start != start
-            or first.source_range.start != original.source_range.start
-            or not _same_piece(first, original)
-        ):
-            raise _Human(f"{before.name}@{start}: item changed")
-        group = [first]
-        position = first_start + first.duration
-        source = first.source_range.end
-        cursor += 1
-        while position < end:
-            if cursor >= len(pieces):
-                raise _Human(f"{before.name}@{start}: item shortened")
-            next_start, piece = pieces[cursor]
-            if (
-                next_start != position
-                or piece.source_range.start != source
-                or not _same_piece(piece, original)
-            ):
-                raise _Human(f"{before.name}@{position}: not a source-contiguous split")
-            if position not in planned:
-                raise _Human(f"{before.name}@{position}: split at an unlisted frame")
-            found.append(position)
-            group.append(piece)
-            position += piece.duration
-            source = piece.source_range.end
+        group: list[tuple[int, HandoffClip]] = []
+        while cursor < len(pieces) and pieces[cursor][0] < end:
+            group.append(pieces[cursor])
             cursor += 1
-        if position != end:
-            raise _Human(f"{before.name}@{start}: item extended")
-        markers = sorted(_marker_key(m) for piece in group for m in piece.markers)
+
+        def same(piece: HandoffClip, original: HandoffClip = original) -> bool:
+            return _same_piece(piece, original)
+
+        frames = contiguous_split_frames(start, original, group, same)
+        if isinstance(frames, str):
+            raise _Human(f"{before.name}@{start}: {frames}")
+        for frame in frames:
+            if frame not in planned:
+                raise _Human(f"{before.name}@{frame}: split at an unlisted frame")
+        found.extend(frames)
+        markers = sorted(_marker_key(m) for _, piece in group for m in piece.markers)
         if markers != sorted(_marker_key(m) for m in original.markers):
             raise _Human(f"{before.name}@{start}: markers changed across the split")
     if cursor != len(pieces):

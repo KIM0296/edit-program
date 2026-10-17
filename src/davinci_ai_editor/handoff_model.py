@@ -30,6 +30,16 @@ from .timecode import is_smpte_rate
 
 ARTIFACT_KIND: Literal["EXPECTED_TIMELINE_ARTIFACT"] = "EXPECTED_TIMELINE_ARTIFACT"
 EVIDENCE_CLASS: Literal["FILE_ROUNDTRIP"] = "FILE_ROUNDTRIP"
+# INT-002 (STUDIO-T1 request): non-file evidence class for a getter-only Studio API
+# read. Never native evidence; today only produced from the in-repo fake object graph,
+# so its qualification is TEST_ONLY_SUPPORT.
+STUDIO_EVIDENCE_CLASS: Literal["STUDIO_API_READ"] = "STUDIO_API_READ"
+EvidenceClass = Literal["FILE_ROUNDTRIP", "STUDIO_API_READ"]
+EVIDENCE_CLASSES: frozenset[str] = frozenset({EVIDENCE_CLASS, STUDIO_EVIDENCE_CLASS})
+EVIDENCE_QUALIFICATION: dict[str, str] = {
+    EVIDENCE_CLASS: "FILE_ROUNDTRIP",
+    STUDIO_EVIDENCE_CLASS: "TEST_ONLY_SUPPORT",
+}
 
 
 class HandoffTrackKind(str, Enum):
@@ -425,7 +435,8 @@ class ReimportedTimeline:
     """Actual side: a timeline re-read from a file an NLE exported (RT-001 decision 1).
 
     Distinct from the Expected :class:`HandoffTimeline`: it carries the evidence
-    class ``FILE_ROUNDTRIP`` (never native evidence, never VERIFIED_LIVE) and no
+    class ``FILE_ROUNDTRIP`` (never native evidence, never VERIFIED_LIVE; INT-002:
+    ``STUDIO_API_READ`` when it came from a getter-only Studio read, TEST_ONLY_SUPPORT) and no
     ``EXPECTED_TIMELINE_ARTIFACT`` constant, so a re-read file can never be passed
     where an Expected plan is required. Tracks reuse the structural
     :class:`HandoffTrack` values.
@@ -448,7 +459,7 @@ class ReimportedTimeline:
     path_identified_media_ids: tuple[str, ...] = ()
     unpreserved: tuple[str, ...] = ()
     markers: tuple[SequenceMarker, ...] = ()
-    evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
+    evidence_class: EvidenceClass = EVIDENCE_CLASS
     native_evidence: Literal[False] = False
 
     def __post_init__(self) -> None:
@@ -469,8 +480,10 @@ class ReimportedTimeline:
             raise TypeError("Timeline tracks must be HandoffTrack values")
         for media_id in self.path_identified_media_ids:
             _nonempty(media_id, "Path-identified media ID")
-        if self.evidence_class != EVIDENCE_CLASS or self.native_evidence is not False:
-            raise ValueError("A re-imported timeline is FILE_ROUNDTRIP evidence, never native")
+        if self.evidence_class not in EVIDENCE_CLASSES or self.native_evidence is not False:
+            raise ValueError(
+                "A re-imported timeline is FILE_ROUNDTRIP or STUDIO_API_READ evidence, never native"
+            )
 
     @property
     def duration(self) -> int:

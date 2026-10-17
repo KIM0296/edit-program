@@ -30,16 +30,23 @@ Two ports, one core:
   timeline. Every mutation is followed by a read-back verified with VER-001
   (Expected vs Actual) -> MATCH / MISMATCH / UNVERIFIED. Nothing is retried.
 
-Evidence labels: the core RT/VER types carry the constant ``FILE_ROUNDTRIP``
-("re-read Actual, never native"). STUDIO-T0 reuses them unchanged rather than
-forking the core; the transport-level truth is carried by this module's
-results (``evidence_domain = TEST_ONLY_SUPPORT``, ``native_evidence = False``)
-and by ``RoundTripFormat.STUDIO_API_READ`` on the artifact reference.
-STUDIO-T1 adds the Studio-domain label explicitly: every read and mutation
-result carries ``evidence_label = "STUDIO_API_READ"`` and an
-:class:`StudioEvidence` (``.evidence``) that states the core label it wraps
-(``core_evidence_class = "FILE_ROUNDTRIP"``) is superseded for Studio reads.
-:func:`studio_verification` wraps a VER-001 report the same way.
+Evidence labels (INT-002): the core RT/VER types now carry a non-file evidence
+class, so a Studio read is ``STUDIO_API_READ`` end to end: the Actual
+(``ReimportedTimeline.evidence_class``), the artifact reference
+(``RoundTripFormat.STUDIO_API_READ``), the RT-001 diff and the VER-001 report.
+It is never native evidence and stays TEST_ONLY_SUPPORT (fake object graph).
+Every read and mutation result also carries ``evidence_label =
+"STUDIO_API_READ"`` and :class:`StudioEvidence` (``.evidence``), whose
+``core_evidence_class`` is now ``STUDIO_API_READ`` (nothing is superseded any
+more). :func:`studio_verification` wraps a VER-001 report the same way.
+
+Per-track policy (INT-002, LAYER-001 merged): the in-place path takes each
+approved cut's per-track policies from the confirmation (bound by its digest;
+overrides go through ``build_apply_confirmation(track_overrides=...)``).
+``CUT_WITH_SOURCE`` tracks lose the cut range and ``SHIFT_WITH_RIPPLE`` tracks
+only move by the span ripple of ``DeleteClips``. ``KEEP_IN_PLACE`` stays
+UNSUPPORTED in place (no track-selective ripple, STUDIO-T0); the import tiers
+of STUDIO-T1 express it through the shared Expected.
 
 STUDIO-T1 additions here: :meth:`ResolveReadPort.read` can read an explicit
 timeline object (the imported new version), and
@@ -56,7 +63,7 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Literal
 
-from .apply_cuts import ApplyConfirmation, apply_approved_cuts
+from .apply_cuts import ApplyConfirmation, ApprovedCut, apply_approved_cuts
 from .candidate_markers import (
     ANCHOR_TRACK,
     CandidateHandoff,
@@ -65,6 +72,7 @@ from .candidate_markers import (
 )
 from .domain import FrameRange
 from .handoff_model import (
+    STUDIO_EVIDENCE_CLASS,
     HandoffClip,
     HandoffGap,
     HandoffItem,
@@ -76,8 +84,10 @@ from .handoff_model import (
     MarkerColor,
     ReimportedTimeline,
 )
+from .layer_policy import TrackEditPolicy
 from .native_snapshot import CaptureConsistency
 from .roundtrip_diff import (
+    ExpectedSplits,
     RoundTripArtifactRef,
     RoundTripDiff,
     RoundTripFormat,
@@ -201,26 +211,23 @@ _TRACK_API = (
 # --- evidence label (STUDIO-T1) -------------------------------------------------------
 
 STUDIO_EVIDENCE_LABEL: Literal["STUDIO_API_READ"] = "STUDIO_API_READ"
-CORE_EVIDENCE_CLASS: Literal["FILE_ROUNDTRIP"] = "FILE_ROUNDTRIP"
+CORE_EVIDENCE_CLASS: Literal["STUDIO_API_READ"] = STUDIO_EVIDENCE_CLASS
 
 
 @dataclass(frozen=True)
 class StudioEvidence:
-    """Studio-domain evidence label for results built on the reused RT/VER core types.
+    """Studio-domain evidence label for Studio read / mutation / plan results.
 
-    The core types hard-code ``FILE_ROUNDTRIP``; for a Studio read that label is
-    wrong (no file was re-read). This wrapper names the real domain
-    (``STUDIO_API_READ``), keeps ``native_evidence = False`` and the
-    ``TEST_ONLY_SUPPORT`` qualification (fake object graph), and records the core
-    label it supersedes. A core change (a non-file evidence class in RT/VER) is
-    the proper fix; until then this annotation is authoritative for Studio.
+    INT-002: the core RT/VER types carry ``STUDIO_API_READ`` themselves, so the
+    core label matches this domain and supersedes nothing
+    (``core_label_superseded = False``). Never native; TEST_ONLY_SUPPORT.
     """
 
     domain: Literal["STUDIO_API_READ"] = STUDIO_EVIDENCE_LABEL
     qualification: Literal["TEST_ONLY_SUPPORT"] = QUALIFICATION
     native_evidence: Literal[False] = False
-    core_evidence_class: Literal["FILE_ROUNDTRIP"] = CORE_EVIDENCE_CLASS
-    core_label_superseded: Literal[True] = True
+    core_evidence_class: Literal["STUDIO_API_READ"] = CORE_EVIDENCE_CLASS
+    core_label_superseded: Literal[False] = False
 
     def __post_init__(self) -> None:
         if (
@@ -228,7 +235,7 @@ class StudioEvidence:
             or self.qualification != QUALIFICATION
             or self.native_evidence is not False
             or self.core_evidence_class != CORE_EVIDENCE_CLASS
-            or self.core_label_superseded is not True
+            or self.core_label_superseded is not False
         ):
             raise ValueError("Studio evidence is STUDIO_API_READ, TEST_ONLY_SUPPORT, never native")
 
@@ -732,7 +739,9 @@ def _actual_from_raw(raw: RawTimelineRead) -> ReimportedTimeline:
         raise _Invalid(
             f"END_FRAME_INCONSISTENT: last item end {last_end} != timeline end {raw.end_frame}"
         )
-    return ReimportedTimeline(name, rate, start_frame, tuple(tracks))
+    return ReimportedTimeline(
+        name, rate, start_frame, tuple(tracks), evidence_class=STUDIO_EVIDENCE_CLASS
+    )
 
 
 # --- read port ---------------------------------------------------------------------
@@ -775,6 +784,7 @@ class StudioReadResult:
             f"studio-read:{self.timeline_ref}",
             RoundTripFormat.STUDIO_API_READ,
             self.snapshot_sha256,
+            STUDIO_EVIDENCE_CLASS,
         )
 
 
@@ -853,15 +863,29 @@ class ResolveReadPort:
         )
 
 
-def diff_studio_read(expected: HandoffTimeline, result: StudioReadResult) -> RoundTripDiff:
-    """RT-001 diff of an Expected against a Studio read (whole-UNKNOWN unless CONSISTENT)."""
+def diff_studio_read(
+    expected: HandoffTimeline,
+    result: StudioReadResult,
+    *,
+    expected_splits: ExpectedSplits | None = None,
+) -> RoundTripDiff:
+    """RT-001 diff of an Expected against a Studio read (whole-UNKNOWN unless CONSISTENT).
+
+    ``expected_splits``: split frames listed to the editor (razor assist); a split
+    exactly at them is RT-001 ``NEUTRAL_SPLIT`` (no HARD_LOCK), as on the file path.
+    """
     if not isinstance(result, StudioReadResult):
         raise TypeError("A StudioReadResult is required")
     if result.actual is None:
         return diff_unreadable_roundtrip(
             expected, artifact_ref=result.artifact_ref, read_diagnostics=()
         )
-    return diff_roundtrip(expected, result.actual, artifact_ref=result.artifact_ref)
+    return diff_roundtrip(
+        expected,
+        result.actual,
+        artifact_ref=result.artifact_ref,
+        expected_splits=expected_splits,
+    )
 
 
 def expected_from_actual(actual: ReimportedTimeline) -> HandoffTimeline:
@@ -926,19 +950,13 @@ class Fallback(str, Enum):
     FILE_PATH = "FILE_PATH"  # APPLY-001 FCP7 XML: a new timeline the editor imports
 
 
-class TrackCutPolicy(str, Enum):
-    """Per-track policy for an in-place cut (LAYER-001 vocabulary; tracks never merge).
-
-    CUT_WITH_SOURCE: items at the cut are removed (with ripple). SHIFT_WITH_RIPPLE:
-    never cut; later items move left by the ripple; an item spanning the cut is a
-    LAYER_CONFLICT. KEEP_IN_PLACE: never cut and never moved, which no documented
-    call can express in place (TRACK_SELECTIVE_RIPPLE NOT_AVAILABLE) -> UNSUPPORTED.
-    """
-
-    UNKNOWN = "UNKNOWN"
-    CUT_WITH_SOURCE = "CUT_WITH_SOURCE"
-    SHIFT_WITH_RIPPLE = "SHIFT_WITH_RIPPLE"
-    KEEP_IN_PLACE = "KEEP_IN_PLACE"
+# INT-002: the Studio transport uses LAYER-001's policy type directly (one vocabulary).
+# In place: CUT_WITH_SOURCE = items at the cut are removed (with ripple);
+# SHIFT_WITH_RIPPLE = never cut, later items move left by the span ripple (an item
+# spanning the cut is a LAYER_CONFLICT); KEEP_IN_PLACE = never cut and never moved,
+# which no documented call can express in place (TRACK_SELECTIVE_RIPPLE NOT_AVAILABLE)
+# -> UNSUPPORTED; UNKNOWN is refused.
+TrackCutPolicy = TrackEditPolicy
 
 
 class OperationKind(str, Enum):
@@ -1362,46 +1380,53 @@ class ResolveMutationPort:
     def plan_cuts_in_place(
         self,
         actual: ReimportedTimeline,
-        cuts: Sequence[FrameRange],
-        policies: Mapping[str, TrackCutPolicy],
+        approved: Sequence[ApprovedCut],
     ) -> tuple[tuple[PlannedOperation, ...], tuple[str, ...]]:
         """(operations, unsupported reasons). Pure: no call is made.
 
-        Only CUT_WITH_SOURCE tracks lose frames; SHIFT_WITH_RIPPLE tracks are only
-        moved by the ripple; KEEP_IN_PLACE is not expressible in place. No track is
-        ever deleted, merged or flattened, and nothing is rebuilt.
+        Each cut uses its own confirmed per-track policies (LAYER-001,
+        ``ApprovedCut.track_policies``): only CUT_WITH_SOURCE tracks lose frames;
+        SHIFT_WITH_RIPPLE tracks are only moved by the span ripple; KEEP_IN_PLACE is
+        not expressible in place (TRACK_SELECTIVE_RIPPLE NOT_AVAILABLE); UNKNOWN is
+        refused. No track is ever deleted, merged or flattened; nothing is rebuilt.
         """
         split = self._granted(_C.SPLIT_ITEM_AT_FRAME) is CapabilityGrant.GRANTED_TEST_ONLY
-        selective = self._granted(_C.TRACK_SELECTIVE_RIPPLE) is CapabilityGrant.GRANTED_TEST_ONLY
         operations: list[PlannedOperation] = []
         reasons: list[str] = []
-        for _, track in track_keys(actual):
-            policy = policies.get(track.name, TrackCutPolicy.UNKNOWN)
-            if policy is TrackCutPolicy.UNKNOWN:
-                reasons.append(f"{track.name}: track policy UNKNOWN")
-            elif policy is TrackCutPolicy.KEEP_IN_PLACE and cuts and not selective:
-                reasons.append(
-                    f"{track.name}: KEEP_IN_PLACE needs track-selective ripple "
-                    "(TRACK_SELECTIVE_RIPPLE NOT_AVAILABLE)"
-                )
+        for approved_cut in approved:
+            for key, track in track_keys(actual):
+                policy = approved_cut.policy(key)
+                where = f"{approved_cut.candidate_id} {track.name}"
+                if policy is TrackEditPolicy.UNKNOWN:
+                    reasons.append(f"{where}: track policy UNKNOWN")
+                elif policy is TrackEditPolicy.KEEP_IN_PLACE:
+                    reasons.append(
+                        f"{where}: KEEP_IN_PLACE needs track-selective ripple "
+                        "(TRACK_SELECTIVE_RIPPLE NOT_AVAILABLE)"
+                    )
         if reasons:
             return (), tuple(reasons)
-        cut_tracks = ",".join(
-            sorted(n for n, p in policies.items() if p is TrackCutPolicy.CUT_WITH_SOURCE)
-        )
-        for cut in cuts:
+        for approved_cut in approved:
+            cut = approved_cut.timeline_range
+            cut_tracks = ",".join(
+                sorted(
+                    a.track_name
+                    for a in approved_cut.track_policies
+                    if a.policy is TrackEditPolicy.CUT_WITH_SOURCE
+                )
+            )
             spans: list[tuple[int, int]] = []
             needed: list[tuple[str, int]] = []
             conflict = False
             for key, track in track_keys(actual):
                 if key.kind not in (HandoffTrackKind.VIDEO, HandoffTrackKind.AUDIO):
                     continue
-                policy = policies[track.name]
+                policy = approved_cut.policy(key)
                 for start, clip in track.placements():
                     end = start + clip.duration
                     if not _overlaps(start, end, cut):
                         continue
-                    if policy is not TrackCutPolicy.CUT_WITH_SOURCE:
+                    if policy is not TrackEditPolicy.CUT_WITH_SOURCE:
                         reasons.append(
                             f"[{cut.start},{cut.end}): LAYER_CONFLICT on {track.name} "
                             f"({policy.value} item overlaps the cut; never cut)"
@@ -1452,7 +1477,6 @@ class ResolveMutationPort:
         confirmation: ApplyConfirmation,
         *,
         confirmed_digest: str,
-        track_policies: Mapping[str, TrackCutPolicy] | None = None,
         neutral_splits: SplitPlan | None = None,
     ) -> MutationOutcome:
         """Apply APPLY-001 confirmed cuts to the live timeline in place (never a rebuild).
@@ -1467,11 +1491,11 @@ class ResolveMutationPort:
         confirmation digest. The Expected is APPLY-001's own result (same
         geometry as the file path) keeping the live timeline name.
 
-        ``track_policies`` maps Actual track names (``Video 1``...) to a
-        :class:`TrackCutPolicy`; ``None`` means today's APPLY-001 semantics (every
-        track CUT_WITH_SOURCE). Until LAYER-001 lands APPLY-001's Expected cuts every
-        track, so a non-CUT track overlapping a cut is reported as LAYER_CONFLICT
-        (UNSUPPORTED in place) instead of silently diverging from the Expected.
+        Per-track policies come only from the confirmation (each approved cut's
+        LAYER-001 ``track_policies``, bound by the confirmation digest), so the
+        in-place result and APPLY-001's Expected never diverge: CUT_WITH_SOURCE and
+        SHIFT_WITH_RIPPLE are applied; KEEP_IN_PLACE (or UNKNOWN) is UNSUPPORTED in
+        place with ``fallback = FILE_PATH``.
         """
         kind = (
             MutationKind.APPLY_CUTS_IN_PLACE
@@ -1521,13 +1545,15 @@ class ResolveMutationPort:
                     "a cut overlaps a HARD_LOCK",
                     confirmation_digest=digest,
                 )
-        policies: Mapping[str, TrackCutPolicy] = MappingProxyType(
-            {t.name: TrackCutPolicy.CUT_WITH_SOURCE for t in live.actual.tracks}
-            if track_policies is None
-            else dict(track_policies)
-        )
-        cut_tracks = {n for n, p in policies.items() if p is TrackCutPolicy.CUT_WITH_SOURCE}
-        planned, reasons = self.plan_cuts_in_place(live.actual, cuts, policies)
+        cut_tracks_of = {
+            c.timeline_range: frozenset(
+                a.track_name
+                for a in c.track_policies
+                if a.policy is TrackEditPolicy.CUT_WITH_SOURCE
+            )
+            for c in confirmation.approved_cuts
+        }
+        planned, reasons = self.plan_cuts_in_place(live.actual, confirmation.approved_cuts)
         if reasons:
             return self._outcome(
                 kind,
@@ -1577,7 +1603,7 @@ class ResolveMutationPort:
                     for i in self._live_items()
                     if cut.start <= i.start
                     and i.end <= cut.end
-                    and f"{i.track_api.capitalize()} {i.track_index}" in cut_tracks
+                    and f"{i.track_api.capitalize()} {i.track_index}" in cut_tracks_of[cut]
                 ]
                 result = self._mutate(
                     timeline, _K.TIMELINE, "DeleteClips", _C.DELETE_ITEMS_RIPPLE, inside, True

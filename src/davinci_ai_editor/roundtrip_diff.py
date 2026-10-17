@@ -34,11 +34,26 @@ with identical content (MOVED) or newly added (ADDED) is no longer UNKNOWN;
 MOVED / ADDED / CHANGED / LOST items and changed track state are HARD_LOCKed
 like any other human change. A region with changed content, or overlapping an
 Expected modelled clip, stays UNKNOWN.
+
+INT-002 (requested by STUDIO-T1):
+
+- Evidence class: a Studio API read (``RoundTripFormat.STUDIO_API_READ``) is
+  labelled ``STUDIO_API_READ`` end to end (artifact reference, diff, VER-001
+  report), never ``FILE_ROUNDTRIP``; it is still never native evidence and today
+  only TEST_ONLY_SUPPORT (fake object graph).
+- Expected split frames: ``diff_roundtrip(..., expected_splits=...)`` takes the
+  split frames we listed to the editor (track name or ``KIND:n`` label -> Actual
+  timeline frames). A split of one Expected clip into unmoved, source-contiguous
+  pieces of the same media / name / enabled state whose every split frame is
+  listed is ``NEUTRAL_SPLIT``: not a human edit and no HARD_LOCK (a marker change
+  on the pieces still is). Any other split stays ``SPLIT`` (HARD_LOCK). The
+  geometry rule is shared with ``studio_razor.classify_split_change``
+  (:func:`contiguous_split_frames`).
 """
 
 import hashlib
 import itertools
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
@@ -46,6 +61,10 @@ from typing import Literal
 from .domain import FrameRange, ProtectedRange, TrackId
 from .handoff_model import (
     EVIDENCE_CLASS,
+    EVIDENCE_CLASSES,
+    EVIDENCE_QUALIFICATION,
+    STUDIO_EVIDENCE_CLASS,
+    EvidenceClass,
     HandoffClip,
     HandoffDiagnostic,
     HandoffTimeline,
@@ -117,6 +136,8 @@ class ChangeKind(str, Enum):
     TRIMMED = "TRIMMED"
     MOVED = "MOVED"
     SPLIT = "SPLIT"
+    # INT-002: a split exactly at frames we listed (razor assist); not a human edit
+    NEUTRAL_SPLIT = "NEUTRAL_SPLIT"
     MERGED = "MERGED"
     REMOVED_BY_HUMAN = "REMOVED_BY_HUMAN"
     ADDED_BY_HUMAN = "ADDED_BY_HUMAN"
@@ -145,14 +166,24 @@ class AttributeChange(str, Enum):
     MARKERS = "MARKERS"
 
 
+def evidence_class_for(fmt: RoundTripFormat) -> EvidenceClass:
+    """The evidence class a round-trip format carries (never native)."""
+    return STUDIO_EVIDENCE_CLASS if fmt is RoundTripFormat.STUDIO_API_READ else EVIDENCE_CLASS
+
+
 @dataclass(frozen=True)
 class RoundTripArtifactRef:
-    """The re-imported file: caller reference + exact text digest. FILE_ROUNDTRIP only."""
+    """The re-read Actual: caller reference + exact content digest.
+
+    ``FILE_ROUNDTRIP`` for a re-imported file; ``STUDIO_API_READ`` (INT-002) for a
+    getter-only Studio read, where ``text_sha256`` is the raw-read snapshot digest.
+    The class must match the format; neither is ever native evidence.
+    """
 
     ref: str
     format: RoundTripFormat
     text_sha256: str
-    evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
+    evidence_class: EvidenceClass = EVIDENCE_CLASS
     native_evidence: Literal[False] = False
 
     def __post_init__(self) -> None:
@@ -166,14 +197,25 @@ class RoundTripArtifactRef:
             or any(c not in _HEX for c in self.text_sha256)
         ):
             raise ValueError("Lowercase SHA-256 hex digest required")
-        if self.evidence_class != EVIDENCE_CLASS or self.native_evidence is not False:
-            raise ValueError("A re-imported file is FILE_ROUNDTRIP evidence, never native")
+        if self.evidence_class not in EVIDENCE_CLASSES or self.native_evidence is not False:
+            raise ValueError("A re-read Actual is FILE_ROUNDTRIP / STUDIO_API_READ, never native")
+        if self.evidence_class != evidence_class_for(self.format):
+            raise ValueError(
+                f"Evidence class {self.evidence_class} does not match format {self.format.value}"
+            )
+
+    @property
+    def evidence_domain(self) -> str:
+        """``FILE_ROUNDTRIP`` or ``TEST_ONLY_SUPPORT`` (Studio reads exist only on the fake)."""
+        return EVIDENCE_QUALIFICATION[self.evidence_class]
 
 
 def roundtrip_artifact_ref(ref: str, text: str, fmt: RoundTripFormat) -> RoundTripArtifactRef:
     if not isinstance(text, str):
         raise TypeError("Artifact text must be a string")
-    return RoundTripArtifactRef(ref, fmt, hashlib.sha256(text.encode("utf-8")).hexdigest())
+    return RoundTripArtifactRef(
+        ref, fmt, hashlib.sha256(text.encode("utf-8")).hexdigest(), evidence_class_for(fmt)
+    )
 
 
 def timeline_digest(timeline: TimelineStructure) -> str:
@@ -244,7 +286,7 @@ class RoundTripChange:
             ok = self.expected is None and n == 1
         elif kind is ChangeKind.REMOVED_BY_HUMAN:
             ok = self.expected is not None and n == 0
-        elif kind is ChangeKind.SPLIT:
+        elif kind in (ChangeKind.SPLIT, ChangeKind.NEUTRAL_SPLIT):
             ok = self.expected is not None and n >= 2
         elif kind is ChangeKind.UNKNOWN:
             ok = self.expected is not None or n >= 1
@@ -259,7 +301,7 @@ class RoundTripChange:
 
     @property
     def human_touched(self) -> bool:
-        if self.kind is ChangeKind.UNCHANGED:
+        if self.kind in (ChangeKind.UNCHANGED, ChangeKind.NEUTRAL_SPLIT):
             return bool(self.attribute_changes)
         return True
 
@@ -287,7 +329,9 @@ class RoundTripDiff:
     lock_horizon: int
     read_diagnostics: tuple[HandoffDiagnostic, ...] = ()
     layer_findings: tuple[LayerFinding, ...] = ()
-    evidence_class: Literal["FILE_ROUNDTRIP"] = EVIDENCE_CLASS
+    # INT-002: split frames listed to the editor (Actual track, frames), bound by digest
+    expected_splits: tuple[tuple[TrackKey, tuple[int, ...]], ...] = ()
+    evidence_class: EvidenceClass = EVIDENCE_CLASS
 
     def __post_init__(self) -> None:
         for name in (
@@ -297,12 +341,16 @@ class RoundTripDiff:
             "actual_tracks",
             "read_diagnostics",
             "layer_findings",
+            "expected_splits",
         ):
             object.__setattr__(self, name, tuple(getattr(self, name)))
-        if self.evidence_class != EVIDENCE_CLASS:
-            raise ValueError("Round-trip diffs are FILE_ROUNDTRIP evidence only")
         if not isinstance(self.artifact, RoundTripArtifactRef):
             raise TypeError("Artifact reference required")
+        if (
+            self.evidence_class not in EVIDENCE_CLASSES
+            or self.evidence_class != self.artifact.evidence_class
+        ):
+            raise ValueError("A round-trip diff carries its artifact's evidence class")
         if not isinstance(self.status, DiffStatus):
             raise TypeError("Typed status required")
         has_unknown = any(c.kind is ChangeKind.UNKNOWN for c in self.changes)
@@ -316,6 +364,10 @@ class RoundTripDiff:
             raise ValueError("Without a readable Actual the diff is UNKNOWN")
         if type(self.lock_horizon) is not int or self.lock_horizon <= 0:
             raise ValueError("Lock horizon must be a positive int")
+
+    @property
+    def evidence_domain(self) -> str:
+        return EVIDENCE_QUALIFICATION[self.evidence_class]
 
     @property
     def digest(self) -> str:
@@ -378,6 +430,45 @@ def identity_strength(
             return IdentityStrength.WEAK
         return IdentityStrength.UNKNOWN  # display-name collision with a different path
     return IdentityStrength.UNKNOWN
+
+
+def contiguous_split_frames(
+    start: int,
+    original: HandoffClip,
+    pieces: Sequence[tuple[int, HandoffClip]],
+    same_piece: Callable[[HandoffClip], bool],
+) -> tuple[int, ...] | str:
+    """Split frames if ``pieces`` (timeline start, clip) are ``original`` (placed at
+    ``start``) divided in place: the first piece starts where the original started,
+    every next piece starts where the previous one ended in both timeline and source,
+    every piece satisfies ``same_piece`` and the last ends where the original ended.
+    Otherwise a short reason (str). Shared by RT-001 (NEUTRAL_SPLIT) and the Studio
+    razor-assist classifier; frames are timeline frames of the caller's coordinates.
+    """
+    if not pieces:
+        return "item missing"
+    first_start, first = pieces[0]
+    if (
+        first_start != start
+        or first.source_range.start != original.source_range.start
+        or not same_piece(first)
+    ):
+        return "item changed"
+    frames: list[int] = []
+    position = first_start + first.duration
+    source = first.source_range.end
+    for next_start, piece in pieces[1:]:
+        if next_start != position or piece.source_range.start != source or not same_piece(piece):
+            return f"not a source-contiguous split at {position}"
+        frames.append(position)
+        position += piece.duration
+        source = piece.source_range.end
+    end = start + original.duration
+    if position < end:
+        return "item shortened"
+    if position > end:
+        return "item extended"
+    return tuple(frames)
 
 
 _STRENGTH_ORDER = {
@@ -448,8 +539,10 @@ class _Differ:
         actual: ReimportedTimeline,
         basis: MediaIdentityBasis,
         regions: tuple[UnknownRegion, ...],
+        expected_splits: Mapping[TrackKey, frozenset[int]] | None = None,
     ) -> None:
         self.basis = basis
+        self.expected_splits = {} if expected_splits is None else dict(expected_splits)
         self.path_identified = frozenset(actual.path_identified_media_ids)
         self.regions = regions
         self.expected = _placements(expected)
@@ -536,7 +629,11 @@ class _Differ:
         if kind_hint is not None:
             kind = kind_hint
         elif len(fragments) > 1:
-            kind = ChangeKind.SPLIT
+            kind = (
+                ChangeKind.NEUTRAL_SPLIT
+                if self.neutral_split(e, fragments, strength)
+                else ChangeKind.SPLIT
+            )
         elif head == 0 and tail == 0:
             kind = (
                 ChangeKind.UNCHANGED
@@ -546,7 +643,7 @@ class _Differ:
         else:
             kind = ChangeKind.TRIMMED
         actual_hull = _hull(a.timeline_range for a in fragments)
-        if kind is ChangeKind.UNCHANGED:
+        if kind in (ChangeKind.UNCHANGED, ChangeKind.NEUTRAL_SPLIT):
             if attrs:
                 regions.append(ActualRegion(first.track, actual_hull))
         elif kind is ChangeKind.TRIMMED:
@@ -573,6 +670,35 @@ class _Differ:
             attrs,
             tuple(regions),
         )
+
+    def neutral_split(
+        self,
+        e: ClipPlacement,
+        fragments: tuple[ClipPlacement, ...],
+        strength: IdentityStrength,
+    ) -> bool:
+        """A split of ``e`` in place, only at listed frames (INT-002 NEUTRAL_SPLIT)."""
+        listed = self.expected_splits.get(e.track)
+        if not listed or strength is IdentityStrength.UNKNOWN:
+            return False
+        if any(a.track != e.track for a in fragments):
+            return False
+
+        def same(piece: HandoffClip) -> bool:
+            return (
+                piece.name == e.clip.name
+                and piece.enabled == e.clip.enabled
+                and identity_strength(e.clip, piece, self.basis_for(piece))
+                in (IdentityStrength.WEAK, IdentityStrength.STRONG)
+            )
+
+        frames = contiguous_split_frames(
+            e.timeline_range.start,
+            e.clip,
+            tuple((a.timeline_range.start, a.clip) for a in fragments),
+            same,
+        )
+        return not isinstance(frames, str) and bool(frames) and set(frames) <= listed
 
     # --- passes -------------------------------------------------------------
 
@@ -864,7 +990,42 @@ def _whole_unknown(
         () if actual is None else _extents(expected, actual),
         frames_per_24_hours(rate),
         diagnostics,
+        evidence_class=artifact_ref.evidence_class,
     )
+
+
+ExpectedSplits = Mapping[str, Iterable[int]]  # track name or KIND:n label -> frames
+
+
+def resolve_expected_splits(
+    timeline: TimelineStructure, splits: ExpectedSplits | None
+) -> dict[TrackKey, frozenset[int]]:
+    """Map listed split frames to tracks (name or ``KIND:n`` label, like LAYER-001
+    overrides). Unknown, ambiguous or duplicate references and non-positive frames
+    refuse (ValueError); nothing is guessed."""
+    if splits is None:
+        return {}
+    keyed = track_keys(timeline)
+    result: dict[TrackKey, frozenset[int]] = {}
+    for reference, frames in splits.items():
+        if not isinstance(reference, str) or not reference.strip():
+            raise ValueError("Split track reference must be a nonempty string")
+        wanted = reference.strip()
+        hits = [
+            key
+            for key, track in keyed
+            if track.name == wanted or key.label.casefold() == wanted.casefold()
+        ]
+        if len(hits) != 1:
+            raise ValueError(f"Split track {wanted!r} matches {len(hits)} tracks; nothing guessed")
+        values = frozenset(frames)
+        if any(type(f) is not int or f <= 0 for f in values):
+            raise ValueError("Split frames must be positive int timeline frames")
+        if hits[0] in result:
+            raise ValueError(f"Duplicate split list for {hits[0].label}")
+        if values:
+            result[hits[0]] = values
+    return result
 
 
 def diff_roundtrip(
@@ -874,6 +1035,7 @@ def diff_roundtrip(
     artifact_ref: RoundTripArtifactRef,
     unknown_regions: tuple[UnknownRegion, ...] = (),
     read_diagnostics: tuple[HandoffDiagnostic, ...] = (),
+    expected_splits: ExpectedSplits | None = None,
 ) -> RoundTripDiff:
     """Deterministic Expected-vs-Actual round-trip diff, digest-bound to both artifacts.
 
@@ -882,16 +1044,27 @@ def diff_roundtrip(
     and path (WEAK at best). OTIO clips whose metadata the NLE dropped
     (``actual.path_identified_media_ids``) are matched by path + source range
     with WEAK identity instead of making the whole diff UNKNOWN.
+
+    ``expected_splits`` (INT-002): split frames we listed to the editor (razor
+    assist), in Actual timeline frames per track. A split exactly at listed frames
+    is ``NEUTRAL_SPLIT`` (no HARD_LOCK); see :func:`contiguous_split_frames`.
     """
     if not isinstance(expected, HandoffTimeline):
         raise TypeError("Expected must be a HandoffTimeline (Expected artifact)")
     if not isinstance(actual, ReimportedTimeline):
-        raise TypeError("Actual must be a ReimportedTimeline (FILE_ROUNDTRIP)")
+        raise TypeError("Actual must be a ReimportedTimeline (re-read, never native)")
     if not isinstance(artifact_ref, RoundTripArtifactRef):
         raise TypeError("A RoundTripArtifactRef is required")
+    if actual.evidence_class != artifact_ref.evidence_class:
+        raise ValueError("The Actual and its artifact reference carry different evidence classes")
     regions = tuple(unknown_regions)
     if any(not isinstance(r, UnknownRegion) for r in regions):
         raise TypeError("Unknown regions must be UnknownRegion values")
+    splits = resolve_expected_splits(expected, expected_splits)
+    split_binding = tuple(
+        (key, tuple(sorted(frames)))
+        for key, frames in sorted(splits.items(), key=lambda kv: _key_order(kv[0]))
+    )
     diagnostics = tuple(read_diagnostics)
     basis = _BASIS_BY_FORMAT[artifact_ref.format]
     if basis is MediaIdentityBasis.METADATA and actual.path_identified_media_ids:
@@ -912,7 +1085,7 @@ def diff_roundtrip(
     )
     findings = compare_layers(expected, actual)
     regions = resolve_passthrough_regions(regions, expected, actual, findings)
-    changes = _Differ(expected, actual, differ_basis, regions).run()
+    changes = _Differ(expected, actual, differ_basis, regions, splits).run()
     partial = bool(regions) or any(c.kind is ChangeKind.UNKNOWN for c in changes)
     return RoundTripDiff(
         timeline_digest(expected),
@@ -927,6 +1100,8 @@ def diff_roundtrip(
         frames_per_24_hours(actual.rate),
         diagnostics,
         findings,
+        split_binding,
+        artifact_ref.evidence_class,
     )
 
 
@@ -952,7 +1127,11 @@ def diff_unreadable_roundtrip(
 
 
 def diff_xmeml_roundtrip(
-    expected: HandoffTimeline, result: XmemlReadResult, *, artifact_ref: RoundTripArtifactRef
+    expected: HandoffTimeline,
+    result: XmemlReadResult,
+    *,
+    artifact_ref: RoundTripArtifactRef,
+    expected_splits: ExpectedSplits | None = None,
 ) -> RoundTripDiff:
     if not isinstance(result, XmemlReadResult):
         raise TypeError("An XmemlReadResult is required")
@@ -968,11 +1147,16 @@ def diff_xmeml_roundtrip(
         artifact_ref=artifact_ref,
         unknown_regions=result.unknown_regions,
         read_diagnostics=result.diagnostics,
+        expected_splits=expected_splits,
     )
 
 
 def diff_otio_roundtrip(
-    expected: HandoffTimeline, result: OtioReadResult, *, artifact_ref: RoundTripArtifactRef
+    expected: HandoffTimeline,
+    result: OtioReadResult,
+    *,
+    artifact_ref: RoundTripArtifactRef,
+    expected_splits: ExpectedSplits | None = None,
 ) -> RoundTripDiff:
     if not isinstance(result, OtioReadResult):
         raise TypeError("An OtioReadResult is required")
@@ -983,7 +1167,11 @@ def diff_otio_roundtrip(
             expected, artifact_ref=artifact_ref, read_diagnostics=result.diagnostics
         )
     return diff_roundtrip(
-        expected, result.timeline, artifact_ref=artifact_ref, read_diagnostics=result.diagnostics
+        expected,
+        result.timeline,
+        artifact_ref=artifact_ref,
+        read_diagnostics=result.diagnostics,
+        expected_splits=expected_splits,
     )
 
 

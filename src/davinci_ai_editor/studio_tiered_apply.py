@@ -80,7 +80,6 @@ from .studio_transport import (
     ResolveReadPort,
     StudioEvidence,
     StudioReadResult,
-    TrackCutPolicy,
     _Blocked,
     _invoke,
     diff_studio_read,
@@ -586,8 +585,8 @@ class TieredApplyPort:
         confirmation: ApplyConfirmation,
         *,
         user_choice: UserChoice = UserChoice.NONE,
-        track_policies: Mapping[str, TrackCutPolicy] | None = None,
     ) -> StudioApplyPlan:
+        """Plan the confirmed cuts; per-track policies are the confirmation's own."""
         live = self._read.read()
         grade = self.read_grade_state()
         listing = self.existing_timelines()
@@ -598,7 +597,6 @@ class TieredApplyPort:
             self._profile,
             existing_timeline_names=None if listing is None else [n for n, _ in listing],
             user_choice=user_choice,
-            track_policies=track_policies,
         )
 
     # -- tier 4 helper -------------------------------------------------------------
@@ -679,7 +677,7 @@ class TieredApplyPort:
             )
         if plan.tier is ApplyTier.TIER_3_DELETE_ALIGNED_IN_PLACE:
             in_place = self._mutation.apply_confirmed_cuts(
-                confirmation, confirmed_digest=confirmed_digest, track_policies=plan.policy_map()
+                confirmation, confirmed_digest=confirmed_digest
             )
             return self._from_in_place(plan, confirmation, in_place, None)
         if plan.tier is ApplyTier.TIER_4_RAZOR_ASSIST:
@@ -779,7 +777,6 @@ class TieredApplyPort:
         in_place = self._mutation.apply_confirmed_cuts(
             confirmation,
             confirmed_digest=confirmed_digest,
-            track_policies=plan.policy_map(),
             neutral_splits=plan.split_plan_map(),
         )
         return self._from_in_place(plan, confirmation, in_place, split)

@@ -16,8 +16,8 @@ from davinci_ai_editor.apply_cuts import (
     ApplyConfirmation,
     ApplyRefused,
     SkipReason,
-    apply_approved_cuts,
     actual_binding_digest,
+    apply_approved_cuts,
     build_apply_confirmation,
 )
 from davinci_ai_editor.candidate_markers import (
@@ -37,6 +37,7 @@ from davinci_ai_editor.handoff_model import (
     MarkerColor,
     ReimportedTimeline,
 )
+from davinci_ai_editor.layer_policy import TrackPolicyOverride
 from davinci_ai_editor.native_snapshot import CaptureConsistency
 from davinci_ai_editor.roundtrip_diff import (
     RoundTripFormat,
@@ -153,8 +154,11 @@ def _written(timeline: HandoffTimeline) -> str:
 
 def file_path(
     decisions: dict[str, str] = DECISIONS,
+    *,
+    timeline: HandoffTimeline | None = None,
+    overrides: tuple[TrackPolicyOverride, ...] = (),
 ) -> tuple[CandidateHandoff, ReimportedTimeline, ApplyConfirmation, AppliedTimeline]:
-    handoff = attach_candidate_markers(fixture(), CANDIDATES)
+    handoff = attach_candidate_markers(fixture() if timeline is None else timeline, CANDIDATES)
     exported = _rename_xml(_written(handoff.timeline), decisions)
     result = read_xmeml(exported)
     assert result.timeline is not None and result.complete, result.diagnostics
@@ -164,7 +168,9 @@ def file_path(
         artifact_ref=roundtrip_artifact_ref("export.xml", exported, RoundTripFormat.XMEML),
     )
     selection = read_marker_selections(result.timeline, handoff.candidates)
-    confirmation = build_apply_confirmation(selection, handoff.timeline, diff)
+    confirmation = build_apply_confirmation(
+        selection, handoff.timeline, diff, track_overrides=overrides
+    )
     applied = apply_approved_cuts(confirmation, confirmed_digest=confirmation.confirmation_digest)
     return handoff, result.timeline, confirmation, applied
 
@@ -212,12 +218,18 @@ class Studio:
         for token, word in decisions.items():  # simulated marker renames in the Resolve UI
             self.project.timeline._rename_marker(token, f"{token} {word}")
 
-    def confirm(self, handoff: CandidateHandoff) -> tuple[StudioReadResult, ApplyConfirmation]:
+    def confirm(
+        self,
+        handoff: CandidateHandoff,
+        overrides: tuple[TrackPolicyOverride, ...] = (),
+    ) -> tuple[StudioReadResult, ApplyConfirmation]:
         live = self.read_port.read()
         assert live.actual is not None, live.diagnostics
         diff = diff_studio_read(handoff.timeline, live)
         selection = read_marker_selections(live.actual, handoff.candidates)
-        return live, build_apply_confirmation(selection, handoff.timeline, diff)
+        return live, build_apply_confirmation(
+            selection, handoff.timeline, diff, track_overrides=overrides
+        )
 
 
 def _decisions(confirmation: ApplyConfirmation) -> tuple[object, ...]:
@@ -228,7 +240,11 @@ def _decisions(confirmation: ApplyConfirmation) -> tuple[object, ...]:
 
 
 def _uncoloured(actual: ReimportedTimeline) -> ReimportedTimeline:
-    """FCP7 xmeml carries no marker colour: normalize the live colours to UNKNOWN."""
+    """FCP7 xmeml carries no marker colour: normalize the live colours to UNKNOWN.
+
+    INT-002: also restate the transport label (STUDIO_API_READ -> FILE_ROUNDTRIP) so
+    the content of the two reads can be compared directly.
+    """
     tracks = tuple(
         replace(
             t,
@@ -241,7 +257,14 @@ def _uncoloured(actual: ReimportedTimeline) -> ReimportedTimeline:
         )
         for t in actual.tracks
     )
-    return replace(actual, tracks=tracks)
+    return replace(actual, tracks=tracks, evidence_class="FILE_ROUNDTRIP")
+
+
+def track_effects_of(confirmation: ApplyConfirmation) -> tuple[tuple[str, str, int, int], ...]:
+    return tuple(
+        (e.track_name, e.effect.value, e.cut_frames, e.shift_frames)
+        for e in confirmation.track_effects
+    )
 
 
 # --- parity -------------------------------------------------------------------------
@@ -255,6 +278,9 @@ def test_file_and_studio_transports_reach_the_same_core_result() -> None:
     live, conf_b = studio.confirm(handoff_b)
     assert live.consistency is CaptureConsistency.CONSISTENT
     assert live.evidence_domain == "TEST_ONLY_SUPPORT" and live.native_evidence is False
+    # INT-002: the Studio read is STUDIO_API_READ end to end, the file read FILE_ROUNDTRIP
+    assert live.actual is not None and live.actual.evidence_class == "STUDIO_API_READ"
+    assert actual_a.evidence_class == "FILE_ROUNDTRIP"
     # identical candidate sets and identical Expected (same expected digest)
     assert candidate_sets_equal(handoff_a, handoff_b)
     assert handoff_a.timeline == handoff_b.timeline
@@ -277,6 +303,13 @@ def test_file_and_studio_transports_reach_the_same_core_result() -> None:
     assert conf_a.candidate_statuses == conf_b.candidate_statuses
     assert actual_binding_digest(live.actual) == actual_binding_digest(actual_a)
     assert conf_a.confirmation_digest == conf_b.confirmation_digest
+    # identical per-track policy and effect (LAYER-001): dialogue cut, B-roll shifted
+    assert track_effects_of(conf_a) == track_effects_of(conf_b)
+    assert track_effects_of(conf_b) == (
+        ("Video 1", "CUT", 32, 0),
+        ("Video 2", "SHIFTED", 0, 32),
+        ("Audio 1", "CUT", 32, 0),
+    )
     # apply: file path -> new Expected file; Studio -> in place on the fake
     outcome = studio.mutation.apply_confirmed_cuts(
         conf_b, confirmed_digest=conf_b.confirmation_digest
@@ -291,7 +324,8 @@ def test_file_and_studio_transports_reach_the_same_core_result() -> None:
     readback = outcome.readback_read.actual
     assert cut_geometry(applied_a.timeline) == cut_geometry(applied_b.timeline)
     assert cut_geometry(applied_a.timeline) == cut_geometry(readback)
-    video1, _, audio1 = cut_geometry(readback)
+    video1, video2, audio1 = cut_geometry(readback)
+    assert video2 == ("VIDEO", 2, ((268, "broll.mov", 0, 50),))  # shifted by 32, never cut
     assert video1 == (
         "VIDEO",
         1,
@@ -307,6 +341,9 @@ def test_file_and_studio_transports_reach_the_same_core_result() -> None:
     # VER-001 MATCH on both transports
     assert file_verification(applied_a) is VerificationStatus.MATCH
     assert outcome.report is not None and outcome.report.status is VerificationStatus.MATCH
+    assert outcome.report.evidence_class == "STUDIO_API_READ"
+    assert outcome.report.evidence_domain == "TEST_ONLY_SUPPORT"
+    assert outcome.report.native_evidence is False
 
 
 def test_mid_item_cut_without_split_is_unsupported_and_never_rebuilt() -> None:
@@ -539,44 +576,61 @@ def test_hard_lock_from_a_human_edit_is_respected() -> None:
     assert (100, "interview.mov", 100, 120) in video1[2]  # the locked pause survives
 
 
-def test_per_track_policies_never_cut_non_cut_tracks() -> None:
+def test_per_track_policies_come_from_the_confirmation() -> None:
+    """INT-002: the in-place path applies the confirmed LAYER-001 policies only."""
+    overrides = (TrackPolicyOverride("Video 2", TrackCutPolicy.KEEP_IN_PLACE),)
     studio = Studio()
     handoff = studio.handoff()
     studio.decide()
-    _, confirmation = studio.confirm(handoff)
-    digest = confirmation.confirmation_digest
-    base = {"Video 1": TrackCutPolicy.CUT_WITH_SOURCE, "Audio 1": TrackCutPolicy.CUT_WITH_SOURCE}
+    _, keep_conf = studio.confirm(handoff, overrides)
+    assert {a.track_name: a.policy for a in keep_conf.approved_cuts[0].track_policies} == {
+        "Video 1": TrackCutPolicy.CUT_WITH_SOURCE,
+        "Video 2": TrackCutPolicy.KEEP_IN_PLACE,
+        "Audio 1": TrackCutPolicy.CUT_WITH_SOURCE,
+    }
     keep = studio.mutation.apply_confirmed_cuts(
-        confirmation,
-        confirmed_digest=digest,
-        track_policies={**base, "Video 2": TrackCutPolicy.KEEP_IN_PLACE},
+        keep_conf, confirmed_digest=keep_conf.confirmation_digest
     )
+    # KEEP_IN_PLACE stays UNSUPPORTED in place (no track-selective ripple, STUDIO-T0)
     assert keep.status is MutationStatus.UNSUPPORTED and "TRACK_SELECTIVE_RIPPLE" in keep.detail
-    conflict = studio.mutation.apply_confirmed_cuts(
-        confirmation,
-        confirmed_digest=digest,
-        track_policies={
-            **base,
-            "Audio 1": TrackCutPolicy.SHIFT_WITH_RIPPLE,
-            "Video 2": TrackCutPolicy.SHIFT_WITH_RIPPLE,
-        },
-    )
-    assert conflict.status is MutationStatus.UNSUPPORTED and "LAYER_CONFLICT" in conflict.detail
-    unknown = studio.mutation.apply_confirmed_cuts(
-        confirmation, confirmed_digest=digest, track_policies=base
-    )
-    assert unknown.status is MutationStatus.UNSUPPORTED and "policy UNKNOWN" in unknown.detail
+    assert keep.fallback is Fallback.FILE_PATH and not keep.mutated
     assert studio.behavior.count("Timeline.DeleteClips") == 0
+    # the file path expresses the same confirmed KEEP (same digest), B-roll untouched
+    _, _, conf_file, applied_file = file_path(overrides=overrides)
+    assert conf_file.confirmation_digest == keep_conf.confirmation_digest
+    assert cut_geometry(applied_file.timeline)[1] == ("VIDEO", 2, ((300, "broll.mov", 0, 50),))
+    assert any(w.code.value == "SYNC_SHIFT" for w in conf_file.layer_warnings)
+    # SHIFT_WITH_RIPPLE (the default for V2) is applied in place by the span ripple
+    _, shift_conf = studio.confirm(handoff)
     shifted = studio.mutation.apply_confirmed_cuts(
-        confirmation,
-        confirmed_digest=digest,
-        track_policies={**base, "Video 2": TrackCutPolicy.SHIFT_WITH_RIPPLE},
+        shift_conf, confirmed_digest=shift_conf.confirmation_digest
     )
     assert shifted.status is MutationStatus.PERFORMED
     assert shifted.readback is VerificationStatus.MATCH
     assert shifted.readback_read is not None and shifted.readback_read.actual is not None
     broll = cut_geometry(shifted.readback_read.actual)[1]
     assert broll == ("VIDEO", 2, ((268, "broll.mov", 0, 50),))  # moved by 32, never cut
+
+
+def test_planner_refuses_unknown_policy_and_shift_conflict_defensively() -> None:
+    """A confirmation never approves these; the in-place planner re-checks anyway."""
+    studio = Studio()
+    handoff = studio.handoff()
+    studio.decide()
+    live, confirmation = studio.confirm(handoff)
+    assert live.actual is not None
+    cut = confirmation.approved_cuts[0]
+    unknown = replace(cut, track_policies=cut.track_policies[:1])
+    _, reasons = studio.mutation.plan_cuts_in_place(live.actual, (unknown,))
+    assert any("policy UNKNOWN" in r for r in reasons)
+    shift_v1 = replace(
+        cut,
+        track_policies=tuple(
+            replace(a, policy=TrackCutPolicy.SHIFT_WITH_RIPPLE) for a in cut.track_policies
+        ),
+    )
+    _, reasons = studio.mutation.plan_cuts_in_place(live.actual, (shift_v1,))
+    assert any("LAYER_CONFLICT" in r for r in reasons)
 
 
 # --- marker removal ------------------------------------------------------------------
