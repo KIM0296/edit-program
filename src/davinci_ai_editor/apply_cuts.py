@@ -33,8 +33,15 @@ name, ``original_range`` = the piece in Actual coordinates, ``delta_frames`` <
 0) - the same explicit displacement semantics as
 ``safety.propose_ripple_displacements``; nothing moves implicitly. The output
 keeps exactly the Actual tracks (count, order, names, kinds, flags, settings);
-pass-through items are kept verbatim. Anything the new file could not carry
-(e.g. sequence-level markers) makes apply refuse with ``LAYER_LOSS_RISK``.
+pass-through items are kept verbatim. Sequence (timeline) markers ripple with
+the timeline; one inside a removed range is kept and moved to the cut point
+(``MARKER_MOVED_TO_CUT`` warning). File ``<link>`` groups count as linked A/V
+for the default policy. Anything the new file could not carry (e.g. a
+malformed sequence marker) makes apply refuse with ``LAYER_LOSS_RISK``.
+
+The confirmation digest binds the resolved status of every candidate
+(``CandidateStatus``) and an Actual digest with marker colours neutralized
+(:func:`actual_binding_digest`), not the raw marker colour.
 
 Skipped, never applied (with reasons in the summary): UNKNOWN decisions
 (missing / duplicated / malformed / colour conflict / moved = stale), REJECTED,
@@ -60,6 +67,7 @@ from .candidate_markers import (
     CandidateDecision,
     MarkerSelection,
     MarkerSelectionSet,
+    SelectionIssue,
     is_candidate_marker_name,
     parse_candidate_marker_name,
 )
@@ -69,6 +77,7 @@ from .handoff_model import (
     HandoffClip,
     HandoffTimeline,
     HandoffTrack,
+    MarkerColor,
     ReimportedTimeline,
 )
 from .layer_policy import (
@@ -84,9 +93,10 @@ from .layer_policy import (
     apply_track_cuts,
     assign_policies,
     check_cut_layers,
-    link_review_warnings,
     passthrough_markers,
     resolve_overrides,
+    ripple_sequence_markers,
+    sequence_marker_warnings,
     track_effects,
 )
 from .layer_xml import content_key
@@ -173,22 +183,67 @@ class ShiftedLock:
     delta_frames: int
 
 
+@dataclass(frozen=True)
+class CandidateStatus:
+    """Resolved selection status of one candidate (after name + colour resolution)."""
+
+    candidate_id: str
+    decision: CandidateDecision
+    issue: SelectionIssue
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.decision, CandidateDecision) or not isinstance(
+            self.issue, SelectionIssue
+        ):
+            raise TypeError("Typed candidate status required")
+
+
+def actual_binding_digest(actual: ReimportedTimeline) -> str:
+    """Digest of the Actual with every marker colour neutralized.
+
+    Marker colour is only a secondary approval signal (FCP7 xmeml carries none,
+    OTIO does); its effect is bound through the resolved ``CandidateStatus``
+    instead, so the same approvals give the same confirmation digest whether or
+    not the transport carried colours.
+    """
+    tracks = tuple(
+        replace(
+            track,
+            items=tuple(
+                replace(
+                    item,
+                    markers=tuple(replace(m, color=MarkerColor.UNKNOWN) for m in item.markers),
+                )
+                if isinstance(item, HandoffClip)
+                else item
+                for item in track.items
+            ),
+        )
+        for track in actual.tracks
+    )
+    return timeline_digest(replace(actual, tracks=tracks))
+
+
 def confirmation_digest_for(
     expected_digest: str,
-    actual_digest: str,
+    actual_binding: str,
     cuts: tuple[ApprovedCut, ...],
+    statuses: tuple[CandidateStatus, ...] = (),
     track_effects: tuple[TrackEffect, ...] = (),
     layer_warnings: tuple[LayerIssue, ...] = (),
     loss_risks: tuple[LayerIssue, ...] = (),
 ) -> str:
-    """Binds the artifacts, the cut set with per-track policies and the layer plan."""
+    """Binds the artifacts, the resolved candidate statuses, the cut set with
+    per-track policies and the layer plan. ``actual_binding`` is
+    :func:`actual_binding_digest` (raw marker colours are not bound)."""
     payload = {
+        "actual_binding": actual_binding,
         "approved_cuts": list(cuts),
-        "actual_digest": actual_digest,
+        "candidate_statuses": list(statuses),
         "expected_digest": expected_digest,
         "layer_loss_risks": list(loss_risks),
         "layer_warnings": list(layer_warnings),
-        "schema": "apply-001-confirmation-v2-layer-001",
+        "schema": "apply-001-confirmation-v3-layer-001",
         "track_effects": list(track_effects),
     }
     return hashlib.sha256(canonical_bytes(payload)).hexdigest()
@@ -206,6 +261,7 @@ class ApplyConfirmation:
     skipped: tuple[SkippedCandidate, ...]
     locks: tuple[ProtectedRange, ...]
     lock_tracks: tuple[TrackKey | None, ...]  # Actual track of each lock (None = UNKNOWN)
+    candidate_statuses: tuple[CandidateStatus, ...]
     shifted_locks: tuple[ShiftedLock, ...]
     track_effects: tuple[TrackEffect, ...]
     layer_warnings: tuple[LayerIssue, ...]
@@ -221,6 +277,7 @@ class ApplyConfirmation:
             "skipped",
             "locks",
             "lock_tracks",
+            "candidate_statuses",
             "shifted_locks",
             "track_effects",
             "layer_warnings",
@@ -255,8 +312,9 @@ class ApplyConfirmation:
             raise ValueError("Loss risks carry the LAYER_LOSS_RISK code")
         expected = confirmation_digest_for(
             self.expected_digest,
-            self.actual_digest,
+            actual_binding_digest(self.actual),
             self.approved_cuts,
+            self.candidate_statuses,
             self.track_effects,
             self.layer_warnings,
             self.loss_risks,
@@ -383,8 +441,8 @@ def _lock_track_keys(
     return tuple(result)
 
 
-def _candidate_media(actual: ReimportedTimeline, selection: MarkerSelection) -> str | None:
-    """Media of the anchor clip that carries the approved candidate marker."""
+def _candidate_clip(actual: ReimportedTimeline, selection: MarkerSelection) -> HandoffClip | None:
+    """The anchor clip that carries the approved candidate marker."""
     cut = selection.actual_range
     if cut is None or selection.actual_track is None:
         return None
@@ -393,7 +451,7 @@ def _candidate_media(actual: ReimportedTimeline, selection: MarkerSelection) -> 
             continue
         for start, clip in track.placements():
             if FrameRange(start, start + clip.duration).contains(cut):
-                return clip.media.media_id
+                return clip
     return None
 
 
@@ -547,13 +605,15 @@ def build_apply_confirmation(
                 )
             )
             continue
-        media = _candidate_media(actual, item)
-        if media is None:
+        anchor = _candidate_clip(actual, item)
+        if anchor is None:
             skipped.append(
                 SkippedCandidate(item.candidate_id, SkipReason.UNKNOWN, "Candidate clip not found")
             )
             continue
-        policies = assign_policies(actual, cut_range, media, overrides)
+        policies = assign_policies(
+            actual, cut_range, anchor.media.media_id, overrides, anchor.link_group
+        )
         blocking, cut_warnings = check_cut_layers(actual, cut_range, item.candidate_id, policies)
         if blocking:
             unsupported = [i for i in blocking if i.code is LayerIssueCode.LAYER_UNSUPPORTED_ITEM]
@@ -599,6 +659,7 @@ def build_apply_confirmation(
             continue
         approved.append(ApprovedCut(item.candidate_id, cut_range, item.reason, policies))
         warnings.extend(cut_warnings)
+        warnings.extend(sequence_marker_warnings(actual.markers, cut_range, item.candidate_id))
     cuts = tuple(sorted(approved, key=lambda c: c.timeline_range.start))
     shifted: list[ShiftedLock] = []
     for lock, key in zip(locks, lock_tracks, strict=True):
@@ -618,14 +679,19 @@ def build_apply_confirmation(
             conflicts,
             overrides,
         ),
-        tuple(w for w in warnings if w.candidate_id in applied_ids) + link_review_warnings(actual),
+        tuple(w for w in warnings if w.candidate_id in applied_ids),
         _loss_risks(actual),
     )
     ordered_skips = tuple(sorted(skipped, key=lambda s: s.candidate_id))
+    statuses = tuple(
+        CandidateStatus(s.candidate_id, s.decision, s.issue)
+        for s in sorted(selection.selections, key=lambda s: s.candidate_id)
+    )
     digest = confirmation_digest_for(
         expected_digest,
-        selection.actual_digest,
+        actual_binding_digest(actual),
         cuts,
+        statuses,
         plan.track_effects,
         plan.warnings,
         plan.loss_risks,
@@ -640,6 +706,7 @@ def build_apply_confirmation(
         ordered_skips,
         locks,
         lock_tracks,
+        statuses,
         tuple(shifted),
         plan.track_effects,
         plan.warnings,
@@ -678,6 +745,7 @@ def apply_approved_cuts(
         listed = "; ".join(issue.detail for issue in confirmation.loss_risks)
         raise ApplyRefused(f"LAYER_LOSS_RISK: {listed}; nothing applied")
     actual = confirmation.actual
+    all_cuts = tuple(c.timeline_range for c in confirmation.approved_cuts)
     tracks: list[HandoffTrack] = []
     displacements: list[RippleDisplacement] = []
     for key, track in track_keys(actual):
@@ -690,13 +758,17 @@ def apply_approved_cuts(
             if c.policy(key) is TrackEditPolicy.CUT_WITH_SOURCE
         )
         try:
-            new_track, moved = apply_track_cuts(track, remove, cut_ranges)
+            new_track, moved = apply_track_cuts(track, remove, cut_ranges, all_cuts)
         except (LayerLossRisk, ValueError) as exc:
             raise ApplyRefused(f"LAYER_LOSS_RISK on {track.name}: {exc}; nothing applied") from exc
         tracks.append(new_track)
         displacements.extend(moved)
     timeline = HandoffTimeline(
-        next_version_name(actual.name), actual.rate, actual.start_frame, tuple(tracks)
+        next_version_name(actual.name),
+        actual.rate,
+        actual.start_frame,
+        tuple(tracks),
+        ripple_sequence_markers(actual.markers, all_cuts),
     )
     _check_layers_kept(actual, timeline)
     applied_ids = {c.candidate_id for c in confirmation.approved_cuts}

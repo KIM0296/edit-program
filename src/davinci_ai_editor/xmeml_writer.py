@@ -28,6 +28,13 @@ collision-free ids (``passthrough-N``; file definitions ``pt-file-N``). An item
 whose stored timing disagrees with its extent is refused (``LAYER_LOSS_RISK``),
 never written corrupted. Whether Resolve imports these items faithfully is
 UNVERIFIED.
+
+LAYER-001 follow-up: items carrying a ``link_group`` read from a file are
+linked by that group with ``<link>`` references re-mapped to the new element
+ids (pass-through items included); a group whose other end is gone is written
+unlinked with a ``LINK_NOT_PRESERVED`` warning. ``source_track`` is written as
+``<sourcetrack>``; sequence markers are re-emitted verbatim at their (possibly
+rippled) position.
 The written file is an Expected artifact only; importing it is a native
 mutation (HOLD / manual user action) and nothing here authorizes it.
 """
@@ -52,7 +59,7 @@ from .handoff_model import (
     refusal,
     warning,
 )
-from .layer_xml import emit_raw, parse_raw, root_timing
+from .layer_xml import append_links, emit_raw, marker_raw_at, parse_raw, root_timing
 from .temporal_mapping import FrameRate
 from .timecode import default_mode, frames_to_timecode, is_ntsc, nominal_fps, supports_drop_frame
 
@@ -123,15 +130,6 @@ def _preflight(timeline: HandoffTimeline) -> list[HandoffDiagnostic]:
                 refusal(HandoffDiagnosticCode.UNKNOWN_TRACK_KIND, location, "Track kind UNKNOWN")
             )
         for p_index, pt_item in enumerate(track.passthrough):
-            if pt_item.links_removed:
-                diagnostics.append(
-                    warning(
-                        HandoffDiagnosticCode.LINK_NOT_PRESERVED,
-                        f"{location}.passthrough[{p_index}]",
-                        f"{pt_item.kind.value} {pt_item.label!r} is written without its "
-                        f"{pt_item.links_removed} <link> reference(s); re-check its A/V link",
-                    )
-                )
             problem = _passthrough_problem(pt_item)
             if problem is not None:
                 diagnostics.append(
@@ -193,9 +191,6 @@ class _LinkMember:
     clip_index: int  # 1-based position of the clipitem in its track
 
 
-_LinkKey = tuple[str, int, int, int, int]
-
-
 def _ordered_tracks(timeline: HandoffTimeline) -> Iterator[tuple[str, int, HandoffTrack]]:
     """(media type, 1-based track index within kind, track) in document order."""
     for kind, media_type in ((HandoffTrackKind.VIDEO, "video"), (HandoffTrackKind.AUDIO, "audio")):
@@ -225,38 +220,79 @@ def _track_entries(track: HandoffTrack) -> list[_TrackEntry]:
     return [(start, value) for _, start, value in keyed]
 
 
-def _link_groups(timeline: HandoffTimeline) -> dict[str, tuple[_LinkMember, ...]]:
-    """clipitem id -> link group (same media, timeline range and source range).
+_LinkGroupKey = tuple[object, ...]
 
-    Clipitem ids are assigned in the same document order as :class:`_Builder`;
-    ``clipindex`` counts every track item element (pass-through items included).
+
+def _link_groups(
+    timeline: HandoffTimeline,
+) -> tuple[dict[str, tuple[_LinkMember, ...]], list[HandoffDiagnostic]]:
+    """element id -> link group, plus warnings for groups that lost an end.
+
+    Element ids are assigned in the same document order as :class:`_Builder`
+    (``clipitem-N`` for modelled clips, ``passthrough-N`` for pass-through
+    items); ``clipindex`` counts every track item element. Items carrying a
+    ``link_group`` read from a file are linked by that group (re-mapped to the
+    new ids); a group with a single surviving member is reported as
+    ``LINK_NOT_PRESERVED``. Modelled clips without a group are linked by the
+    APPLY-001 rule (same media, timeline range and source range, exactly one
+    video member).
     """
-    groups: dict[_LinkKey, list[_LinkMember]] = {}
-    counter = 0
+    groups: dict[_LinkGroupKey, list[_LinkMember]] = {}
+    labels: dict[_LinkGroupKey, str] = {}
+    clips = 0
+    passthroughs = 0
     for media_type, track_index, track in _ordered_tracks(timeline):
-        for clip_index, (start, clip) in enumerate(_track_entries(track), start=1):
-            if not isinstance(clip, HandoffClip):
-                continue
-            counter += 1
-            key: _LinkKey = (
-                clip.media.media_id,
-                start,
-                start + clip.duration,
-                clip.source_range.start,
-                clip.source_range.end,
+        for clip_index, (start, entry) in enumerate(_track_entries(track), start=1):
+            key: _LinkGroupKey
+            if isinstance(entry, HandoffClip):
+                clips += 1
+                element_id = f"clipitem-{clips}"
+                if entry.link_group is not None:
+                    key = ("FILE", entry.link_group)
+                else:
+                    key = (
+                        "AUTO",
+                        entry.media.media_id,
+                        start,
+                        start + entry.duration,
+                        entry.source_range.start,
+                        entry.source_range.end,
+                    )
+                label = entry.name
+            else:
+                passthroughs += 1
+                element_id = f"passthrough-{passthroughs}"
+                if entry.link_group is None:
+                    continue
+                key = ("FILE", entry.link_group)
+                label = entry.label
+            groups.setdefault(key, []).append(
+                _LinkMember(element_id, media_type, track_index, clip_index)
             )
-            member = _LinkMember(f"clipitem-{counter}", media_type, track_index, clip_index)
-            groups.setdefault(key, []).append(member)
+            labels.setdefault(key, label)
     result: dict[str, tuple[_LinkMember, ...]] = {}
-    for members in groups.values():
-        videos = [m for m in members if m.media_type == "video"]
-        audios = [m for m in members if m.media_type == "audio"]
-        if len(videos) != 1 or not audios:
-            continue
+    warnings: list[HandoffDiagnostic] = []
+    for key, members in groups.items():
+        if key[0] == "FILE":
+            if len(members) < 2:
+                warnings.append(
+                    warning(
+                        HandoffDiagnosticCode.LINK_NOT_PRESERVED,
+                        members[0].clip_id,
+                        f"{labels[key]!r}: the other end of its <link> group is gone; "
+                        "written unlinked, re-check its A/V link",
+                    )
+                )
+                continue
+        else:
+            videos = [m for m in members if m.media_type == "video"]
+            audios = [m for m in members if m.media_type == "audio"]
+            if len(videos) != 1 or not audios:
+                continue
         group = tuple(members)
         for member in group:
             result[member.clip_id] = group
-    return result
+    return result, warnings
 
 
 class _Builder:
@@ -267,7 +303,7 @@ class _Builder:
         self.clip_counter = 0
         self.passthrough_counter = 0
         self.pt_file_ids: dict[str, str] = {}
-        self.links = _link_groups(timeline)
+        self.links = _link_groups(timeline)[0]
 
     def file(self, parent: ET.Element, media: HandoffMediaRef) -> None:
         existing = self.file_ids.get(media.media_id)
@@ -300,14 +336,12 @@ class _Builder:
         _leaf(element, "in", str(clip.source_range.start))
         _leaf(element, "out", str(clip.source_range.end))
         self.file(element, clip.media)
-        for member in self.links.get(clip_id, ()):
-            link = ET.SubElement(element, "link")
-            _leaf(link, "linkclipref", member.clip_id)
-            _leaf(link, "mediatype", member.media_type)
-            _leaf(link, "trackindex", str(member.track_index))
-            _leaf(link, "clipindex", str(member.clip_index))
-            if member.media_type == "audio":
-                _leaf(link, "groupindex", "1")
+        if clip.source_track is not None:
+            media_type, _, index = clip.source_track.partition(":")
+            source = ET.SubElement(element, "sourcetrack")
+            _leaf(source, "mediatype", media_type)
+            _leaf(source, "trackindex", index)
+        self.links_for(element, clip_id)
         for marker in clip.markers:
             marker_element = ET.SubElement(element, "marker")
             _leaf(marker_element, "name", marker.name)
@@ -315,11 +349,21 @@ class _Builder:
             _leaf(marker_element, "in", str(marker.frame_range.start))
             _leaf(marker_element, "out", str(marker.frame_range.end))
 
+    def links_for(self, element: ET.Element, element_id: str) -> None:
+        append_links(
+            element,
+            [
+                (m.clip_id, m.media_type, m.track_index, m.clip_index)
+                for m in self.links.get(element_id, ())
+            ],
+        )
+
     def passthrough(self, parent: ET.Element, item: PassthroughItem) -> None:
         self.passthrough_counter += 1
-        parent.append(
-            emit_raw(item.raw_xml, f"passthrough-{self.passthrough_counter}", self.pt_file_ids)
-        )
+        element_id = f"passthrough-{self.passthrough_counter}"
+        element = emit_raw(item.raw_xml, element_id, self.pt_file_ids)
+        self.links_for(element, element_id)
+        parent.append(element)
 
     def track(self, parent: ET.Element, track: HandoffTrack) -> None:
         element = ET.SubElement(parent, "track", dict(track.attributes))
@@ -354,6 +398,8 @@ class _Builder:
         for track in self.timeline.tracks:
             if track.kind is HandoffTrackKind.AUDIO:
                 self.track(audio, track)
+        for marker in self.timeline.markers:
+            sequence.append(parse_raw(marker_raw_at(marker.raw_xml, marker.frame_range)))
         return root
 
 
@@ -362,6 +408,7 @@ def write_xmeml(timeline: HandoffTimeline) -> XmemlWriteResult:
     if not isinstance(timeline, HandoffTimeline):
         raise TypeError("A HandoffTimeline is required")
     diagnostics = _preflight(timeline)
+    diagnostics.extend(_link_groups(timeline)[1])
     if has_refusal(tuple(diagnostics)):
         return XmemlWriteResult(None, tuple(diagnostics))
     root = _Builder(timeline).build()

@@ -23,6 +23,7 @@ from davinci_ai_editor.apply_cuts import (
     build_apply_confirmation,
 )
 from davinci_ai_editor.candidate_markers import (
+    CandidateDecision,
     CandidateHandoff,
     CutCandidate,
     attach_candidate_markers,
@@ -48,8 +49,14 @@ from davinci_ai_editor.layer_policy import (
     TrackEffectKind,
     TrackPolicyOverride,
 )
-from davinci_ai_editor.otio_json import write_otio
-from davinci_ai_editor.roundtrip_diff import DiffStatus, RoundTripDiff
+from davinci_ai_editor.otio_json import read_otio, write_otio
+from davinci_ai_editor.roundtrip_diff import (
+    DiffStatus,
+    RoundTripDiff,
+    RoundTripFormat,
+    diff_otio_roundtrip,
+    roundtrip_artifact_ref,
+)
 from davinci_ai_editor.roundtrip_verification import (
     ActualProvenance,
     ItemStatus,
@@ -146,13 +153,36 @@ def _fill_track(text: str, index: int, xml: str) -> str:
     return text[:close] + xml + text[close:]
 
 
-def _editor_original(*, stereo: bool = True, audio_filter: bool = False) -> str:
+def _source_track(index: int) -> str:
+    return (
+        f"<sourcetrack><mediatype>audio</mediatype><trackindex>{index}</trackindex></sourcetrack>"
+    )
+
+
+SEQUENCE_MARKERS = (
+    "<marker><name>chapter 2</name><comment>c</comment><in>150</in><out>-1</out></marker>"
+    "<marker><name>breath note</name><comment /><in>110</in><out>115</out></marker>"
+)
+
+
+def _editor_original(
+    *,
+    stereo: bool = True,
+    audio_filter: bool = False,
+    sourcetrack: bool = True,
+    markers: bool = False,
+) -> str:
     """The editor's own multi-layer timeline as exported before the handoff."""
     text = fx.written(_base(stereo=stereo))
     text = _insert_into_clip(text, "clipitem-2", FILTER)  # V2 B-roll colour filter
     text = _fill_track(text, 2, _generator(300, 350))  # V3 title
+    if stereo and sourcetrack:  # one stereo file: A1 = left, A2 = right channel
+        text = _insert_into_clip(text, "clipitem-3", _source_track(1))
+        text = _insert_into_clip(text, "clipitem-4", _source_track(2))
     if audio_filter:
         text = _insert_into_clip(text, "clipitem-3", AUDIO_FILTER)  # A1 levels
+    if markers:
+        text = text.replace("</media>", "</media>" + SEQUENCE_MARKERS, 1)
     return text
 
 
@@ -166,7 +196,9 @@ def _expected(original_text: str) -> CandidateHandoff:
     read = read_xmeml(original_text)
     assert read.timeline is not None, read.diagnostics
     original = read.timeline
-    expected = HandoffTimeline(original.name, original.rate, original.start_frame, original.tracks)
+    expected = HandoffTimeline(
+        original.name, original.rate, original.start_frame, original.tracks, original.markers
+    )
     return attach_candidate_markers(expected, (CUT_1, CUT_2))
 
 
@@ -217,9 +249,9 @@ MONO_MUSIC_CUT = (TrackPolicyOverride("Audio 2", TrackEditPolicy.CUT_WITH_SOURCE
 
 
 def _scenario(
-    *, stereo: bool = True
+    *, stereo: bool = True, sourcetrack: bool = True
 ) -> tuple[str, CandidateHandoff, str, RoundTripDiff, ApplyConfirmation]:
-    original = _editor_original(stereo=stereo)
+    original = _editor_original(stereo=stereo, sourcetrack=sourcetrack)
     handoff = _expected(original)
     exported = _approve_all(handoff)
     music = A3_CUT if stereo else MONO_MUSIC_CUT
@@ -389,7 +421,20 @@ def test_multi_layer_end_to_end_with_override_and_verification() -> None:
     layer_items = [i for i in report.items if i.item_id.startswith("L")]
     assert {i.item_id for i in layer_items} == {"L:VIDEO:2:0", "L:VIDEO:3:0"}
     assert all(i.status is ItemStatus.MATCH for i in layer_items)
-    # A1/A2 dual-mono of one file over FCP7 XML is WEAK-ambiguous (RT/VER decision 3)
+    # A1/A2 are the two channels of one file, told apart by <sourcetrack>
+    assert report.status is VerificationStatus.MATCH, report.reasons
+
+
+def test_dual_mono_without_sourcetrack_evidence_stays_identity_ambiguous() -> None:
+    _, _, _, _, confirmation = _scenario(sourcetrack=False)
+    applied = apply_approved_cuts(confirmation, confirmed_digest=confirmation.confirmation_digest)
+    text = fx.written(applied.timeline)
+    report = verify_roundtrip(
+        applied.revision,
+        applied.timeline,
+        fx.diff_text(applied.timeline, text.replace("clipitem-", "item-"), ref="re.xml"),
+        provenance=ActualProvenance.IMMEDIATE_REEXPORT,
+    )
     assert report.status is VerificationStatus.UNVERIFIED
     assert report.reasons == ("IDENTITY_AMBIGUOUS",)
     unknown = {i.track.label for i in report.items if i.status is ItemStatus.UNKNOWN}
@@ -478,10 +523,10 @@ def test_filtered_clip_that_is_cut_keeps_filters_on_each_piece_with_review_flag(
     assert [c.candidate_id for c in confirmation.approved_cuts] == ["AIE-0001"]
     codes = [(w.code, w.track_name) for w in confirmation.layer_warnings]
     assert codes == [(LayerIssueCode.EFFECT_SPLIT_REVIEW, "Audio 1")]
-    handoff_write = write_xmeml(handoff.timeline)
-    assert [d.code for d in handoff_write.diagnostics].count(
-        HandoffDiagnosticCode.LINK_NOT_PRESERVED
-    ) == 1  # the A1 clipitem's <link>s cannot be kept by a new file: reported, not silent
+    handoff_write = write_xmeml(handoff.timeline)  # A1 links re-mapped to the new ids
+    assert HandoffDiagnosticCode.LINK_NOT_PRESERVED not in {
+        d.code for d in handoff_write.diagnostics
+    }
     assert "EFFECT_SPLIT_REVIEW AIE-0001 Audio 1 [AUDIO:1]" in confirmation.summary
     applied = apply_approved_cuts(confirmation, confirmed_digest=confirmation.confirmation_digest)
     text = fx.written(applied.timeline)
@@ -492,6 +537,11 @@ def test_filtered_clip_that_is_cut_keeps_filters_on_each_piece_with_review_flag(
         assert piece.findtext("duration") == str(
             int(piece.findtext("end") or 0) - int(piece.findtext("start") or 0)
         )
+    # the preserved A1 pieces stay linked with the matching V1 and A2 pieces
+    for index, piece in enumerate(pieces):
+        video_piece = _tracks(text, "video")[0].findall("clipitem")[index]
+        refs = {link.findtext("linkclipref") for link in piece.findall("link")}
+        assert video_piece.get("id") in refs and piece.get("id") in refs and len(refs) == 3
     reread = read_xmeml(text)
     assert reread.timeline is not None
     assert [p.source_range for p in reread.timeline.tracks[3].passthrough] == [
@@ -541,18 +591,150 @@ def test_overrides_must_name_exactly_one_track() -> None:
         TrackPolicyOverride("Audio 3", TrackEditPolicy.UNKNOWN)
 
 
-def test_sequence_markers_make_apply_refuse_with_layer_loss_risk() -> None:
+def test_sequence_markers_are_preserved_shifted_and_verified() -> None:
+    handoff = _expected(_editor_original(markers=True))
+    assert [m.name for m in handoff.timeline.markers] == ["chapter 2", "breath note"]
+    diff, confirmation = _confirm(handoff, _approve_all(handoff), A3_CUT)
+    assert {f.kind for f in diff.layer_findings} == {LayerFindingKind.MATCH}
+    assert [c.candidate_id for c in confirmation.approved_cuts] == ["AIE-0001"]
+    assert confirmation.loss_risks == ()
+    moved = [w for w in confirmation.layer_warnings if w.code is LayerIssueCode.MARKER_MOVED_TO_CUT]
+    assert len(moved) == 1 and "'breath note' [110,115)" in moved[0].detail
+    assert "MARKER_MOVED_TO_CUT AIE-0001" in confirmation.summary
+    applied = apply_approved_cuts(confirmation, confirmed_digest=confirmation.confirmation_digest)
+    assert [(m.name, m.frame_range) for m in applied.timeline.markers] == [
+        ("chapter 2", FrameRange(120, 121)),  # rippled -30
+        ("breath note", FrameRange(100, 101)),  # inside the cut: kept at the cut point
+    ]
+    text = fx.written(applied.timeline)
+    sequence = ET.fromstring(text).find("sequence")
+    assert sequence is not None
+    written = [
+        (m.findtext("name"), m.findtext("in"), m.findtext("out"))
+        for m in sequence.findall("marker")
+    ]
+    assert written == [("chapter 2", "120", "-1"), ("breath note", "100", "101")]
+    report = verify_roundtrip(
+        applied.revision,
+        applied.timeline,
+        fx.diff_text(applied.timeline, text.replace("clipitem-", "item-"), ref="re.xml"),
+        provenance=ActualProvenance.IMMEDIATE_REEXPORT,
+    )
+    assert report.status is VerificationStatus.MATCH, report.reasons
+    assert report.item("M:SEQUENCE:0").status is ItemStatus.MATCH
+    root = ET.fromstring(text)
+    seq = root.find("sequence")
+    assert seq is not None
+    seq.remove(seq.findall("marker")[0])
+    lost = ET.tostring(root, encoding="unicode")
+    lost_report = verify_roundtrip(
+        applied.revision,
+        applied.timeline,
+        fx.diff_text(applied.timeline, lost, ref="lost.xml"),
+        provenance=ActualProvenance.IMMEDIATE_REEXPORT,
+    )
+    assert lost_report.item("M:SEQUENCE:0").status is ItemStatus.MARKER_LOST
+    assert lost_report.status is VerificationStatus.MISMATCH
+
+
+def test_malformed_sequence_marker_still_refuses_with_layer_loss_risk() -> None:
     handoff = _expected(_editor_original())
     exported = _approve_all(handoff)
-    marker = "<marker><name>chapter 2</name><in>150</in><out>-1</out></marker>"
-    exported = exported.replace("<media>", marker + "<media>", 1)
+    exported = exported.replace("</media>", "</media><marker><name>bad</name></marker>", 1)
     _, confirmation = _confirm(handoff, exported, A3_CUT)
-    assert [c.candidate_id for c in confirmation.approved_cuts] == ["AIE-0001"]
     (risk,) = confirmation.loss_risks
-    assert risk.code is LayerIssueCode.LAYER_LOSS_RISK and "chapter 2" in risk.detail
+    assert risk.code is LayerIssueCode.LAYER_LOSS_RISK and "bad" in risk.detail
     assert "LAYER_LOSS_RISK - apply refused" in confirmation.summary
     with pytest.raises(ApplyRefused, match="LAYER_LOSS_RISK"):
         apply_approved_cuts(confirmation, confirmed_digest=confirmation.confirmation_digest)
+
+
+RECORDER = HandoffMediaRef("rec", "/media/recorder.wav", FrameRange(0, 2000), 0)
+
+
+def _double_system(*, linked: bool) -> CandidateHandoff:
+    """V1 camera clip + A1 separate-recorder audio (another file), linked or not."""
+    group = "g1" if linked else None
+    v1 = HandoffTrack(
+        "V1",
+        HandoffTrackKind.VIDEO,
+        (HandoffClip("Cam", INTERVIEW, FrameRange(0, 400), link_group=group),),
+    )
+    a1 = HandoffTrack(
+        "A1",
+        HandoffTrackKind.AUDIO,
+        (HandoffClip("Rec", RECORDER, FrameRange(0, 400), link_group=group),),
+    )
+    read = read_xmeml(fx.written(HandoffTimeline("DS", fx.RATE, 0, (v1, a1))))
+    assert read.timeline is not None
+    expected = HandoffTimeline("DS", fx.RATE, 0, read.timeline.tracks)
+    return attach_candidate_markers(expected, (CUT_1,))
+
+
+def test_file_link_groups_count_as_linked_av_for_the_default_policy() -> None:
+    linked = _double_system(linked=True)
+    recorder = linked.timeline.tracks[1].items[0]
+    assert isinstance(recorder, HandoffClip) and recorder.link_group == "L1"
+    text = _rename(fx.written(linked.timeline), "AIE-0001 ?", "AIE-0001 OK")
+    _, confirmation = _confirm(linked, text)
+    (cut,) = confirmation.approved_cuts
+    assert [a.policy for a in cut.track_policies] == [TrackEditPolicy.CUT_WITH_SOURCE] * 2
+    applied = apply_approved_cuts(confirmation, confirmed_digest=confirmation.confirmation_digest)
+    written = fx.written(applied.timeline)
+    for video, audio in zip(
+        _tracks(written, "video")[0].findall("clipitem"),
+        _tracks(written, "audio")[0].findall("clipitem"),
+        strict=True,
+    ):
+        assert _timing(video) == _timing(audio)
+        refs = {link.findtext("linkclipref") for link in audio.findall("link")}
+        assert refs == {video.get("id"), audio.get("id")}
+    unlinked = _double_system(linked=False)
+    text = _rename(fx.written(unlinked.timeline), "AIE-0001 ?", "AIE-0001 OK")
+    _, refused = _confirm(unlinked, text)
+    assert refused.skipped[0].reason is SkipReason.LAYER_CONFLICT
+
+
+def test_link_with_a_missing_end_is_reported_not_silent() -> None:
+    lone = HandoffTrack(
+        "V1",
+        HandoffTrackKind.VIDEO,
+        (HandoffClip("Cam", INTERVIEW, FrameRange(0, 100), link_group="g9"),),
+    )
+    result = write_xmeml(HandoffTimeline("T", fx.RATE, 0, (lone,)))
+    assert result.text is not None and "<link>" not in result.text
+    assert HandoffDiagnosticCode.LINK_NOT_PRESERVED in {d.code for d in result.diagnostics}
+
+
+def _otio_confirmation(color: str, name: str = "AIE-0001 OK") -> ApplyConfirmation:
+    clip = HandoffClip("Cam", INTERVIEW, FrameRange(0, 400))
+    base = HandoffTimeline("C", fx.RATE, 0, (HandoffTrack("V1", HandoffTrackKind.VIDEO, (clip,)),))
+    handoff = attach_candidate_markers(base, (CUT_1,))
+    otio_text = write_otio(handoff.timeline).text
+    assert otio_text is not None
+    document = json.loads(otio_text)
+    marker = document["tracks"]["children"][0]["children"][0]["markers"][0]
+    marker["name"], marker["color"] = name, color
+    mutated = json.dumps(document)
+    read = read_otio(mutated)
+    assert read.timeline is not None
+    artifact = roundtrip_artifact_ref("c.otio", mutated, RoundTripFormat.OTIO_JSON)
+    diff = diff_otio_roundtrip(handoff.timeline, read, artifact_ref=artifact)
+    selection = read_marker_selections(read.timeline, handoff.candidates)
+    return build_apply_confirmation(selection, handoff.timeline, diff)
+
+
+def test_confirmation_digest_binds_resolved_status_not_raw_marker_colour() -> None:
+    green = _otio_confirmation("GREEN")
+    blue = _otio_confirmation("BLUE")
+    assert green.actual_digest != blue.actual_digest  # the raw files differ ...
+    assert green.confirmation_digest == blue.confirmation_digest  # ... the approval does not
+    assert [s.decision for s in green.candidate_statuses] == [CandidateDecision.APPROVED]
+    conflict = _otio_confirmation("RED")  # name OK + RED = UNKNOWN: a different approval
+    assert conflict.candidate_statuses[0].decision is CandidateDecision.UNKNOWN
+    assert conflict.confirmation_digest != green.confirmation_digest
+    with pytest.raises(ValueError):
+        replace(green, candidate_statuses=conflict.candidate_statuses)
 
 
 def test_writers_refuse_instead_of_dropping_layer_items() -> None:

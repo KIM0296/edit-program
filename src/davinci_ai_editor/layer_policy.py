@@ -33,8 +33,8 @@ Warnings (shown in the confirmation and bound by its digest):
 ``SYNC_SHIFT`` (a KEEP track next to rippling tracks: lists what will no longer
 line up), ``EFFECT_SPLIT_REVIEW`` (a clipitem with filters is cut: the filter
 elements are kept on each piece but keyframes may not line up) and
-``LINK_REVIEW`` (a pass-through item lost its ``<link>`` references when its
-subtree was captured; the editor re-checks the A/V link).
+``MARKER_MOVED_TO_CUT`` (a sequence marker inside a removed range is kept and
+moved to the cut point, never dropped).
 
 Layer preservation checks (:func:`compare_layers`) compare two timelines track
 by track: same track set and order per kind, same track state (enabled /
@@ -56,10 +56,12 @@ from .handoff_model import (
     HandoffItem,
     HandoffMarker,
     HandoffTrack,
+    HandoffTrackKind,
     PassthroughItem,
+    SequenceMarker,
     TimelineStructure,
 )
-from .layer_xml import content_key, cut_piece_raw, raw_markers, shifted_raw
+from .layer_xml import content_key, cut_piece_raw, marker_raw_at, raw_markers, shifted_raw
 from .xmeml_reader import TrackKey, UnknownRegion, UnsupportedConstruct, track_keys
 
 
@@ -85,7 +87,7 @@ class LayerIssueCode(str, Enum):
     LAYER_UNSUPPORTED_ITEM = "LAYER_UNSUPPORTED_ITEM"
     SYNC_SHIFT = "SYNC_SHIFT"
     EFFECT_SPLIT_REVIEW = "EFFECT_SPLIT_REVIEW"
-    LINK_REVIEW = "LINK_REVIEW"
+    MARKER_MOVED_TO_CUT = "MARKER_MOVED_TO_CUT"
     LAYER_LOSS_RISK = "LAYER_LOSS_RISK"
 
 
@@ -221,6 +223,7 @@ class LayerItemView:
     media_id: str | None
     clip: HandoffClip | None
     passthrough: PassthroughItem | None
+    link_group: str | None = None
 
     @property
     def describe(self) -> str:
@@ -242,12 +245,20 @@ def track_items(key: TrackKey, track: HandoffTrack) -> tuple[LayerItemView, ...]
                 clip.media.media_id,
                 clip,
                 None,
+                clip.link_group,
             )
         )
     for item in track.passthrough:
         result.append(
             LayerItemView(
-                key, track.name, item.label, item.timeline_range, item.media_id, None, item
+                key,
+                track.name,
+                item.label,
+                item.timeline_range,
+                item.media_id,
+                None,
+                item,
+                item.link_group,
             )
         )
     return tuple(result)
@@ -286,10 +297,21 @@ def resolve_overrides(
 
 
 def default_policy(
-    views: Sequence[LayerItemView], cut: FrameRange, candidate_media: str
+    views: Sequence[LayerItemView],
+    cut: FrameRange,
+    candidate_media: str,
+    candidate_link: str | None = None,
 ) -> TrackEditPolicy:
+    """CUT when every item covering the cut is the candidate's source media or is in
+    the candidate clip's file ``<link>`` group (e.g. separate-recorder audio)."""
+
+    def with_source(view: LayerItemView) -> bool:
+        if view.media_id == candidate_media:
+            return True
+        return candidate_link is not None and view.link_group == candidate_link
+
     covering = [v for v in views if _touches(v, cut)]
-    if covering and all(v.media_id == candidate_media for v in covering):
+    if covering and all(with_source(v) for v in covering):
         return TrackEditPolicy.CUT_WITH_SOURCE
     return TrackEditPolicy.SHIFT_WITH_RIPPLE
 
@@ -299,6 +321,7 @@ def assign_policies(
     cut: FrameRange,
     candidate_media: str,
     overrides: Mapping[TrackKey, TrackEditPolicy],
+    candidate_link: str | None = None,
 ) -> tuple[TrackPolicyAssignment, ...]:
     result: list[TrackPolicyAssignment] = []
     for key, track in track_keys(timeline):
@@ -306,7 +329,7 @@ def assign_policies(
         if override is not None:
             result.append(TrackPolicyAssignment(key, track.name, override, PolicySource.OVERRIDE))
             continue
-        policy = default_policy(track_items(key, track), cut, candidate_media)
+        policy = default_policy(track_items(key, track), cut, candidate_media, candidate_link)
         result.append(TrackPolicyAssignment(key, track.name, policy, PolicySource.DEFAULT))
     return tuple(result)
 
@@ -401,24 +424,6 @@ def check_cut_layers(
     return tuple(blocking), tuple(warnings)
 
 
-def link_review_warnings(timeline: TimelineStructure) -> tuple[LayerIssue, ...]:
-    result: list[LayerIssue] = []
-    for key, track in track_keys(timeline):
-        for item in track.passthrough:
-            if item.links_removed:
-                result.append(
-                    LayerIssue(
-                        LayerIssueCode.LINK_REVIEW,
-                        "",
-                        key,
-                        track.name,
-                        f"{item.kind.value} {item.label!r} had {item.links_removed} <link> "
-                        "reference(s) that a new file cannot keep; re-check its A/V link",
-                    )
-                )
-    return tuple(result)
-
-
 def track_effects(
     timeline: TimelineStructure,
     applied: Sequence[tuple[FrameRange, Sequence[TrackPolicyAssignment]]],
@@ -471,13 +476,32 @@ def ripple_delta(frame: int, cuts: tuple[FrameRange, ...]) -> int:
     return -sum(c.duration for c in cuts if c.end <= frame)
 
 
-def _piece(clip: HandoffClip, span_start: int, piece: FrameRange) -> HandoffClip:
+def piece_link_group(
+    group: str | None, piece_start: int, split: bool, all_cuts: tuple[FrameRange, ...]
+) -> str | None:
+    """Link group of one piece of a split item.
+
+    Pieces of linked items cut by the same approved cuts get the same suffix
+    (the number of approved cuts before the piece), so piece k of the video stays
+    linked with piece k of its audio; an unsplit item keeps its group.
+    """
+    if group is None or not split:
+        return group
+    return f"{group}.{sum(1 for c in all_cuts if c.end <= piece_start)}"
+
+
+def _piece(
+    clip: HandoffClip,
+    span_start: int,
+    piece: FrameRange,
+    link_group: str | None,
+) -> HandoffClip:
     offset = clip.source_range.start - span_start
     source = FrameRange(piece.start + offset, piece.end + offset)
     markers: tuple[HandoffMarker, ...] = tuple(
         m for m in clip.markers if source.contains(m.frame_range)
     )
-    return replace(clip, source_range=source, markers=markers)
+    return replace(clip, source_range=source, markers=markers, link_group=link_group)
 
 
 class LayerLossRisk(ValueError):
@@ -485,7 +509,10 @@ class LayerLossRisk(ValueError):
 
 
 def _passthrough_after_cuts(
-    item: PassthroughItem, remove: tuple[FrameRange, ...], cut_ranges: frozenset[FrameRange]
+    item: PassthroughItem,
+    remove: tuple[FrameRange, ...],
+    cut_ranges: frozenset[FrameRange],
+    all_cuts: tuple[FrameRange, ...],
 ) -> tuple[list[PassthroughItem], list[tuple[FrameRange, int]]]:
     """(resulting items, moved pieces as (original range, delta))."""
     extent = item.timeline_range
@@ -510,7 +537,8 @@ def _passthrough_after_cuts(
     pieces: list[PassthroughItem] = []
     moves: list[tuple[FrameRange, int]] = []
     offset = source.start - extent.start
-    for piece in subtract(extent, remove):
+    split_pieces = subtract(extent, remove)
+    for piece in split_pieces:
         delta = ripple_delta(piece.start, remove)
         piece_source = FrameRange(piece.start + offset, piece.end + offset)
         start = piece.start + delta
@@ -520,6 +548,9 @@ def _passthrough_after_cuts(
                 timeline_range=FrameRange(start, start + piece.duration),
                 source_range=piece_source,
                 raw_xml=cut_piece_raw(item.raw_xml, start, piece_source),
+                link_group=piece_link_group(
+                    item.link_group, piece.start, len(split_pieces) > 1, all_cuts
+                ),
             )
         )
         if delta:
@@ -528,13 +559,20 @@ def _passthrough_after_cuts(
 
 
 def apply_track_cuts(
-    track: HandoffTrack, remove: tuple[FrameRange, ...], cut_ranges: frozenset[FrameRange]
+    track: HandoffTrack,
+    remove: tuple[FrameRange, ...],
+    cut_ranges: frozenset[FrameRange],
+    all_cuts: tuple[FrameRange, ...] | None = None,
 ) -> tuple[HandoffTrack, list[RippleDisplacement]]:
     """Ripple-delete ``remove`` (sorted) from one track; ``cut_ranges`` are its CUT ranges.
+
+    ``all_cuts`` (every approved cut, default ``remove``) numbers the pieces of
+    split linked items so their ``link_group`` stays paired across tracks.
 
     SHIFT ranges contain no item (checked at confirmation), so removing them only
     shrinks gaps and moves later items. Track identity, flags and settings are kept.
     """
+    every_cut = remove if all_cuts is None else all_cuts
     items: list[HandoffItem] = []
     displacements: list[RippleDisplacement] = []
     cursor = 0
@@ -553,7 +591,8 @@ def apply_track_cuts(
                 else:
                     items.append(HandoffGap(piece.duration))
                 continue
-            items.append(_piece(item, span.start, piece))
+            group = piece_link_group(item.link_group, piece.start, len(pieces) > 1, every_cut)
+            items.append(_piece(item, span.start, piece, group))
             delta = ripple_delta(piece.start, remove)
             if delta:
                 displacements.append(RippleDisplacement(TrackId(track.name), piece, delta))
@@ -561,7 +600,7 @@ def apply_track_cuts(
         items.pop()
     passthrough: list[PassthroughItem] = []
     for entry in track.passthrough:
-        kept, moves = _passthrough_after_cuts(entry, remove, cut_ranges)
+        kept, moves = _passthrough_after_cuts(entry, remove, cut_ranges, every_cut)
         passthrough.extend(kept)
         displacements.extend(
             RippleDisplacement(TrackId(track.name), original, delta) for original, delta in moves
@@ -791,6 +830,7 @@ def compare_layers(
         findings.extend(
             f for f in _compare_track(key, empty, track) if f.kind is LayerFindingKind.ADDED
         )
+    findings.extend(_compare_sequence_markers(expected.markers, actual.markers))
     return tuple(findings)
 
 
@@ -873,3 +913,134 @@ def resolve_passthrough_regions(
         if not explained:
             remaining.append(region)
     return tuple(remaining)
+
+
+# --- sequence (timeline) markers ------------------------------------------------------
+
+SEQUENCE_TRACK = TrackKey(HandoffTrackKind.UNKNOWN, 1)
+"""Pseudo track key for sequence-level findings (sequence markers live on no track)."""
+
+
+def ripple_frame(frame: int, cuts: tuple[FrameRange, ...]) -> int:
+    """Timeline position after removing ``cuts``; a frame inside a cut maps to the cut point."""
+    return frame - sum(max(0, min(frame, c.end) - c.start) for c in cuts if c.start < frame)
+
+
+def ripple_sequence_markers(
+    markers: tuple[SequenceMarker, ...], cuts: tuple[FrameRange, ...]
+) -> tuple[SequenceMarker, ...]:
+    """Shift sequence markers with the timeline ripple; never drop one.
+
+    A marker (or the part of it) inside a removed range is moved to the cut point;
+    a marker collapsing to nothing becomes a one-frame marker at the cut point.
+    """
+    result: list[SequenceMarker] = []
+    for marker in markers:
+        start = ripple_frame(marker.frame_range.start, cuts)
+        end = max(ripple_frame(marker.frame_range.end, cuts), start + 1)
+        moved = FrameRange(start, end)
+        if moved == marker.frame_range:
+            result.append(marker)
+        else:
+            result.append(
+                replace(marker, frame_range=moved, raw_xml=marker_raw_at(marker.raw_xml, moved))
+            )
+    return tuple(result)
+
+
+def sequence_marker_warnings(
+    markers: tuple[SequenceMarker, ...], cut: FrameRange, candidate_id: str
+) -> tuple[LayerIssue, ...]:
+    span = f"[{cut.start},{cut.end})"
+    return tuple(
+        LayerIssue(
+            LayerIssueCode.MARKER_MOVED_TO_CUT,
+            candidate_id,
+            None,
+            "",
+            f"sequence marker {m.name!r} [{m.frame_range.start},{m.frame_range.end}) lies in "
+            f"the removed range {span}; it is kept and moved to the cut point",
+        )
+        for m in markers
+        if m.frame_range.overlaps(cut)
+    )
+
+
+def _compare_sequence_markers(
+    expected: tuple[SequenceMarker, ...], actual: tuple[SequenceMarker, ...]
+) -> list[LayerFinding]:
+    findings: list[LayerFinding] = []
+    used: set[int] = set()
+    pending: list[int] = []
+    for index, marker in enumerate(expected):
+        hit = next((j for j, o in enumerate(actual) if j not in used and o == marker), None)
+        if hit is None:
+            pending.append(index)
+            continue
+        used.add(hit)
+        findings.append(
+            LayerFinding(
+                f"M:SEQUENCE:{index}",
+                SEQUENCE_TRACK,
+                LayerFindingKind.MATCH,
+                marker.name,
+                marker.frame_range,
+                marker.frame_range,
+                index,
+                hit,
+                "sequence marker preserved verbatim",
+            )
+        )
+    for index in pending:
+        marker = expected[index]
+        key = content_key(marker.raw_xml, ("in", "out"))
+        same = [
+            j
+            for j, o in enumerate(actual)
+            if j not in used and content_key(o.raw_xml, ("in", "out")) == key
+        ]
+        if len(same) == 1:
+            used.add(same[0])
+            findings.append(
+                LayerFinding(
+                    f"M:SEQUENCE:{index}",
+                    SEQUENCE_TRACK,
+                    LayerFindingKind.MOVED,
+                    marker.name,
+                    marker.frame_range,
+                    actual[same[0]].frame_range,
+                    index,
+                    same[0],
+                    "sequence marker content identical, position differs",
+                )
+            )
+            continue
+        findings.append(
+            LayerFinding(
+                f"M:SEQUENCE:{index}",
+                SEQUENCE_TRACK,
+                LayerFindingKind.LOST,
+                marker.name,
+                marker.frame_range,
+                None,
+                index,
+                None,
+                "sequence marker missing in Actual",
+            )
+        )
+    for j, other in enumerate(actual):
+        if j not in used:
+            findings.append(
+                LayerFinding(
+                    f"MA:SEQUENCE:{j}",
+                    SEQUENCE_TRACK,
+                    LayerFindingKind.ADDED,
+                    other.name,
+                    None,
+                    other.frame_range,
+                    None,
+                    j,
+                    "sequence marker not in Expected",
+                )
+            )
+    return findings

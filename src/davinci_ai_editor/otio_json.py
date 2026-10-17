@@ -359,19 +359,36 @@ def write_otio(
             HandoffDiagnosticCode.LAYER_LOSS_RISK,
             f"tracks[{index}]",
             f"Track {track.name!r} carries pass-through items or track state "
-            "(xmeml subtree, disabled/locked flag, attributes) that this OTIO subset "
+            "(xmeml subtree, disabled/locked flag, attributes, source channel) that this OTIO subset "
             "cannot carry; refused instead of dropping them",
         )
         for index, track in enumerate(timeline.tracks)
-        if track.has_layer_state
+        if track.has_layer_state or any(c.source_track is not None for _, c in track.placements())
     )
+    if timeline.markers:
+        losses += (
+            refusal(
+                HandoffDiagnosticCode.LAYER_LOSS_RISK,
+                "timeline.markers",
+                "Sequence markers are not carried by this OTIO subset; refused",
+            ),
+        )
     if losses:
         return OtioWriteResult(None, profile, losses)
     try:
         document = _Writer(timeline, profile).document()
     except _Refused as refused:
         return OtioWriteResult(None, profile, (refused.diagnostic,))
-    return OtioWriteResult(dumps_deterministic(document), profile, ())
+    links = tuple(
+        warning(
+            HandoffDiagnosticCode.LINK_NOT_PRESERVED,
+            f"tracks[{index}]",
+            f"Track {track.name!r}: <link> groups have no form in this OTIO subset",
+        )
+        for index, track in enumerate(timeline.tracks)
+        if any(c.link_group is not None for _, c in track.placements())
+    )
+    return OtioWriteResult(dumps_deterministic(document), profile, links)
 
 
 # --- reader -------------------------------------------------------------------

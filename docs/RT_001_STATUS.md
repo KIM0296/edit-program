@@ -62,7 +62,7 @@ other `filter`, unknown clip/track child, clip without file or in/out,
 mixed-rate file, marker outside the clip, overlapping placements, disabled
 track. A `-1`/missing clip boundary or unknown track child makes the whole
 track UNKNOWN (`frame_range=None`). Missing clip `enabled` uses the FCP7 DTD
-default TRUE with a warning. Sequence-level markers are reported, not modelled.
+default TRUE with a warning. Sequence-level markers are kept (LAYER-001 follow-up).
 
 ## Diff (`roundtrip_diff.py`)
 

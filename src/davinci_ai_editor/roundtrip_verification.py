@@ -331,9 +331,16 @@ def _drift(change: RoundTripChange) -> FrameDrift:
     )
 
 
-def _media_key(clip: HandoffClip) -> tuple[str, str]:
+def _media_key(clip: HandoffClip) -> tuple[str, str, str]:
+    """WEAK identity key: path (or ID) plus the FCP7 source channel when present.
+
+    LAYER-001 follow-up: ``<sourcetrack>`` (``source_track``) separates the
+    channels of one stereo file (A1 ``audio:1`` vs A2 ``audio:2``); without that
+    evidence the channel part is empty and same-path clips stay ambiguous.
+    """
+    channel = clip.source_track or ""
     path = path_key(clip.media.target_path)
-    return ("PATH", path) if path is not None else ("ID", clip.media.media_id)
+    return ("PATH", path, channel) if path is not None else ("ID", clip.media.media_id, channel)
 
 
 def _kind_counts(keys: Iterable[TrackKey]) -> dict[HandoffTrackKind, int]:
@@ -529,6 +536,8 @@ class _Observer:
     def layer(self, finding: LayerFinding) -> _Observation:
         """LAYER-001: track set/state and pass-through presence (verbatim compare)."""
         observed = _LAYER_OBSERVED[finding.kind]
+        if finding.finding_id.startswith("M") and observed is ItemStatus.LAYER_LOST:
+            observed = ItemStatus.MARKER_LOST  # a sequence marker missing in Actual
         drift: FrameDrift | None = None
         if observed is ItemStatus.FRAME_DRIFT:
             if finding.expected_range is None or finding.actual_range is None:

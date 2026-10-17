@@ -345,7 +345,18 @@ def path_key(path: str | None) -> str | None:
 def identity_strength(
     expected: HandoffClip, actual: HandoffClip, basis: MediaIdentityBasis
 ) -> IdentityStrength | None:
-    """``None`` = no correspondence (different media)."""
+    """``None`` = no correspondence (different media, or different source channel).
+
+    LAYER-001 follow-up: when both clips carry FCP7 ``<sourcetrack>`` evidence
+    (``source_track``) and it differs (e.g. the left vs right channel of one
+    stereo file), they are different content and never correspond.
+    """
+    if (
+        expected.source_track is not None
+        and actual.source_track is not None
+        and expected.source_track != actual.source_track
+    ):
+        return None
     e_media, a_media = expected.media, actual.media
     id_eq = e_media.media_id == a_media.media_id
     pe, pa = path_key(e_media.target_path), path_key(a_media.target_path)

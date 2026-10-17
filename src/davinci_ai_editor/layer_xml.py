@@ -162,14 +162,43 @@ def cut_piece_raw(raw: str, timeline_start: int, source: FrameRange) -> str:
     return serialize(root)
 
 
-def content_key(raw: str) -> str:
-    """Canonical content ignoring only the root's timeline ``start``/``end``."""
+def content_key(raw: str, tags: tuple[str, ...] = ("start", "end")) -> str:
+    """Canonical content ignoring only the root's direct timing children ``tags``."""
     root = parse_raw(raw)
-    for tag in ("start", "end"):
+    for tag in tags:
         child = root.find(tag)
         if child is not None:
             root.remove(child)
     return serialize(root)
+
+
+def marker_raw_at(raw: str, frame_range: FrameRange) -> str:
+    """A ``<marker>`` subtree moved to ``frame_range`` (timeline frames).
+
+    ``in`` becomes the new start; ``out`` is rewritten only when the original
+    carried a real out point (a point marker's ``-1`` / absent out is kept).
+    """
+    root = parse_raw(raw)
+    _set_child_int(root, "in", frame_range.start)
+    out = child_int(root, "out")
+    if out is not None and out != -1:
+        _set_child_int(root, "out", frame_range.end)
+    return serialize(root)
+
+
+def append_links(element: ET.Element, links: list[tuple[str, str, int, int]]) -> None:
+    """Append FCP7 ``<link>`` children: (linkclipref, mediatype, trackindex, clipindex)."""
+    for ref, media_type, track_index, clip_index in links:
+        link = ET.SubElement(element, "link")
+        for tag, text in (
+            ("linkclipref", ref),
+            ("mediatype", media_type),
+            ("trackindex", str(track_index)),
+            ("clipindex", str(clip_index)),
+        ):
+            ET.SubElement(link, tag).text = text
+        if media_type == "audio":
+            ET.SubElement(link, "groupindex").text = "1"
 
 
 def emit_raw(raw: str, element_id: str, file_ids: dict[str, str]) -> ET.Element:

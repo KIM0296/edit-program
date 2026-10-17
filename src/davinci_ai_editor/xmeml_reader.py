@@ -29,6 +29,13 @@ or whole-UNKNOWN track, overlapped clipitems) is kept verbatim as a
 children are kept on the track. Sequence-level markers, which the model cannot
 carry, are listed in ``ReimportedTimeline.unpreserved``.
 
+LAYER-001 follow-up: well-formed sequence-level markers are kept verbatim as
+``ReimportedTimeline.markers`` (only a malformed one is ``unpreserved``);
+``<link>`` groups among track items are read as ``link_group`` (canonical
+``L1``, ``L2``, ... by document order); ``<sourcetrack>`` is read as
+``HandoffClip.source_track`` (``audio:2``) and distinguishes the channels of
+one stereo file.
+
 Security: input is a ``str`` capped at ``max_chars``; any ``<!ENTITY``
 declaration, DTD internal subset, external DOCTYPE identifier or DOCTYPE other
 than the bare ``<!DOCTYPE xmeml>`` is refused before parsing (defusedxml-like
@@ -63,6 +70,7 @@ from .handoff_model import (
     LayerItemKind,
     PassthroughItem,
     ReimportedTimeline,
+    SequenceMarker,
     TimelineStructure,
     file_url_to_path,
     has_refusal,
@@ -121,6 +129,18 @@ _TRACK_UNSUPPORTED = {
     "transitionitem": "TRANSITION",
     "generatoritem": "GENERATOR",
 }
+
+
+def _source_track(element: ET.Element) -> str | None:
+    """FCP7 ``<sourcetrack>`` as ``mediatype:trackindex``; absent/malformed -> None."""
+    source = element.find("sourcetrack")
+    if source is None:
+        return None
+    media_type = (source.findtext("mediatype") or "").strip().lower()
+    index = child_int(source, "trackindex")
+    if media_type not in ("video", "audio") or index is None or index < 1:
+        return None
+    return f"{media_type}:{index}"
 
 
 def _layer_kind(element: ET.Element) -> LayerItemKind:
@@ -367,6 +387,7 @@ class _Reader:
         self.regions: list[UnknownRegion] = []
         self.files: dict[str, _FileDef] = {}
         self.file_elements: dict[str, ET.Element] = {}
+        self.link_groups: dict[str, str] = {}
         self.rate: FrameRate = FrameRate(24, 1)
 
     # --- files --------------------------------------------------------------
@@ -405,6 +426,47 @@ class _Reader:
                 )
             self.files[file_id] = definition
             self.file_elements.setdefault(file_id, element)
+
+    def collect_links(self, media: ET.Element) -> None:
+        """FCP7 ``<link>`` groups among top-level track items -> canonical group names.
+
+        Groups are the connected components of ``linkclipref`` references between
+        existing item ids, named ``L1``, ``L2``, ... by document order; references
+        to ids that do not exist are ignored and single-member groups get none.
+        """
+        items: list[ET.Element] = [
+            child
+            for section in ("video", "audio")
+            for track in media.findall(f"{section}/track")
+            for child in track
+            if child.get("id")
+        ]
+        ids = [child.get("id") or "" for child in items]
+        known = set(ids)
+        parent = {item_id: item_id for item_id in ids}
+
+        def find(item_id: str) -> str:
+            while parent[item_id] != item_id:
+                parent[item_id] = parent[parent[item_id]]
+                item_id = parent[item_id]
+            return item_id
+
+        for item_id, child in zip(ids, items, strict=True):
+            for ref in child.findall("link/linkclipref"):
+                other = (ref.text or "").strip()
+                if other in known and other != item_id:
+                    parent[find(other)] = find(item_id)
+        members: dict[str, list[str]] = {}
+        for item_id in ids:
+            members.setdefault(find(item_id), []).append(item_id)
+        names: dict[str, str] = {}
+        for item_id in ids:
+            root = find(item_id)
+            if len(members[root]) < 2:
+                continue
+            if root not in names:
+                names[root] = f"L{len(names) + 1}"
+            self.link_groups[item_id] = names[root]
 
     def resolve_file(self, element: ET.Element, location: str) -> _FileDef:
         file_id = element.get("id")
@@ -569,7 +631,15 @@ class _Reader:
             raise AssertionError("validated above")
         media = HandoffMediaRef(media_id, definition.path, available, definition.media_start)
         name = (element.findtext("name") or "").strip() or media_id
-        clip = HandoffClip(name, media, source, enabled_value, markers)
+        clip = HandoffClip(
+            name,
+            media,
+            source,
+            enabled_value,
+            markers,
+            _source_track(element),
+            self.link_groups.get(element.get("id") or ""),
+        )
         return _Placed(span.start, span.end, clip)
 
     # --- tracks -------------------------------------------------------------
@@ -643,7 +713,7 @@ class _Reader:
         result: list[PassthroughItem] = []
         for index, (child, placed) in enumerate(leftovers):
             extent = extents[index]
-            raw, links = canonical_subtree(child, self.file_elements)
+            raw = canonical_subtree(child, self.file_elements)[0]
             kind = _layer_kind(child)
             media_id = self.raw_media_id(child)
             overlapped = extent is None or any(
@@ -671,7 +741,7 @@ class _Reader:
                     media_id,
                     source,
                     child.find("filter") is not None,
-                    links,
+                    self.link_groups.get(child.get("id") or ""),
                 )
             )
         return tuple(result)
@@ -809,6 +879,7 @@ class _Reader:
         media = sequence.find("media")
         if media is None:
             raise _fail(HandoffDiagnosticCode.MALFORMED_DOCUMENT, "sequence", "No <media>")
+        self.collect_links(media)
         tracks: list[HandoffTrack] = []
         for section_tag, kind in (
             ("video", HandoffTrackKind.VIDEO),
@@ -821,17 +892,25 @@ class _Reader:
                 key = TrackKey(kind, index + 1)
                 tracks.append(self.track(track, key, f"{section_tag}.track[{index}]"))
         unpreserved: list[str] = []
+        sequence_markers: list[SequenceMarker] = []
         for marker_index, marker in enumerate(sequence.findall("marker")):
-            self.diagnostics.append(
-                warning(
-                    HandoffDiagnosticCode.UNSUPPORTED_FEATURE,
-                    f"sequence.markers[{marker_index}]",
-                    "Sequence-level markers are not modelled; reported, not compared",
-                )
-            )
             name = (marker.findtext("name") or "").strip()
-            position = (marker.findtext("in") or "?").strip()
-            unpreserved.append(f"sequence marker {name!r} at frame {position}")
+            m_start = child_int(marker, "in")
+            m_end = child_int(marker, "out")
+            if m_end is None or m_end == -1:
+                m_end = None if m_start is None else m_start + 1
+            if m_start is None or m_end is None or m_start < 0 or m_end <= m_start:
+                self.diagnostics.append(
+                    warning(
+                        HandoffDiagnosticCode.UNSUPPORTED_FEATURE,
+                        f"sequence.markers[{marker_index}]",
+                        "Malformed sequence-level marker; listed as unpreserved",
+                    )
+                )
+                unpreserved.append(f"malformed sequence marker {name!r}")
+                continue
+            raw = canonical_subtree(marker, {})[0]
+            sequence_markers.append(SequenceMarker(FrameRange(m_start, m_end), name, raw))
         raw_name = (sequence.findtext("name") or "").strip()
         if not raw_name:
             raw_name = "UNNAMED_SEQUENCE"
@@ -839,7 +918,12 @@ class _Reader:
                 warning(HandoffDiagnosticCode.INVALID_VALUE, "sequence.name", "No sequence name")
             )
         return ReimportedTimeline(
-            raw_name, rate, start, tuple(tracks), unpreserved=tuple(unpreserved)
+            raw_name,
+            rate,
+            start,
+            tuple(tracks),
+            unpreserved=tuple(unpreserved),
+            markers=tuple(sequence_markers),
         )
 
 
